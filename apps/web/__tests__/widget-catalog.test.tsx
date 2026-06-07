@@ -25,4 +25,13 @@ describe('WidgetCatalog', () => {
     fireEvent.click(screen.getByRole('button', { name: /add calc a/i }));
     expect(onAdd).toHaveBeenCalledWith('a');
   });
+
+  it('closes on backdrop click and on Escape', () => {
+    const onClose = vi.fn();
+    const { container } = render(<WidgetCatalog onAdd={() => {}} onClose={onClose} />);
+    fireEvent.click(container.firstChild as Element); // backdrop
+    expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
 });

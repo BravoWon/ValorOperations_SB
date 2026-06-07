@@ -24,7 +24,7 @@ export function WidgetCard({
             type="button"
             onClick={onRemove}
             aria-label={`Remove ${title}`}
-            className="ml-auto rounded p-1 text-muted-foreground hover:text-red-400"
+            className="ml-auto rounded p-1 text-muted-foreground hover:text-red"
           >
             <X className="h-3.5 w-3.5" />
           </button>

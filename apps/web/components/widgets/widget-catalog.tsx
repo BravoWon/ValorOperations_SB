@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useMemo } from 'react';
 import type { WidgetCategory } from '@valor/core';
 import { listWidgets } from '@/lib/widgets/registry';
 
@@ -18,12 +19,21 @@ export function WidgetCatalog({
   onAdd: (widgetId: string) => void;
   onClose: () => void;
 }) {
-  const all = listWidgets();
+  const all = useMemo(() => listWidgets(), []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="glass-strong w-full max-w-lg rounded-xl p-5" onClick={(e) => e.stopPropagation()}>
+      <div className="glass-strong w-full max-w-lg rounded-xl p-5" role="dialog" aria-modal="true" aria-labelledby="widget-catalog-title" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg text-cream">Add widget</h2>
+          <h2 id="widget-catalog-title" className="font-display text-lg text-cream">Add widget</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="text-muted-foreground">✕</button>
         </div>
         <div className="max-h-[60vh] space-y-4 overflow-auto">

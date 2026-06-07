@@ -8,12 +8,16 @@ export function useRepoData<T>(fetcher: () => Promise<T>): { data: T | null; loa
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let active = true;
-    fetcher().then((d) => {
-      if (active) {
-        setData(d);
-        setLoading(false);
-      }
-    });
+    fetcher()
+      .then((d) => {
+        if (active) {
+          setData(d);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
     };

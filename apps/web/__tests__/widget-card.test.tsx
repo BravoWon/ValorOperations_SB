@@ -15,4 +15,9 @@ describe('WidgetCard', () => {
     fireEvent.click(screen.getByLabelText(/remove active jobs/i));
     expect(onRemove).toHaveBeenCalledOnce();
   });
+
+  it('renders the icon when provided', () => {
+    render(<WidgetCard title="X" icon={<span data-testid="ic" />}>b</WidgetCard>);
+    expect(screen.getByTestId('ic')).toBeInTheDocument();
+  });
 });
