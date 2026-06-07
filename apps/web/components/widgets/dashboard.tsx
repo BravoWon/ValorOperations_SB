@@ -9,6 +9,8 @@ import { getRepo } from '@/lib/repo';
 import { getWidget } from '@/lib/widgets/registry';
 import { WidgetCard } from '@/components/widgets/widget-card';
 import { WidgetCatalog } from '@/components/widgets/widget-catalog';
+import { PageHeader } from '@/components/ui/page-header';
+import { SkeletonLines } from '@/components/ui/states';
 
 let counter = 0;
 function newInstanceId(): string {
@@ -30,7 +32,16 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!dash) return <div className="text-sm text-muted-foreground">Loading dashboard…</div>;
+  if (!dash) {
+    return (
+      <div>
+        <PageHeader eyebrow="Operations" title="Dashboard" />
+        <div className="glass rounded-lg p-6">
+          <SkeletonLines lines={6} />
+        </div>
+      </div>
+    );
+  }
 
   const persist = (next: DashboardLayout) => {
     setDash(next);
@@ -79,16 +90,20 @@ export function Dashboard() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl text-cream">Dashboard</h1>
-        <button
-          type="button"
-          onClick={() => setCatalogOpen(true)}
-          className="flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-sm text-gold-light"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" /> Add widget
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Operations"
+        title="Dashboard"
+        subtitle="Your live operations workspace — drag to rearrange, resize from any edge."
+        actions={
+          <button
+            type="button"
+            onClick={() => setCatalogOpen(true)}
+            className="lift inline-flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3.5 py-2 text-sm font-medium text-gold-light shadow-[0_0_18px_-8px_rgba(201,168,76,0.6)] hover:bg-gold/15"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" /> Add widget
+          </button>
+        }
+      />
 
       <div ref={containerRef}>
         <ResponsiveGridLayout
@@ -109,7 +124,9 @@ export function Dashboard() {
                   {entry ? (
                     <entry.Component config={w.config} surface="card" />
                   ) : (
-                    <div className="text-xs text-red">Unknown widget: {w.widgetId}</div>
+                    <div className="flex h-full items-center justify-center rounded-md border border-dashed border-red/30 bg-red/[0.04] px-3 py-6 text-center font-mono text-[0.6875rem] uppercase tracking-wider text-red/80">
+                      Unknown widget: {w.widgetId}
+                    </div>
                   )}
                 </WidgetCard>
               </div>

@@ -3,10 +3,11 @@ import { registerWidget } from '@/lib/widgets/registry';
 import { AssetTree } from '@/components/asset-tree';
 import { useRepoData } from '@/lib/use-repo-data';
 import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
+import { LoadingState } from '@/components/ui/states';
 
 function AssetTreeWidget() {
   const { data } = useRepoData(() => getRepo().getAssetTree(DEMO_ORG_ID));
-  return data ? <AssetTree tree={data} /> : <div className="text-xs text-muted-foreground">Loading…</div>;
+  return data ? <AssetTree tree={data} /> : <LoadingState />;
 }
 
 registerWidget(

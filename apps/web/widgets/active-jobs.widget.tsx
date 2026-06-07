@@ -3,10 +3,11 @@ import { registerWidget } from '@/lib/widgets/registry';
 import { JobsBoard } from '@/components/jobs-board';
 import { useRepoData } from '@/lib/use-repo-data';
 import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
+import { LoadingState } from '@/components/ui/states';
 
 function ActiveJobsWidget() {
   const { data } = useRepoData(() => getRepo().listJobs(DEMO_ORG_ID));
-  return data ? <JobsBoard jobs={data} /> : <div className="text-xs text-muted-foreground">Loading…</div>;
+  return data ? <JobsBoard jobs={data} /> : <LoadingState />;
 }
 
 registerWidget(
