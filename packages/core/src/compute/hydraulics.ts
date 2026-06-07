@@ -46,6 +46,9 @@ export function computeHydraulics(i: HydraulicsInputs): HydraulicsResult {
 
   const eff = i.pumpEfficiencyPct / 100;
   const pumpOutputBblPerStk = PUMP_TRIPLEX_FACTOR * i.pumpLinerIdIn ** 2 * i.pumpStrokeLengthIn * eff;
+  if (pumpOutputBblPerStk <= 0) {
+    warnings.push('Pump output is zero — check liner ID, stroke length, and efficiency.');
+  }
   const flowRateGpm = pumpOutputBblPerStk * 42 * i.spm;
 
   let bottomsUpStrokes = 0;
@@ -82,7 +85,7 @@ export function computeHydraulics(i: HydraulicsInputs): HydraulicsResult {
 
 // --- Registry: drives the panel (mirrors the field_defs pattern) ---
 
-export interface CalcFieldSpec {
+export interface HydraulicsFieldSpec {
   key: keyof HydraulicsInputs;
   label: string;
   unit: string;
@@ -92,7 +95,7 @@ export interface CalcFieldSpec {
   group: 'Geometry' | 'Depth' | 'Fluid' | 'Pump';
 }
 
-export const HYDRAULICS_FIELDS: CalcFieldSpec[] = [
+export const HYDRAULICS_FIELDS: HydraulicsFieldSpec[] = [
   { key: 'holeDiameterIn', label: 'Hole diameter', unit: 'in', min: 3, max: 36, default: 9.875, group: 'Geometry' },
   { key: 'pipeOdIn', label: 'Pipe OD', unit: 'in', min: 1, max: 10, default: 5.0, group: 'Geometry' },
   { key: 'pipeIdIn', label: 'Pipe ID', unit: 'in', min: 0.5, max: 9, default: 4.276, group: 'Geometry' },
@@ -105,14 +108,14 @@ export const HYDRAULICS_FIELDS: CalcFieldSpec[] = [
   { key: 'spm', label: 'Pump speed', unit: 'spm', min: 0, max: 200, default: 60, group: 'Pump' },
 ];
 
-export interface CalcOutputSpec {
+export interface HydraulicsOutputSpec {
   key: keyof Omit<HydraulicsResult, 'warnings'>;
   label: string;
   unit: string;
   decimals: number;
 }
 
-export const HYDRAULICS_OUTPUTS: CalcOutputSpec[] = [
+export const HYDRAULICS_OUTPUTS: HydraulicsOutputSpec[] = [
   { key: 'annularCapacityBblPerFt', label: 'Annular capacity', unit: 'bbl/ft', decimals: 4 },
   { key: 'pipeCapacityBblPerFt', label: 'Pipe capacity', unit: 'bbl/ft', decimals: 4 },
   { key: 'annularVolumeBbl', label: 'Annular volume', unit: 'bbl', decimals: 1 },
