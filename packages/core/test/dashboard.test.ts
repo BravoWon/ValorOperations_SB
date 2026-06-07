@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createDefaultDashboard } from '../src/widgets/types';
+import { createDefaultDashboard, isValidDashboardLayout } from '../src/widgets/types';
 import { MockRepository } from '../src/mock-repository';
 
 function fakeLocalStorage() {
@@ -86,5 +86,42 @@ describe('dashboard persistence', () => {
     await repo.saveDashboard(layout);
     (layout.widgets as unknown[]).push({});
     expect((await repo.getDashboard('u5')).widgets).toEqual([]);
+  });
+});
+
+describe('isValidDashboardLayout + persistence hardening', () => {
+  it('accepts a well-formed layout and rejects malformed ones', () => {
+    expect(isValidDashboardLayout({ id: 'd', ownerId: 'u', widgets: [] })).toBe(true);
+    expect(isValidDashboardLayout({ id: 'd', ownerId: 'u', widgets: [{ instanceId: 'a', widgetId: 'b', layout: { x: 0, y: 0, w: 1, h: 1 } }] })).toBe(true);
+    expect(isValidDashboardLayout(null)).toBe(false);
+    expect(isValidDashboardLayout({ ownerId: 'u', widgets: [] })).toBe(false); // missing id
+    expect(isValidDashboardLayout({ id: 'd', ownerId: 'u', widgets: [{ instanceId: 'a', widgetId: 'b', layout: { x: 0, y: null, w: 1, h: 1 } }] })).toBe(false); // null y
+    expect(isValidDashboardLayout({ id: 'd', ownerId: 'u', widgets: [{ instanceId: 'a', widgetId: 'b' }] })).toBe(false); // missing layout
+  });
+
+  it('getDashboard falls back to the default when a stored layout has a null y', async () => {
+    (globalThis as unknown as { localStorage: Storage }).localStorage = fakeLocalStorage();
+    try {
+      globalThis.localStorage.setItem(
+        'valor:dashboard:u6',
+        JSON.stringify({ id: 'd', ownerId: 'u6', widgets: [{ instanceId: 'a', widgetId: 'kpi-strip', layout: { x: 0, y: null, w: 12, h: 2 } }] }),
+      );
+      expect((await new MockRepository().getDashboard('u6')).widgets).toHaveLength(4);
+    } finally {
+      delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    }
+  });
+
+  it('getDashboard falls back to the default when a stored widget is missing its layout', async () => {
+    (globalThis as unknown as { localStorage: Storage }).localStorage = fakeLocalStorage();
+    try {
+      globalThis.localStorage.setItem(
+        'valor:dashboard:u7',
+        JSON.stringify({ id: 'd', ownerId: 'u7', widgets: [{ instanceId: 'a', widgetId: 'kpi-strip' }] }),
+      );
+      expect((await new MockRepository().getDashboard('u7')).widgets).toHaveLength(4);
+    } finally {
+      delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    }
   });
 });
