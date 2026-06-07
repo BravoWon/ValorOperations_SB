@@ -253,7 +253,7 @@ Run:
 corepack pnpm --filter @valor/core test
 corepack pnpm --filter @valor/core exec tsc --noEmit
 ```
-Expected: all suites pass (**33 tests**: prior 30 + 3 hydraulics); tsc exit 0.
+Expected: all suites pass (**34 tests**: prior 30 + 4 hydraulics); tsc exit 0.
 
 - [ ] **Step 3: Commit**
 
@@ -441,7 +441,7 @@ Follow `docs/superpowers/process/review-pipeline.md`.
 
 - [ ] **Step 1: Final verification**
 ```bash
-corepack pnpm --filter @valor/core test           # 33 passing
+corepack pnpm --filter @valor/core test           # 34 passing
 corepack pnpm --filter @valor/web build           # succeeds
 ```
 
@@ -463,7 +463,7 @@ gh pr create --base master --head feat/hydraulics-module \
 
 ## Definition of Done
 
-- `corepack pnpm --filter @valor/core test` → 33 passing (incl. 3 hydraulics).
+- `corepack pnpm --filter @valor/core test` → 34 passing (incl. 4 hydraulics).
 - `corepack pnpm --filter @valor/web build` → `/tools/hydraulics` compiles.
 - The calculator renders in the Valor theme, recomputes live, shows the 9 outputs + warnings, and is reachable from the sidebar nav.
 - Compute lives in `@valor/core` (shared, testable); the panel only consumes it — same adapter-agnostic seam.

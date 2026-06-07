@@ -24,65 +24,6 @@ export interface HydraulicsResult {
   warnings: string[];
 }
 
-// bbl/stroke per (in^2 * in), triplex single-acting. (Derived from the standard
-// (pi/4 * ID^2 * stroke * 3 cylinders) / (231 in^3/gal * 42 gal/bbl); ~0.0002429.)
-const PUMP_TRIPLEX_FACTOR = 0.000243;
-// in^2 -> bbl/ft capacity constant: 1 bbl = 9702 in^3; capacity(bbl/ft) = ID^2 / 1029.4.
-const CAPACITY_CONSTANT = 1029.4;
-
-export function computeHydraulics(i: HydraulicsInputs): HydraulicsResult {
-  const warnings: string[] = [];
-
-  const annClearanceSq = i.holeDiameterIn ** 2 - i.pipeOdIn ** 2;
-  let annularCapacityBblPerFt = 0;
-  if (annClearanceSq <= 0) {
-    warnings.push('Hole diameter must exceed pipe OD for a valid annulus.');
-  } else {
-    annularCapacityBblPerFt = annClearanceSq / CAPACITY_CONSTANT;
-  }
-
-  const pipeCapacityBblPerFt = i.pipeIdIn ** 2 / CAPACITY_CONSTANT;
-  const annularVolumeBbl = annularCapacityBblPerFt * i.measuredDepthFt;
-
-  const eff = i.pumpEfficiencyPct / 100;
-  const pumpOutputBblPerStk = PUMP_TRIPLEX_FACTOR * i.pumpLinerIdIn ** 2 * i.pumpStrokeLengthIn * eff;
-  if (pumpOutputBblPerStk <= 0) {
-    warnings.push('Pump output is zero — check liner ID, stroke length, and efficiency.');
-  }
-  const flowRateGpm = pumpOutputBblPerStk * 42 * i.spm;
-
-  let bottomsUpStrokes = 0;
-  if (pumpOutputBblPerStk > 0) {
-    bottomsUpStrokes = annularVolumeBbl / pumpOutputBblPerStk;
-  }
-  let bottomsUpTimeMin = 0;
-  if (i.spm > 0) {
-    bottomsUpTimeMin = bottomsUpStrokes / i.spm;
-  } else if (bottomsUpStrokes > 0) {
-    warnings.push('SPM is zero — bottoms-up time is undefined.');
-  }
-
-  let annularVelocityFtPerMin = 0;
-  if (annClearanceSq > 0) {
-    annularVelocityFtPerMin = (24.5 * flowRateGpm) / annClearanceSq;
-  }
-
-  const hydrostaticPressurePsi = 0.052 * i.mudWeightPpg * i.trueVerticalDepthFt;
-
-  return {
-    annularCapacityBblPerFt,
-    pipeCapacityBblPerFt,
-    annularVolumeBbl,
-    pumpOutputBblPerStk,
-    flowRateGpm,
-    bottomsUpStrokes,
-    bottomsUpTimeMin,
-    annularVelocityFtPerMin,
-    hydrostaticPressurePsi,
-    warnings,
-  };
-}
-
 // --- Registry: drives the panel (mirrors the field_defs pattern) ---
 
 export interface HydraulicsFieldSpec {
@@ -126,3 +67,82 @@ export const HYDRAULICS_OUTPUTS: HydraulicsOutputSpec[] = [
   { key: 'annularVelocityFtPerMin', label: 'Annular velocity', unit: 'ft/min', decimals: 1 },
   { key: 'hydrostaticPressurePsi', label: 'Hydrostatic pressure', unit: 'psi', decimals: 0 },
 ];
+
+// bbl/stroke per (in^2 * in), triplex single-acting. (Derived from the standard
+// (pi/4 * ID^2 * stroke * 3 cylinders) / (231 in^3/gal * 42 gal/bbl); ~0.0002429.)
+const PUMP_TRIPLEX_FACTOR = 0.000243;
+// in^2 -> bbl/ft capacity constant: 1 bbl = 9702 in^3; capacity(bbl/ft) = ID^2 / 1029.4.
+const CAPACITY_CONSTANT = 1029.4;
+
+function sanitizeInputs(i: HydraulicsInputs): { values: HydraulicsInputs; warnings: string[] } {
+  const warnings: string[] = [];
+  const values = { ...i };
+  for (const f of HYDRAULICS_FIELDS) {
+    const v = i[f.key];
+    if (!Number.isFinite(v)) {
+      values[f.key] = 0;
+      warnings.push(`${f.label} is not a valid number — treated as 0.`);
+    } else if (v < 0) {
+      values[f.key] = 0;
+      warnings.push(`${f.label} cannot be negative — treated as 0.`);
+    } else if (v < f.min) {
+      warnings.push(`${f.label} ${v} ${f.unit} is below the expected minimum ${f.min}.`);
+    } else if (v > f.max) {
+      warnings.push(`${f.label} ${v} ${f.unit} is above the expected maximum ${f.max}.`);
+    }
+  }
+  return { values, warnings };
+}
+
+export function computeHydraulics(i: HydraulicsInputs): HydraulicsResult {
+  const { values, warnings } = sanitizeInputs(i);
+
+  const annClearanceSq = values.holeDiameterIn ** 2 - values.pipeOdIn ** 2;
+  let annularCapacityBblPerFt = 0;
+  if (annClearanceSq <= 0) {
+    warnings.push('Hole diameter must exceed pipe OD for a valid annulus.');
+  } else {
+    annularCapacityBblPerFt = annClearanceSq / CAPACITY_CONSTANT;
+  }
+
+  const pipeCapacityBblPerFt = values.pipeIdIn ** 2 / CAPACITY_CONSTANT;
+  const annularVolumeBbl = annularCapacityBblPerFt * values.measuredDepthFt;
+
+  const eff = values.pumpEfficiencyPct / 100;
+  const pumpOutputBblPerStk = PUMP_TRIPLEX_FACTOR * values.pumpLinerIdIn ** 2 * values.pumpStrokeLengthIn * eff;
+  if (pumpOutputBblPerStk <= 0) {
+    warnings.push('Pump output is zero — check liner ID, stroke length, and efficiency.');
+  }
+  const flowRateGpm = pumpOutputBblPerStk * 42 * values.spm;
+
+  let bottomsUpStrokes = 0;
+  if (pumpOutputBblPerStk > 0) {
+    bottomsUpStrokes = annularVolumeBbl / pumpOutputBblPerStk;
+  }
+  let bottomsUpTimeMin = 0;
+  if (values.spm > 0) {
+    bottomsUpTimeMin = bottomsUpStrokes / values.spm;
+  } else if (bottomsUpStrokes > 0) {
+    warnings.push('SPM is zero — bottoms-up time is undefined.');
+  }
+
+  let annularVelocityFtPerMin = 0;
+  if (annClearanceSq > 0) {
+    annularVelocityFtPerMin = (24.5 * flowRateGpm) / annClearanceSq;
+  }
+
+  const hydrostaticPressurePsi = 0.052 * values.mudWeightPpg * values.trueVerticalDepthFt;
+
+  return {
+    annularCapacityBblPerFt,
+    pipeCapacityBblPerFt,
+    annularVolumeBbl,
+    pumpOutputBblPerStk,
+    flowRateGpm,
+    bottomsUpStrokes,
+    bottomsUpTimeMin,
+    annularVelocityFtPerMin,
+    hydrostaticPressurePsi,
+    warnings,
+  };
+}
