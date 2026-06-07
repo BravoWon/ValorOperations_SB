@@ -19,6 +19,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="mt-8 text-xs uppercase tracking-wide text-slate-400">Assets</div>
+        {/* TODO(Plan 2): replace this static tree with a data-driven asset hierarchy. */}
         <div className="mt-2 text-sm leading-7 text-slate-300">
           ▾ Ross County Field
           <br />

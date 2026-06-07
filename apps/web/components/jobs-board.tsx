@@ -1,5 +1,7 @@
 import type { Job, JobStatus } from '@valor/core';
 
+// Board shows the in-flight lifecycle columns. `suspended`/`closed` jobs are counted in
+// the KPI strip but not given a column here; revisit column set when those states see real use.
 const COLUMNS: { status: JobStatus; title: string }[] = [
   { status: 'planned', title: 'Planned' },
   { status: 'mobilized', title: 'Mobilized' },
