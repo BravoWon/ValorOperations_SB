@@ -34,15 +34,18 @@ export function Dashboard() {
     void repo.saveDashboard(next);
   };
 
-  const onLayoutChange = (current: Layout) => {
+  const onLayoutChange = (current: Layout /* , allLayouts */) => {
     const byId = new Map(current.map((l) => [l.i, l]));
-    persist({
-      ...dash,
-      widgets: dash.widgets.map((w) => {
-        const l = byId.get(w.instanceId);
-        return l ? { ...w, layout: { x: l.x, y: l.y, w: l.w, h: l.h } } : w;
-      }),
+    let changed = false;
+    const widgets = dash.widgets.map((w) => {
+      const l = byId.get(w.instanceId);
+      if (!l) return w;
+      if (l.x === w.layout.x && l.y === w.layout.y && l.w === w.layout.w && l.h === w.layout.h) return w;
+      changed = true;
+      return { ...w, layout: { x: l.x, y: l.y, w: l.w, h: l.h } };
     });
+    // Multi-breakpoint (md/sm) persistence deferred; v1 persists the primary layout only.
+    if (changed) persist({ ...dash, widgets });
   };
 
   const addWidget = (widgetId: string) => {
@@ -79,7 +82,7 @@ export function Dashboard() {
           onClick={() => setCatalogOpen(true)}
           className="flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-sm text-gold-light"
         >
-          <Plus className="h-4 w-4" /> Add widget
+          <Plus className="h-4 w-4" aria-hidden="true" /> Add widget
         </button>
       </div>
 

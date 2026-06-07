@@ -21,6 +21,9 @@ beforeEach(() => {
 });
 
 describe('Dashboard', () => {
+  // jsdom can't simulate pointer drag/resize; grid interaction is covered manually / by a future Playwright pass.
+  it.todo('persists layout on drag/resize (browser-only)');
+
   it('renders the default widgets', async () => {
     render(<Dashboard />);
     await waitFor(() => expect(screen.getAllByText('box-card').length).toBe(4));
