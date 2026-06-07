@@ -66,4 +66,10 @@ describe('validateFieldValue', () => {
     const r = validateFieldValue(def({ dataType: 'date' }), 'not-a-date');
     expect(r.ok).toBe(false);
   });
+
+  it('rejects an enum field with no options defined', () => {
+    const r = validateFieldValue(def({ dataType: 'enum', enumOptions: undefined }), 'anything');
+    expect(r.ok).toBe(false);
+    expect(r.error).toMatch(/no valid options/);
+  });
 });

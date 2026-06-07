@@ -12,7 +12,8 @@ import type { Job, JobStatusHistory, JobWithRelations, Stage, Well, JobTemplate 
 export class MockRepository implements Repository {
   private data: SeedData;
   private history: JobStatusHistory[] = [];
-  private counter = 1000;
+  private counter = 0;
+  private tickMs = 0;
 
   constructor() {
     this.data = createSeed();
@@ -20,12 +21,13 @@ export class MockRepository implements Repository {
 
   private nextId(prefix: string): string {
     this.counter += 1;
-    return `${prefix}-${this.counter}`;
+    return `${prefix}-gen-${this.counter}`;
   }
 
-  // Deterministic, strictly-increasing timestamps so status-history ordering is stable in tests.
+  // Deterministic, strictly-increasing timestamps (decoupled from ID counter) so history ordering is stable in tests.
   private now(): string {
-    return new Date(Date.UTC(2026, 5, 7, 12, 0, this.counter)).toISOString();
+    this.tickMs += 1000;
+    return new Date(Date.UTC(2026, 5, 7) + this.tickMs).toISOString();
   }
 
   async listWells(orgId: string): Promise<Well[]> {
@@ -58,7 +60,7 @@ export class MockRepository implements Repository {
     const job = this.data.jobs.find((j) => j.id === id);
     if (!job) return null;
     const well = this.data.wells.find((w) => w.id === job.wellId);
-    if (!well) return null;
+    if (!well) throw new Error(`Job ${id} references missing well ${job.wellId}`);
     return {
       ...job,
       well,

@@ -92,6 +92,7 @@ export function createSeed(): SeedData {
     { id: 'job-3', orgId: org, wellId: 'well-lf1', wellboreId: 'wb-lf1', templateId: 'tmpl-drill-vert', name: 'Rig Up & Mobilization', jobType: 'drilling', status: 'mobilized', afeNumber: 'AFE-2026-009', createdBy: DEMO_USER_ID },
   ];
 
+  // Seeded jobs intentionally have no stages — stages are created only via createJobFromTemplate.
   const stages: Stage[] = [];
 
   return {

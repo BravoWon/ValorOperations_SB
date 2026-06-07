@@ -47,7 +47,10 @@ export function validateFieldValue(def: TemplateFieldDef, raw: unknown): FieldVa
     }
     case 'enum': {
       const s = String(raw);
-      if (def.enumOptions && !def.enumOptions.includes(s)) {
+      if (!def.enumOptions?.length) {
+        return { ok: false, error: `${def.label} has no valid options defined` };
+      }
+      if (!def.enumOptions.includes(s)) {
         return { ok: false, error: `${def.label} must be one of: ${def.enumOptions.join(', ')}` };
       }
       return { ok: true, coerced: s };

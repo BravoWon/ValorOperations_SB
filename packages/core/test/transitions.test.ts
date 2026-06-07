@@ -29,4 +29,8 @@ describe('job status transitions', () => {
   it('assert is silent on legal transition', () => {
     expect(() => assertJobStatusTransition('planned', 'mobilized')).not.toThrow();
   });
+
+  it('allows suspended -> closed', () => {
+    expect(canTransitionJobStatus('suspended', 'closed')).toBe(true);
+  });
 });
