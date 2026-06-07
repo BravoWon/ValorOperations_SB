@@ -1,8 +1,13 @@
 import Link from 'next/link';
+import type { AssetTreeNode } from '@valor/core';
+import { AssetTree } from '@/components/asset-tree';
 
-const NAV = [{ href: '/jobs', label: 'Active Jobs' }];
+const NAV = [
+  { href: '/jobs', label: 'Active Jobs' },
+  { href: '/assets', label: 'Assets' },
+];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <aside className="w-60 shrink-0 bg-slate-900 p-4 text-slate-100">
@@ -19,14 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="mt-8 text-xs uppercase tracking-wide text-slate-400">Assets</div>
-        {/* TODO(Plan 2): replace this static tree with a data-driven asset hierarchy. */}
-        <div className="mt-2 text-sm leading-7 text-slate-300">
-          ▾ Ross County Field
-          <br />
-          &nbsp;&nbsp;▾ Lease Free Pad
-          <br />
-          &nbsp;&nbsp;&nbsp;&nbsp;● Lease Free #1
-        </div>
+        <AssetTree tree={tree} />
       </aside>
       <main className="flex-1 p-6">{children}</main>
     </div>
