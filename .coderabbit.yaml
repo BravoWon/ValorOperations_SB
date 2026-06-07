@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Dimensions CodeRabbit's review for the Valor Operations Hub: every change is judged not only on
+# technical correctness but on VALUE, CONTEXT, and INTENT ALIGNMENT (expected-vs-delivered).
+language: en-US
+reviews:
+  profile: assertive
+  high_level_summary: true
+  review_status: true
+  poem: false
+  auto_review:
+    enabled: true
+  tone_instructions: >
+    Review like a world-class studio with no budget constraints. For EVERY change, dimension it on
+    three axes and state expected-vs-delivered for the phase: (1) VALUE — does it deliver the
+    intended operational worth to the user (the superintendent / ops team); (2) CONTEXT — does it
+    fit the operations goal and integrate cleanly with the rest of the system; (3) INTENT ALIGNMENT
+    — does the implementation match the stated spec/plan intent. Be exhaustive on technical
+    correctness AND application/UX AND business/operations value. Explicitly flag any gap between
+    intent and delivery, and note what is missing for the phase to be "done" at a world-class bar.
+  path_instructions:
+    - path: "packages/core/**"
+      instructions: >
+        Pure domain/compute logic. Verify formula correctness against standard oilfield math,
+        determinism, edge/division-by-zero handling, unit correctness, and type safety (the project
+        uses strict + noUncheckedIndexedAccess). IP GUARDRAIL (blocker): flag ANY company, product,
+        personnel, client, well, or location name, or any copied proprietary formula text — only
+        generic, independently-restated industry math is permitted. Confirm tests assert real
+        numeric behavior and cover edge cases, not mocks-testing-mocks.
+    - path: "apps/web/**"
+      instructions: >
+        Verify the Valor brand system (dark navy/gold/glass; Zodiak display / Satoshi body /
+        JetBrains Mono data), correct server-vs-client component usage and hydration, accessibility
+        (form labels, semantics, focus), and that the UI depends only on @valor/core + lib/repo (the
+        swappable-adapter seam must stay intact). Assess whether each screen delivers the intended
+        operational value, not merely that it renders.
+    - path: "docs/**"
+      instructions: >
+        Confirm documentation matches delivered behavior; flag drift between plan/spec intent and
+        the implementation.
+  abort_on_close: true
+chat:
+  auto_reply: true

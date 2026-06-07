@@ -16,20 +16,37 @@ earlier one is green.
    concerns, type safety, edge cases, file responsibility, and that tests verify real behavior.
 4. **Final whole-branch review** (in-session subagent, most-capable model) — verifies the branch's
    Definition of Done end-to-end and that it integrates cleanly.
-5. **CodeRabbit review** (GitHub App, automatic on PR) — fires on every push to an open PR.
-   Triage its findings with the checklist below.
-6. **Human review + merge** — the human gives the final approval and merges.
+5. **Comprehensive phase review (value × context × intent)** — at phase completion, a world-class
+   ("AAAA, no budget constraints") multi-dimensional pass. Every change is *dimensioned* on three
+   axes — **value** (intended operational worth), **context** (fit with the ops goal + the system),
+   and **intent alignment** (expected-vs-delivered for the phase) — alongside deep technical +
+   application review and an IP/brand-leak scan. Run via the CodeRabbit App (dimensioned by
+   `.coderabbit.yaml`) **plus** an in-session comprehensive review pass (most-capable model) that
+   mirrors the CodeRabbit CLI's depth. Output includes expected-vs-delivered gaps and a recommended
+   test-after-resolution suite.
+6. **Resolve** — fix (or explicitly justify) every finding from gate 5.
+7. **Test-after-resolution** — *after* resolution is confirmed, add tests that prove the resolved
+   behavior (the suite recommended in gate 5: compute robustness, registry/units integrity, and
+   panel/UI guards). Re-verify everything green.
+8. **Human review + merge** — the human gives the final approval and merges.
 
-Gates 1–4 are the `superpowers:subagent-driven-development` loop. Gates 5–6 happen on the PR.
+Gates 1–4 are the `superpowers:subagent-driven-development` loop. Gates 5–8 happen at phase
+completion on the PR.
 
 ## CodeRabbit configuration (this repo)
 
 - **Integration:** CodeRabbit GitHub App, installed org-wide; reviews automatically on PR open and
-  on each push. No CLI needed.
-- **Profile:** CHILL · **Plan:** Free.
+  on each push.
+- **Dimensioned by `.coderabbit.yaml`** (repo root): `profile: assertive`, plus tone + path
+  instructions that steer the review onto **value / context / intent alignment**
+  (expected-vs-delivered), with a hard **IP guardrail** (no brand/product/personnel/client/well/
+  location names; generic restated math only) for `packages/core`, and brand/a11y/adapter-seam
+  checks for `apps/web`.
+- **CLI:** the CodeRabbit CLI is macOS/Linux/WSL-only (its installer has no native-Windows path), so
+  on Windows we use the App + the in-session comprehensive pass (gate 5); run the literal CLI from
+  WSL/Mac if desired.
 - **Ignored paths:** `pnpm-lock.yaml` (lockfile noise).
-- **Re-trigger manually** (if needed) by commenting on the PR: `@coderabbitai review` (incremental)
-  or `@coderabbitai full review`.
+- **Re-trigger manually** on a PR: `@coderabbitai review` (incremental) or `@coderabbitai full review`.
 
 ### Fetching CodeRabbit findings for triage (no browser)
 
@@ -60,6 +77,8 @@ Do not merge with un-triaged CodeRabbit findings. "Triaged" = fixed or explicitl
 - [ ] App builds (`corepack pnpm --filter @valor/web build`); typecheck clean.
 - [ ] In-session gates 2–4 (spec, quality, final) passed.
 - [ ] CodeRabbit findings triaged (fixed or justified) per the checklist above.
+- [ ] Comprehensive phase review (value × context × intent) passed; all findings resolved.
+- [ ] Test-after-resolution suite added and green (`@valor/core` + `@valor/web`).
 - [ ] Docs updated if behavior/scope changed (README, spec, plan, this process doc).
 - [ ] Security/RLS: when the change touches Supabase (Plan 4+), RLS policies have pgTAP tests and
       tenant isolation is proven — not assumed.
