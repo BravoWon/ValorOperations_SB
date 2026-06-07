@@ -11,7 +11,7 @@ function KpiStripWidget() {
 }
 
 registerWidget(
-  { id: 'kpi-strip', title: 'KPI Strip', description: 'Active / executing / planned job counts.', category: 'data', defaultSize: { w: 12, h: 2 }, minSize: { w: 4, h: 2 } },
+  { id: 'kpi-strip', title: 'KPI Strip', description: 'Active / executing / planned job counts.', category: 'data', defaultSize: { w: 12, h: 5 }, minSize: { w: 4, h: 4 } },
   KpiStripWidget,
 );
 export {};
