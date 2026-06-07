@@ -194,13 +194,16 @@ export class MockRepository implements Repository {
       const raw = store.getItem(this.dashboardKey(ownerId));
       if (raw) {
         try {
-          return JSON.parse(raw) as DashboardLayout;
+          const parsed = JSON.parse(raw) as DashboardLayout;
+          if (parsed && typeof parsed === 'object' && Array.isArray(parsed.widgets)) {
+            return parsed;
+          }
         } catch {
           /* fall through to default */
         }
       }
     } else if (this.dashboards.has(ownerId)) {
-      return this.dashboards.get(ownerId)!;
+      return structuredClone(this.dashboards.get(ownerId)!);
     }
     return createDefaultDashboard(ownerId);
   }
@@ -210,7 +213,7 @@ export class MockRepository implements Repository {
     if (store) {
       store.setItem(this.dashboardKey(layout.ownerId), JSON.stringify(layout));
     } else {
-      this.dashboards.set(layout.ownerId, layout);
+      this.dashboards.set(layout.ownerId, structuredClone(layout));
     }
   }
 }

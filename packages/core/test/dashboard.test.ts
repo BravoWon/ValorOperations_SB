@@ -10,7 +10,7 @@ function fakeLocalStorage() {
     removeItem: (k: string) => void m.delete(k),
     clear: () => m.clear(),
     key: () => null,
-    length: 0,
+    get length() { return m.size; },
   } as Storage;
 }
 
@@ -59,5 +59,32 @@ describe('dashboard persistence', () => {
     } finally {
       delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
     }
+  });
+
+  it('returns the default when localStorage holds corrupt JSON', async () => {
+    (globalThis as unknown as { localStorage: Storage }).localStorage = fakeLocalStorage();
+    try {
+      localStorage.setItem('valor:dashboard:u3', '{not valid json');
+      expect((await new MockRepository().getDashboard('u3')).widgets).toHaveLength(4);
+    } finally {
+      delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    }
+  });
+
+  it('returns the default when localStorage has no entry for the owner', async () => {
+    (globalThis as unknown as { localStorage: Storage }).localStorage = fakeLocalStorage();
+    try {
+      expect((await new MockRepository().getDashboard('u4')).widgets).toHaveLength(4);
+    } finally {
+      delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    }
+  });
+
+  it('in-memory save stores a clone (caller mutation does not leak)', async () => {
+    const repo = new MockRepository();
+    const layout = { id: 'd', ownerId: 'u5', widgets: [] };
+    await repo.saveDashboard(layout);
+    (layout.widgets as unknown[]).push({});
+    expect((await repo.getDashboard('u5')).widgets).toEqual([]);
   });
 });
