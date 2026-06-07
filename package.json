@@ -1,0 +1,14 @@
+{
+  "name": "valor-operations",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter @valor/web dev",
+    "build": "pnpm --filter @valor/web build",
+    "test": "pnpm --filter @valor/core test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
