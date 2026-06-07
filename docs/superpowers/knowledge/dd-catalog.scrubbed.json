@@ -1,0 +1,4201 @@
+{
+ "provenance": "Brand-scrubbed abstraction of mined DD calc sheets + world-class DD software docs. No company/product/well/personnel/location names; generic restated math only. One vendor-derived token (viscometer 300/600-RPM shorthand) generalized per API RP 13B.",
+ "counts": {
+  "modules": 24,
+  "patterns": 6
+ },
+ "wellsetup_field_catalog": [
+  {
+   "group": "Location Hierarchy",
+   "field": "Asset / Field Name",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "required; unique within org",
+   "notes": "Top of canonical 5-level tree: Asset/Field, Structure/Pad, Slot, Well, Borehole. Maps to condition-state assets."
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Structure / Platform / Pad Name",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "required; FK to field",
+   "notes": "Pad/platform/onshore grouping."
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Structure Type",
+   "unit_or_type": "enum (platform|pad|slot|onshore location)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "Configurable pick-list."
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Slot Label",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "unique within structure",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Well Name",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "required; FK to structure",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Well Legal Name",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "optional",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Well Type",
+   "unit_or_type": "enum (exploration|appraisal|development|injection|disposal|observation)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Well Status",
+   "unit_or_type": "enum (planned|active|suspended|abandoned|producing)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Well Spud / Completion Date",
+   "unit_or_type": "ISO-8601 date",
+   "customizable": true,
+   "validation": "spud <= completion",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Borehole / Wellbore Name",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "required; FK to well",
+   "notes": "Supports sidetracks/re-entries; condition-state wellbores."
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Borehole Index / Type",
+   "unit_or_type": "integer / enum (main bore|sidetrack|re-entry)",
+   "customizable": true,
+   "validation": ">=1; enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Location Hierarchy",
+   "field": "Tie-In Point (TIP) MD",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "required when not main bore",
+   "notes": "Sidetrack parent linkage."
+  },
+  {
+   "group": "Surface Datum and Reference",
+   "field": "RKB / Kelly Bushing Elevation",
+   "unit_or_type": "ft or m above datum",
+   "customizable": true,
+   "validation": "one value per borehole",
+   "notes": "Primary depth datum."
+  },
+  {
+   "group": "Surface Datum and Reference",
+   "field": "Ground Elevation / Water Depth / Air Gap",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric; offshore for water depth/air gap",
+   "notes": "Subsea datum chain."
+  },
+  {
+   "group": "Surface Datum and Reference",
+   "field": "Vertical Datum",
+   "unit_or_type": "enum (KB|MSL|ground level|WRP)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Surface Datum and Reference",
+   "field": "MSL Reference / Riserless Drilling Flag",
+   "unit_or_type": "boolean",
+   "customizable": true,
+   "validation": "",
+   "notes": ""
+  },
+  {
+   "group": "Coordinate Reference System",
+   "field": "Coordinate Reference System (CRS)",
+   "unit_or_type": "CRS code (must include datum)",
+   "customizable": true,
+   "validation": "required; datum-less CRS rejected (422)",
+   "notes": "Hard guardrail: datum mandatory."
+  },
+  {
+   "group": "Coordinate Reference System",
+   "field": "Northing / Easting",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": ""
+  },
+  {
+   "group": "Coordinate Reference System",
+   "field": "Latitude / Longitude",
+   "unit_or_type": "decimal degrees (WGS-84) or DMS",
+   "customizable": true,
+   "validation": "lat -90..90; lon -180..180",
+   "notes": "Optional DMS sub-fields."
+  },
+  {
+   "group": "Coordinate Reference System",
+   "field": "Vertical Section Azimuth",
+   "unit_or_type": "degrees",
+   "customizable": true,
+   "validation": "0..360; default 0",
+   "notes": "VS projection plane."
+  },
+  {
+   "group": "Coordinate Reference System",
+   "field": "Display Precision (lat/lon/N/E)",
+   "unit_or_type": "integer",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "User-preference layer."
+  },
+  {
+   "group": "Coordinate Reference System",
+   "field": "Azimuth Reference",
+   "unit_or_type": "enum (true|magnetic|grid north)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Geomagnetics",
+   "field": "Geomagnetic Coefficient Set",
+   "unit_or_type": "enum (IGRF epoch year)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "Drives corrections."
+  },
+  {
+   "group": "Geomagnetics",
+   "field": "Declination / Grid Convergence / Dip Angle",
+   "unit_or_type": "degrees",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": ""
+  },
+  {
+   "group": "Geomagnetics",
+   "field": "Total Field Strength (B-Total)",
+   "unit_or_type": "nT",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Measured Depth (MD)",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "monotonic non-decreasing",
+   "notes": "Core survey triple."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Inclination",
+   "unit_or_type": "degrees",
+   "customizable": true,
+   "validation": "0..180",
+   "notes": ""
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Azimuth",
+   "unit_or_type": "degrees (true|magnetic|grid)",
+   "customizable": true,
+   "validation": "0..360",
+   "notes": "Carry reference-north tag."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "TVD / TVDSS",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "TVDSS may be negative",
+   "notes": ""
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Northing / Easting Departure (cumulative)",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": "+N/-S, +E/-W."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Vertical Section (VS)",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": "Projected on VS azimuth."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Dogleg Severity / Build Rate / Turn Rate",
+   "unit_or_type": "deg/100ft or deg/30m",
+   "customizable": true,
+   "validation": ">=0 for DLS",
+   "notes": "Computed, persistable."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Course Length / Center-to-Center",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Calculation Method",
+   "unit_or_type": "enum (minimum curvature|radius of curvature|average angle|tangential)",
+   "customizable": true,
+   "validation": "RoC normalized to min-curvature on import w/ discrepancy warning",
+   "notes": "Migration audit rule."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Marker Depth Type / Formation Plane Depth-Dip",
+   "unit_or_type": "enum (MD|TVD|TVDSS) / ft,deg",
+   "customizable": true,
+   "validation": "supports negative",
+   "notes": "Above/below dip-plane offset."
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Survey Tool Type",
+   "unit_or_type": "enum (MWD|gyro|magnetic single-shot|accelerometer)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Trajectory / Survey Station",
+   "field": "Tie-On MD / Inc / Azi",
+   "unit_or_type": "ft or m / deg / deg",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": "Survey tie-in reference."
+  },
+  {
+   "group": "Survey Quality and Uncertainty",
+   "field": "Tool Error Model (TEM) Code",
+   "unit_or_type": "enum (ISCWSA-class)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Survey Quality and Uncertainty",
+   "field": "Ellipse of Uncertainty (semi-major/minor/high-side)",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Anti-collision EOU."
+  },
+  {
+   "group": "Survey Quality and Uncertainty",
+   "field": "Separation Factor / Vertical Uncertainty / Allowable Deviation",
+   "unit_or_type": "dimensionless / ft or m",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Anti-collision metrics."
+  },
+  {
+   "group": "Survey Quality and Uncertainty",
+   "field": "Minor / Major No-Go Radius",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "TC plot no-go circles."
+  },
+  {
+   "group": "Survey Quality and Uncertainty",
+   "field": "Exemption / Separation Method",
+   "unit_or_type": "enum (3D least distance|normal plane)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Target / Landing Zone",
+   "field": "Target Name / Type",
+   "unit_or_type": "text / enum (point|rectangle|polygon|ellipse)",
+   "customizable": true,
+   "validation": "required; enum-bound",
+   "notes": "Primary vs contingency windows."
+  },
+  {
+   "group": "Target / Landing Zone",
+   "field": "Target Depth (TVD/TVDSS)",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": ""
+  },
+  {
+   "group": "Target / Landing Zone",
+   "field": "Target Northing / Easting Offset",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": ""
+  },
+  {
+   "group": "Target / Landing Zone",
+   "field": "Target Top / Center / Bottom TVD",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "top<=center<=bottom",
+   "notes": "Build-rate-to-window calcs."
+  },
+  {
+   "group": "Target / Landing Zone",
+   "field": "Target Tolerance / Proposed Azimuth / Target Inclination",
+   "unit_or_type": "ft or m / degrees / degrees",
+   "customizable": true,
+   "validation": "azi 0..360; inc 0..120",
+   "notes": "Left/right offset; landing inclination."
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Hole Section Name / Bit Diameter",
+   "unit_or_type": "text / in or mm",
+   "customizable": true,
+   "validation": ">0 diameter",
+   "notes": "Ordered section list."
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Hole Section Top / Bottom Depth",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "top<bottom",
+   "notes": ""
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Open Hole / Casing Capacity / Displacement",
+   "unit_or_type": "bbl/ft, bbl",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": ""
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Casing/Liner OD / ID",
+   "unit_or_type": "in or mm",
+   "customizable": true,
+   "validation": "0<ID<OD",
+   "notes": ""
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Casing/Liner Weight / Grade",
+   "unit_or_type": "lb/ft or kg/m / enum (H-40|J-55|K-55|L-80|N-80|C-95|P-110|Q-125)",
+   "customizable": true,
+   "validation": ">0; enum extensible",
+   "notes": "Configurable grade catalog."
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Casing Shoe Depth (MD/TVD)",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": "Feeds shoe-test/kill-sheet."
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Casing Burst / Collapse / Joint-Yield Rating",
+   "unit_or_type": "psi / psi / lb",
+   "customizable": true,
+   "validation": ">0",
+   "notes": "Feeds MASICP/overpull/integrity."
+  },
+  {
+   "group": "Wellbore Geometry (Hole/Casing/Liner)",
+   "field": "Connection Type",
+   "unit_or_type": "enum (T&C|LTC|BTC|premium|text)",
+   "customizable": true,
+   "validation": "enum extensible",
+   "notes": ""
+  },
+  {
+   "group": "Tubing",
+   "field": "Tubing OD / ID / Drift / Wall",
+   "unit_or_type": "in",
+   "customizable": true,
+   "validation": "0<ID<OD; drift<=ID",
+   "notes": "Lookup-table backed."
+  },
+  {
+   "group": "Tubing",
+   "field": "Tubing Weight / Grade / Capacity / Displacement",
+   "unit_or_type": "lb/ft / enum / bbl/ft",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Tubing",
+   "field": "Tubing Collapse / Internal-Yield / Joint-Yield / Make-Up Torque",
+   "unit_or_type": "psi / psi / lb / ft-lb",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "BHA Component - Mechanical",
+   "field": "Component Type",
+   "unit_or_type": "enum (bit|motor|turbine|RSS|MWD|LWD|stabilizer|reamer|hole opener|bypass sub|crossover|HWDP|drill collar|jar|misc sub)",
+   "customizable": true,
+   "validation": "catalog-backed enum",
+   "notes": "Drag-to-order BHA builder."
+  },
+  {
+   "group": "BHA Component - Mechanical",
+   "field": "Component OD / ID / Length / Weight",
+   "unit_or_type": "in / in / ft / lb",
+   "customizable": true,
+   "validation": "0<ID<OD; length>0",
+   "notes": ""
+  },
+  {
+   "group": "BHA Component - Mechanical",
+   "field": "Blade/Stabilizer Gauge OD / Material",
+   "unit_or_type": "in / enum (steel|non-mag steel)",
+   "customizable": true,
+   "validation": ">0; enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "BHA Component - Mechanical",
+   "field": "Connection Type-OD / Motor Bend Angle / Lobes-Stages",
+   "unit_or_type": "text,in / degrees / enum,numeric",
+   "customizable": true,
+   "validation": "bend 0..4",
+   "notes": "Drives IDR build-rate."
+  },
+  {
+   "group": "BHA Component - Mechanical",
+   "field": "Bend-to-Bottom-Connection Distance / Tool Face Angle",
+   "unit_or_type": "ft or m / degrees",
+   "customizable": true,
+   "validation": ">=0; 0..360",
+   "notes": "Turbine BHAs."
+  },
+  {
+   "group": "BHA Component - Mechanical",
+   "field": "Serial Number / Condition Status",
+   "unit_or_type": "alphanumeric / enum (in hole|ready-to-run|dirty|failed|standby|shipping|demobilized)",
+   "customizable": true,
+   "validation": "FK to fleet; transitions logged/timestamped",
+   "notes": "Asset lifecycle state machine."
+  },
+  {
+   "group": "BHA Component - Nozzles",
+   "field": "Nozzle Diameter / Count",
+   "unit_or_type": "in (32nds) or mm / integer",
+   "customizable": true,
+   "validation": ">0; >=1",
+   "notes": "Drives TFA & bit-hydraulics."
+  },
+  {
+   "group": "BHA Component - Sensors",
+   "field": "Sensor Type",
+   "unit_or_type": "enum (accelerometer|magnetometer|gamma ray|resistivity|neutron-density|sonic|other LWD)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "BHA Component - Sensors",
+   "field": "Sensor Offset from Reference / Bit-to-Sensor Distance",
+   "unit_or_type": "ft or m (signed)",
+   "customizable": true,
+   "validation": "+above/-below reference",
+   "notes": "Sign convention documented in API."
+  },
+  {
+   "group": "Drilling Parameters - Hydraulics",
+   "field": "Flow Rate / ECD",
+   "unit_or_type": "gpm or L/min / ppg or kg/L",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Drilling Parameters - Hydraulics",
+   "field": "ECD Sensitivity Depth Points / ROP",
+   "unit_or_type": "ft or m array / ft/hr",
+   "customizable": true,
+   "validation": "numeric array",
+   "notes": "Multipoint sweep."
+  },
+  {
+   "group": "Drilling Parameters - Hydraulics",
+   "field": "Standpipe-Surface / Bit / Motor Pressure Drop",
+   "unit_or_type": "psi or bar",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": ""
+  },
+  {
+   "group": "Drilling Parameters - Hydraulics",
+   "field": "Annular Velocity",
+   "unit_or_type": "ft/min or m/min",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": ""
+  },
+  {
+   "group": "Drilling Parameters - Torque and Drag",
+   "field": "WOB / Hookload / Surface Torque",
+   "unit_or_type": "klbf or kN / ft-lbf or N-m",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": ""
+  },
+  {
+   "group": "Drilling Parameters - Torque and Drag",
+   "field": "Friction Factor / Max Allowable Overpull / Buckling Margin",
+   "unit_or_type": "dimensionless / klbf or kN",
+   "customizable": true,
+   "validation": "0..1 friction",
+   "notes": "Calibrated against actuals."
+  },
+  {
+   "group": "Drilling Parameters - Torque and Drag",
+   "field": "Load Case Type",
+   "unit_or_type": "enum (rotating off bottom|tripping in|tripping out|casing run)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Drilling Parameters - Vibration",
+   "field": "Bending Moment / Sensitivity Variable",
+   "unit_or_type": "ft-lbf or N-m / enum (WOB|RPM|Flow)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Drilling Parameters - Vibration",
+   "field": "Shock Level / Stick-Slip / Torsional Mode",
+   "unit_or_type": "enum (L1|L2|L3) / boolean / integer+nodes",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "From real-time feed."
+  },
+  {
+   "group": "Drilling Parameters - BHA Sag",
+   "field": "Formation Stiffness / Sag Angle",
+   "unit_or_type": "dimensionless (default 0.5) / degrees",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": "Inclination correction for BHA flex."
+  },
+  {
+   "group": "Pump",
+   "field": "Pump Type / Action",
+   "unit_or_type": "enum (triplex single-acting|duplex double-acting)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Pump",
+   "field": "Liner Bore / Stroke Length / Rod OD",
+   "unit_or_type": "in",
+   "customizable": true,
+   "validation": ">0",
+   "notes": "Rod OD duplex only."
+  },
+  {
+   "group": "Pump",
+   "field": "Volumetric Efficiency / Output per Stroke",
+   "unit_or_type": "% / bbl-stk or gal-stk",
+   "customizable": true,
+   "validation": "0..100; output>0 computed",
+   "notes": "Feeds all stroke/volume/lag calcs."
+  },
+  {
+   "group": "Pump",
+   "field": "Pump Rate (SPM) / Slow Pump (Kill Rate) Pressure",
+   "unit_or_type": "strokes/min / psi",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Per-pump SCR for kill sheet."
+  },
+  {
+   "group": "Mud / Fluid Properties",
+   "field": "Mud Type",
+   "unit_or_type": "enum (WBM|OBM|SBM)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "Selects buoyancy-factor constant."
+  },
+  {
+   "group": "Mud / Fluid Properties",
+   "field": "Mud Weight (active/original/kill)",
+   "unit_or_type": "ppg or kg/m3",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Mud / Fluid Properties",
+   "field": "PV / YP / 300-RPM viscometer dial reading / 600-RPM viscometer dial reading / Gel Strengths",
+   "unit_or_type": "cP / lbf/100ft2 / dial units",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Rheology."
+  },
+  {
+   "group": "Mud / Fluid Properties",
+   "field": "API Fluid Loss",
+   "unit_or_type": "mL/30min",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": ""
+  },
+  {
+   "group": "Mud / Fluid Properties",
+   "field": "Slug Weight / Volume / Dry-Pipe Length",
+   "unit_or_type": "ppg / bbl / ft",
+   "customizable": true,
+   "validation": "slug wt > mud wt",
+   "notes": "Slug-sizing inputs."
+  },
+  {
+   "group": "Mud / Fluid Properties",
+   "field": "Weighting Agent Sacks per 100 bbl",
+   "unit_or_type": "sacks",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": "Barite/hematite."
+  },
+  {
+   "group": "Pressure and Gradients",
+   "field": "Formation/Pore Pressure and Gradient",
+   "unit_or_type": "psi / psi/ft",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Pressure and Gradients",
+   "field": "Hydrostatic Pressure / Fluid Gradient / EMW",
+   "unit_or_type": "psi / psi/ft / ppg",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": ""
+  },
+  {
+   "group": "Pressure and Gradients",
+   "field": "Trip Margin / Max Allowable Mud Weight",
+   "unit_or_type": "ppg",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Pressure and Gradients",
+   "field": "MASICP/MASP / Safety Derate Factor",
+   "unit_or_type": "psi / dimensionless",
+   "customizable": true,
+   "validation": "derate 0.5..1.0 (typ 0.7)",
+   "notes": "Derate x casing burst."
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "SIDPP / SICP",
+   "unit_or_type": "psi",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Safety-critical inputs."
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "Pit Gain / Kick Volume",
+   "unit_or_type": "bbl",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": ""
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "Influx Type / Density / Gradient",
+   "unit_or_type": "enum (gas|oil|saltwater|mixed) / ppg / psi/ft",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "KWM / ICP / FCP",
+   "unit_or_type": "ppg / psi",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": "Kill-sheet outputs."
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "Kill Method",
+   "unit_or_type": "enum (wait and weight|drillers|volumetric|lubricate and bleed|bullheading|stripping)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": ""
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "Kill Schedule (strokes vs pressure table)",
+   "unit_or_type": "table (strokes,volume,DP pressure)",
+   "customizable": true,
+   "validation": "monotonic strokes",
+   "notes": "Step-down/decline schedule."
+  },
+  {
+   "group": "Well Control - Kill Sheet",
+   "field": "Kick Tolerance / MAASP / Safety Margin",
+   "unit_or_type": "bbl or ppg / psi",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": "On-bottom & circulating-out."
+  },
+  {
+   "group": "Well Control - Formation Tests",
+   "field": "Leak-Off / FIT Pressure / Test Mud Weight / EMW at Shoe",
+   "unit_or_type": "psi / ppg",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Fracture-gradient input."
+  },
+  {
+   "group": "Well Control - Formation Tests",
+   "field": "Pressure-vs-Volume Test Curve / Classification",
+   "unit_or_type": "table (psi vs bbl) / enum (PASS|FAIL|FIT|LOT)",
+   "customizable": true,
+   "validation": "numeric pairs",
+   "notes": "Leak-off inflection ID."
+  },
+  {
+   "group": "Well Control - Subsea",
+   "field": "Choke Line Friction Pressure / Riser ID / Choke Line ID / Riser Margin / Seawater Weight",
+   "unit_or_type": "psi / in / ppg",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Subsea adjustments."
+  },
+  {
+   "group": "BOP / Accumulator",
+   "field": "BOP Stack Component and Elevation",
+   "unit_or_type": "enum (annular|blind/shear|pipe rams|variable bore rams) / ft",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "Datum-chain reference."
+  },
+  {
+   "group": "BOP / Accumulator",
+   "field": "Preventer Size / Pressure Rating",
+   "unit_or_type": "in / psi",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "BOP / Accumulator",
+   "field": "Accumulator System/Pre-Charge Pressure / Safety Factor / Required Volume",
+   "unit_or_type": "psi / dimensionless / gallons",
+   "customizable": true,
+   "validation": ">=1.0 SF; volume computed",
+   "notes": ""
+  },
+  {
+   "group": "BOP / Accumulator",
+   "field": "Riser Working Pressure / Nominal Size / Length",
+   "unit_or_type": "psi / in / ft",
+   "customizable": true,
+   "validation": ">0",
+   "notes": ""
+  },
+  {
+   "group": "Cement",
+   "field": "Cement Yield / Excess Factor / Sacks / Mix Fluid / Displacement / Balanced Plug",
+   "unit_or_type": "cf/sk / % / sacks / bbl / ft",
+   "customizable": true,
+   "validation": ">=0 (computed)",
+   "notes": "Cement job planner."
+  },
+  {
+   "group": "Temperature",
+   "field": "Bottom-Hole / Surface / Circulating Temperature / Gradient",
+   "unit_or_type": "degF or degC / degF/100ft",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": ""
+  },
+  {
+   "group": "Stuck Pipe / Fishing",
+   "field": "Measured Stretch / Overpull Force / Free-Point Constant / Free Pipe Length",
+   "unit_or_type": "in / 1000 lbf / dimensionless / ft",
+   "customizable": true,
+   "validation": ">0; length computed",
+   "notes": "Free-point stretch method."
+  },
+  {
+   "group": "Stuck Pipe / Fishing",
+   "field": "Differential Pressure / Friction Coefficient",
+   "unit_or_type": "psi / dimensionless",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": "Differential-sticking estimator."
+  },
+  {
+   "group": "Tanks / Pits",
+   "field": "Tank Type / Dimensions / Capacity / Volume / Pit Gain",
+   "unit_or_type": "enum (rectangular|vertical cyl|horizontal cyl) / ft / bbl",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": ""
+  },
+  {
+   "group": "Buoyancy and Tubular Mechanics",
+   "field": "Buoyancy Factor / Design Factor / Block-Hook-String Weight",
+   "unit_or_type": "dimensionless / lb",
+   "customizable": true,
+   "validation": "BF 0..1; DF 0.75..1.0",
+   "notes": "Overpull capacity calc."
+  },
+  {
+   "group": "Pipe Tally / Tripping",
+   "field": "Joint Number / Length / Joints-per-Stand / BHA Length / DOK Offset",
+   "unit_or_type": "count / ft / 2 or 3",
+   "customizable": true,
+   "validation": ">0; DOK signed",
+   "notes": "Running tally; auto-increments."
+  },
+  {
+   "group": "Steering / Execution",
+   "field": "Operation Mode",
+   "unit_or_type": "enum (rotary|sliding|non-drilling)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "Auto-filled from real-time feed."
+  },
+  {
+   "group": "Steering / Execution",
+   "field": "Sliding Interval Start/End MD / Percent Drill / Bit Depth / Projection-Ahead MD / DRTime",
+   "unit_or_type": "ft or m / % / seconds or hours",
+   "customizable": true,
+   "validation": "start<end; 0..100",
+   "notes": "Channel-mapped."
+  },
+  {
+   "group": "Risks and Events",
+   "field": "Risk / Event Description",
+   "unit_or_type": "text (<=1000 chars)",
+   "customizable": true,
+   "validation": "<=1000 internal; 256 on WITSML export w/ truncation warning",
+   "notes": ""
+  },
+  {
+   "group": "Risks and Events",
+   "field": "Risk Severity / MD Interval / Hole Size at Risk",
+   "unit_or_type": "enum (low|medium|high|critical) / ft or m / in",
+   "customizable": true,
+   "validation": "start<=end",
+   "notes": ""
+  },
+  {
+   "group": "Lease Lines / Boundaries",
+   "field": "Lease Line Vertex Northing / Easting",
+   "unit_or_type": "ft or m",
+   "customizable": true,
+   "validation": "numeric",
+   "notes": "Polygon boundary for projection/anti-collision."
+  },
+  {
+   "group": "Well Plan (Proposal)",
+   "field": "Plan Name / Status",
+   "unit_or_type": "text / enum (proposal|active|superseded|definitive)",
+   "customizable": true,
+   "validation": "one active per borehole",
+   "notes": "Multiple versioned plans."
+  },
+  {
+   "group": "Well Plan (Proposal)",
+   "field": "Plan Control Point Type / Definitive Survey Sign-Off Date-Name",
+   "unit_or_type": "enum (survey station|EOC|end of build|tangent|landing point) / date,text",
+   "customizable": true,
+   "validation": "required at sign-off gate",
+   "notes": "Draft/approved/definitive state machine."
+  },
+  {
+   "group": "Unit System and Provenance",
+   "field": "Unit System / Per-Quantity Unit Tags",
+   "unit_or_type": "enum (field|metric|hybrid) / enum per quantity",
+   "customizable": true,
+   "validation": "per project/well",
+   "notes": "Stored canonical SI; converted on output."
+  },
+  {
+   "group": "Unit System and Provenance",
+   "field": "Data Source System / Import Timestamp / Schema Version",
+   "unit_or_type": "text / datetime / text",
+   "customizable": true,
+   "validation": "audit-required",
+   "notes": "Provenance for import/migration."
+  },
+  {
+   "group": "Access Control",
+   "field": "Project Owner / Users / Role",
+   "unit_or_type": "login / list / enum (admin|engineer|viewer|external)",
+   "customizable": true,
+   "validation": "two-tier: server auth + project membership",
+   "notes": ""
+  },
+  {
+   "group": "Daily Report - Job Identity",
+   "field": "Job Number / Run Number / Section",
+   "unit_or_type": "alphanumeric / numeric / enum (surface|intermediate|curve|lateral)",
+   "customizable": true,
+   "validation": "required",
+   "notes": "Activity-state job->run->daily."
+  },
+  {
+   "group": "Daily Report - Job Identity",
+   "field": "Operator / Rig Name / Region / District",
+   "unit_or_type": "text / enum",
+   "customizable": true,
+   "validation": "configurable enum",
+   "notes": "Set-once at job start, frozen."
+  },
+  {
+   "group": "Daily Report - Personnel",
+   "field": "Directional Driller / MWD Operator (days/nights)",
+   "unit_or_type": "text",
+   "customizable": true,
+   "validation": "PII-scoped",
+   "notes": "Role-keyed crew slots."
+  },
+  {
+   "group": "Daily Report - Personnel",
+   "field": "Operator Rep / Engineering Contact / Distribution List",
+   "unit_or_type": "text / list of emails",
+   "customizable": true,
+   "validation": "email format",
+   "notes": "Job-scoped subscribers + report overrides."
+  },
+  {
+   "group": "Daily Report - 24hr Performance",
+   "field": "Footage Drilled / Hours Drilled / NPT Hours (24hr)",
+   "unit_or_type": "ft / hr",
+   "customizable": true,
+   "validation": ">=0",
+   "notes": ""
+  },
+  {
+   "group": "Daily Report - 24hr Performance",
+   "field": "Average ROP (24hr)",
+   "unit_or_type": "ft/hr",
+   "customizable": true,
+   "validation": ">=0 (computed footage/hours, zero-safe)",
+   "notes": "Derived, never overridden."
+  },
+  {
+   "group": "Daily Report - 24hr Performance",
+   "field": "Operational Status / Current Activity",
+   "unit_or_type": "enum (drilling|tripping|circulating|reaming|fishing|rigging up/down|testing BOP|wiper trip|wireline|jarring|stuck|washing|FIT|troubleshooting|TD|demobilize)",
+   "customizable": true,
+   "validation": "managed pick-list",
+   "notes": "Time-breakdown analytics."
+  },
+  {
+   "group": "Daily Report - 24hr Performance",
+   "field": "POOH Flag / Reason",
+   "unit_or_type": "boolean / enum (bit trip|change BHA|backed off|section TD|well TD|twist off|washout|tool failure|hole condition|pressure|ROP|anti-collision)",
+   "customizable": true,
+   "validation": "enum-bound",
+   "notes": "Root-cause categorization."
+  },
+  {
+   "group": "Daily Report - 24hr Performance",
+   "field": "Activity Narrative (past 24hr / forecast)",
+   "unit_or_type": "free text",
+   "customizable": true,
+   "validation": "full-text indexed",
+   "notes": ""
+  },
+  {
+   "group": "Daily Report - KPI",
+   "field": "KPI Section / Hole Size / Planned-vs-Actual Date-In-Out / Depth-In-Out / Objective / Met Flag",
+   "unit_or_type": "enum / in / date / ft / text / boolean",
+   "customizable": true,
+   "validation": "planned & actual pairs",
+   "notes": "Schedule variance scorecard."
+  },
+  {
+   "group": "Daily Report - Failure Tracking",
+   "field": "Failed Component / Run Number / Section / OOS Flag / Comments",
+   "unit_or_type": "text / integer / enum / boolean / free text",
+   "customizable": true,
+   "validation": "FK to run",
+   "notes": "Feeds MTBF analytics."
+  },
+  {
+   "group": "Daily Report - Inventory (Tool Register)",
+   "field": "Tool Category / Serial / OD / Connection / Status / Notes",
+   "unit_or_type": "enum / alphanumeric / in / text / enum / free text",
+   "customizable": true,
+   "validation": "serial FK to fleet; mandatory before submit (gate)",
+   "notes": "Authoritative asset registry."
+  },
+  {
+   "group": "Daily Report - Dangerous Goods",
+   "field": "Battery Serial / Standalone Count (UN3090) / In-Equipment Count (UN3091) / Weight",
+   "unit_or_type": "list / integer / lb",
+   "customizable": true,
+   "validation": ">=0; weight computed",
+   "notes": "Auto DG classification."
+  },
+  {
+   "group": "Daily Report - Logistics / BOL",
+   "field": "Shipment ID / Ship Date / From-To / Transfer Type / Carrier / Driver",
+   "unit_or_type": "alphanumeric / date / text / enum / text",
+   "customizable": true,
+   "validation": "enum-bound transfer type",
+   "notes": "BOL = computed view over inventory."
+  },
+  {
+   "group": "Daily Report - Logistics / BOL",
+   "field": "Piece Count / Package Breakdown / Total Weight / Truck Arrival-ETA / Cost-GL Code",
+   "unit_or_type": "integer / object / lb / datetime+tz / alphanumeric",
+   "customizable": true,
+   "validation": "counts computed; store UTC + display tz",
+   "notes": "Links to financial system."
+  },
+  {
+   "group": "Daily Report - Metadata",
+   "field": "Report Date / Period Label / Submitted Datetime / Version / Draft Status",
+   "unit_or_type": "date / enum (days|nights) / datetime / text / enum (draft|submitted|distributed)",
+   "customizable": true,
+   "validation": "submit locks record; amendments versioned",
+   "notes": "Auto-save preserves drafts; deadline ASAP after midnight."
+  },
+  {
+   "group": "Daily Report - Metadata",
+   "field": "Attachments Checklist / File Naming Convention",
+   "unit_or_type": "checklist / pattern {type}_{job}_{run}_{rig}_{well}_{date}",
+   "customizable": true,
+   "validation": "completeness/naming enforced before send",
+   "notes": "Deterministic lookup & dedup."
+  }
+ ],
+ "calc_module_backlog": [
+  {
+   "module": "Directional Survey - Minimum Curvature Engine",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Core station-by-station position propagation (TVD/N/E/VS/DLS/RF/closure) and interpolation-at-MD. Foundational dependency for landing, projection-ahead, anti-collision, and kill-sheet shoe-TVD. Build first as the shared survey primitive; expose as a chained-table panel and a stateless interpolate endpoint."
+  },
+  {
+   "module": "Wellbore Volumetrics + Kill Sheet (Well Control)",
+   "domain": "well_control",
+   "priority": "high",
+   "note": "Safety-critical. Tapered-string capacity/annular volumes, pump-stroke/lag accounting, KWM/ICP/FCP, MAASP, kick tolerance, step-down schedule, gas migration, slug/barite/cuttings. Cross-links string geometry + survey. Validation-enforced inputs mandatory."
+  },
+  {
+   "module": "Bottoms-Up Strokes and Volume (depth-indexed table)",
+   "domain": "hydraulics",
+   "priority": "high",
+   "note": "Highest daily-use rig-floor calc. Geometry-in-once, scrollable depth-stepped strokes/bbl table for open- and cased-hole annulus with washout factor. Printable/pinnable panel."
+  },
+  {
+   "module": "Mud Pump Output Calculator",
+   "domain": "hydraulics",
+   "priority": "high",
+   "note": "Foundational hydraulics input (bbl/stk, gal/stk) for triplex/duplex. Every flow/ECD/hole-fill/lag calc depends on it. Entered once per pump at rig-up; build early."
+  },
+  {
+   "module": "Build-to-Target Landing Calculator",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Closure distance/azimuth, required build rate (radius-of-curvature), above/below + right/left offsets, TVD-uncertainty sensitivity sweep. Landing go/no-go. Reuses survey primitive."
+  },
+  {
+   "module": "Directional Drilling Survey and Trajectory Formula Pack",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Consolidates 15+ hand calcs (dip rate, BUR-needed, radius of curvature, tangent length, MD-to-EOC/TD, closure, dip-corrected KB TVD). One multi-output panel."
+  },
+  {
+   "module": "Horizontal Well Build-Up Rate and Steering",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Real-time build rate to top/center/bottom target windows, azimuth-to-center, lateral departure from target line, high/low. Primary vs contingency windows."
+  },
+  {
+   "module": "Projection to Bit / Projection-to-Polygon-Target",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Extrapolate last-survey-to-bit via min-curvature, compute azimuth to target center/left/right window. Real-time AI-agent-consumable compute endpoint."
+  },
+  {
+   "module": "Directional Projection (Toolface/Ouija Solver)",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Spherical-trig projection of ending inc/azi from DLS+toolface+course; back-solve azimuth-to-target. Core sliding/rotating steering tool."
+  },
+  {
+   "module": "Dogleg Decomposition (build vs turn from toolface)",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Splits planned DLS+toolface into build rate and turn/walk rate. Lightweight; pairs with toolface solver."
+  },
+  {
+   "module": "Bit Hydraulics Optimizer - TFA and Jet Nozzle Sizing",
+   "domain": "hydraulics",
+   "priority": "high",
+   "note": "Nozzle TFA, jet pressure drop, impact force, jet velocity, jet HHP, annular velocity, motor RPM/HP/torque, pump-test friction scaling. Pre-bit-run deliverable."
+  },
+  {
+   "module": "Motor Build Rate Predictor (IDR)",
+   "domain": "directional_survey",
+   "priority": "high",
+   "note": "Three-point-contact IDR model to projected/effective build rate + slide-distance-vs-DLS lookup grid. Instant slide-distance target per BHA."
+  },
+  {
+   "module": "Drillstring Overpull Capacity Calculator",
+   "domain": "tubular",
+   "priority": "high",
+   "note": "Buoyed string weight, surface indicator weight, design-factor-adjusted allowable yield, available overpull (governing min across grades). Prevents parted pipe."
+  },
+  {
+   "module": "Formation/Casing Pressure Integrity Test (FIT/LOT)",
+   "domain": "well_control",
+   "priority": "high",
+   "note": "Pressure-vs-volume curve capture, hydrostatic + total shoe pressure, EMW gradient, leak-off inflection ID, PASS/FAIL. Establishes fracture-gradient input."
+  },
+  {
+   "module": "Directional Survey - Average Angle Method",
+   "domain": "directional_survey",
+   "priority": "medium",
+   "note": "Lighter alternative to min-curvature for quick field checks/training. Multi-row survey table auto-propagating cumulative position + DLS."
+  },
+  {
+   "module": "Azimuthal Turn Rate Calculator",
+   "domain": "directional_survey",
+   "priority": "medium",
+   "note": "DLS to turn rate and footage-required-for-azimuth-change. Trivial math, high planning utility; remaining-footage go/no-go."
+  },
+  {
+   "module": "Stuck Pipe Free Point (Stretch Method)",
+   "domain": "well_control",
+   "priority": "medium",
+   "note": "Hookes-law free-pipe length with analytical and chart/lookup paths. Localizes stuck point without a free-point tool."
+  },
+  {
+   "module": "Drill String Pipe Tally (running)",
+   "domain": "directional_survey",
+   "priority": "medium",
+   "note": "Auto-increment joint/stand numbers, cumulative pipe-in-hole, bit depth, MWD sensor depth with DOK + bit-to-sensor offset. Configurable joints-per-stand."
+  },
+  {
+   "module": "BOP Stack Dimensional Reference and MASICP",
+   "domain": "well_control",
+   "priority": "medium",
+   "note": "KBE-to-mudline datum chain, tubing-head elevation correction, MASICP = derate x casing burst. Auditable elevation reference + shut-in ceiling."
+  },
+  {
+   "module": "Whipstock DLS Expectancy",
+   "domain": "directional_survey",
+   "priority": "medium",
+   "note": "DLS = (face angle/face length) x 100 with OD-keyed geometry lookup. Sidetrack-planning aid feeding dogleg constraints."
+  },
+  {
+   "module": "Time-Depth Drill Schedule (ROP pacing card)",
+   "domain": "directional_survey",
+   "priority": "medium",
+   "note": "Clock-to-depth pacing for slow/controlled drilling (cement drill-out, FIT/LOT, shoe-track). Target-ROP selector + live deviation indicator."
+  },
+  {
+   "module": "Accumulator Sizing / Cement Job / Mud Weight-Up worksheets",
+   "domain": "well_control",
+   "priority": "medium",
+   "note": "Bundle of pre-job planning calcs: BOP accumulator volume, cement sack/mix/displacement + balanced plug, weight-up + pit gain. Stateless compute endpoints."
+  },
+  {
+   "module": "Downhole Motor Job Material Transfer and Cost Summary",
+   "domain": "directional_survey",
+   "priority": "low",
+   "note": "Chain-of-custody manifest + rental/footage/inspection/standby/LIH cost roll-up with tax. Bookkeeping; supports invoicing/LIH claims. Build after compute core."
+  }
+ ],
+ "enterprise_api_architecture": [
+  "Hierarchical REST resource tree mirroring the canonical model: /assets|fields/{id}/structures(pads)/{id}/slots/{id}/wells/{id}/boreholes/{id}/... with consistent CRUD at every level and enforced parent-child referential integrity. Activity-state mirrors a parallel tree: /jobs/{id}/runs/{id}/daily-reports and /jobs/{id}/stages/{id}/events.",
+  "Canonical object model aligned to a standard interoperability envelope (WITSML-style): Plan(Trajectory), Survey, BHA, Wellbore Geometry, Target, Risk, Steering Sheet as first-class resources with interoperable field names/types; text/CSV trajectory export as a fallback for consumers that cannot ingest the envelope.",
+  "Repository seam: every endpoint resolves through a repository interface (mock adapter now, Supabase/Postgres later) so the API contract is storage-agnostic; controllers depend on the repository abstraction, never on the concrete adapter. This is the swap point that keeps frontend-first/backend-later honest.",
+  "Stateless compute endpoints for AI tooling (no formula re-implementation client-side): POST /calculations/{survey-interpolate|ecd|kill-sheet|kick-tolerance|accumulator-sizing|build-to-target|projection-ahead|dogleg-decompose|pump-output|free-point}. Each accepts a typed input payload, returns full structured outputs plus the equation assumptions; lightweight and idempotent for real-time agent queries.",
+  "Async compute + artifact jobs for heavy operations: POST /boreholes/{id}/anti-collision and POST /boreholes/{id}/reports return job_id; GET /jobs/{job_id} polls results; reports are immutable artifacts tied to a dataset snapshot at generation time (multi-tab PDF/XLSX download).",
+  "Real-time channel subscription: a streaming endpoint (WebSocket/SSE) mapping live sensor channels to steering-sheet field targets (bit depth, operation mode, DRTime); channel-map stored as a per-borehole resource; a required-channels completeness check surfaced for validation.",
+  "Plan publish / snapshot action: POST /boreholes/{id}/publish pushes Plan+BHA+Risks as an idempotent, timestamped snapshot to a downstream real-time platform (one-way publish, not bidirectional sync) with rollback to a previous published snapshot.",
+  "Unit-system negotiation on every endpoint: ?units=field|metric|hybrid or an Accept-Units header; server stores canonical SI and converts on output, returning source unit + conversion factor in the response envelope; unit mismatches returned as structured validation failures.",
+  "CRS/datum validation middleware: reject any coordinate record lacking a geodetic datum with a structured 422 (datum-required error code). Geomagnetic model application (GET /geomag/models; POST /surveys/{id}/geomag-apply) logs a per-survey correction audit.",
+  "Schema-version negotiation + migration flags: every response carries X-Schema-Version; trajectory import returns calculation_method_converted + position_discrepancy_warning when Radius-of-Curvature is normalized to Minimum Curvature; export endpoints accept a target-schema-version parameter for heterogeneous consumers.",
+  "Text-field governance: risk/event descriptions stored up to 1000 chars internally; envelope export truncates to 256 with a warnings[] array naming truncated fields (the API communicates the truncation rule, never silently drops).",
+  "Shared reference/catalog APIs: GET /catalog/tubulars?type&od&weight&grade (dimensional/strength lookup), GET /catalog/bha-components (versioned, effective-dated so historical BHAs reference the catalog version active at run time), GET /enumerations/{list_name} (activity codes, POOH reasons, tool types, statuses, regions) so external forms and AI prompts always use the canonical current vocabulary.",
+  "Operations + fleet feeds for dashboards/AI: GET /fleet/daily-summary?date&region (flat rig-status/footage/NPT/KPI/GPS table), GET /wells/{id}/rop-summary, GET /rigs/{id}/activity-breakdown, GET /wells/{id}/failures (MTBF), GET /risks?sort_by=severity,hole_size.",
+  "Event/webhook stream instead of polling: POST /webhooks/daily-report-submitted and inventory/asset event streams fire on report submit, issue-open, severity-High, or tool-failure; payloads carry IDs + key metrics so downstream agents trigger alerts/summaries without traversing the tree.",
+  "Auth + scoping seam: OAuth2/API-key with least-privilege scopes (report:read/write, fleet:read/write, calc:execute, admin); two-tier access (server/identity auth + per-project membership); audit-log endpoint (GET /audit?project_id&from&to) returns a time-ordered mutation changelog for compliance and AI anomaly detection.",
+  "Bulk + chunked export for data-lake / model-training pipelines: paginated bulk export by date/region/well in JSON/CSV, plus subtree-scoped chunked export (depth/node-count caps) to work around payload limits and the legacy ~50 MB package ceiling."
+ ],
+ "persistence_model": [
+  "Typed-EAV core: template_field_defs holds the definition of every field (group, key, label, data_type, unit_quantity, validation rules, enum source, customizable flag, default), and field_values holds the (entity_id, field_def_id, value, unit, version) tuples. Every well-setup and non-drilling field in the catalog is a row in template_field_defs, satisfying the directive that all fields are customizable inputs.",
+  "Templates as the customization unit: a template is a named, versioned bundle of field_defs (visibility, required flags, defaults, enum subsets) scoped per client/region/well type (e.g. a lateral-section template hides surface-only fields). Template versioning is independent of the data; an entity records which template_version produced it.",
+  "Save/Load: save upserts field_values for an entity against its active template version and stamps value-version + timestamp + actor; load rehydrates by joining template_field_defs to field_values, applying unit conversion on output. Reads never depend on the storage adapter (repository seam).",
+  "Push/Recall: push = the plan-publish snapshot (immutable point-in-time copy of field_values + linked objects) sent downstream, with published_at stamp and rollback to a prior snapshot. Recall = open-new-from-previous: copy set-once/static field_values forward, zero out accumulators (footage/hours/charges/strokes), reset draft state (the daily-report pre-fill pattern).",
+  "Canonical units stored once: persist every numeric in SI with an explicit unit_quantity tag on the field_def; the unit system (field/metric/hybrid) is a project/well-level setting, conversion happens on read. No re-entry on unit-system change; conversion factors live in a reference dataset, not hardcoded.",
+  "Lifecycle state machines per entity class: well-setup fields split into immutable (set-once, frozen after job start), mutable (daily-update), and rolling (standing inventory), mirrored as write-policies on field_defs. Reports run draft->submitted->distributed (submit locks); surveys/plans run draft->approved->definitive behind a sign-off gate. Tools run a status state machine (in-hole/ready/dirty/failed/standby/demobilized) with timestamped logged transitions.",
+  "Immutable snapshots + amendment log: a submitted report or definitive survey is frozen; any later edit creates an amendment record (timestamp, actor, field-level delta) rather than overwriting. Kill sheets store pre-kick/post-kick/post-kill snapshots with diff view for incident review. Generated reports are immutable artifacts bound to the dataset snapshot at generation time.",
+  "Computed vs stored: derived fields (average ROP zero-safe, capacities/displacements from geometry, buoyancy factor, battery weight, piece counts) are formula-locked and recomputed, never persisted as authoritative editable values, though results may be cached on the row with a recompute flag.",
+  "Import/Export + dedup: portable package import/export of any subtree node (full or partial scope) for offline backup, cross-instance migration, partial handoff; bidirectional schema-version conversion (downgrade for legacy consumers) via a conversion step. Import enforces content-hash/upsert dedup (re-importing the same package must not duplicate). Async template-based exchange (export scoped sub-template, remote fill, return, merge) covers low-bandwidth field crews with conflict-resolution rules returning a diff summary.",
+  "Provenance + audit baked in: each entity carries data_source_system, import_timestamp, schema_version, template_version; CRS records require a datum at write time; calculation-method normalization on import is recorded with a position-discrepancy warning. Free-text fields (notes, risk descriptions, narratives) are full-text indexed.",
+  "Two persistence/backup paths for DR: (a) portable-package export of a subtree, and (b) native database-engine backup, both required for a complete recovery story. Catalog/reference data (tubular tables, BHA catalog, enumerations) lives in a separate reference layer distinct from well-program data, versioned with effective dates so historical records resolve against the catalog version active at their run time.",
+  "Repository abstraction as the implementation seam: a single repository interface backs save/load/push/recall over the mock adapter today and Supabase/Postgres later. The EAV tables (template_field_defs, field_values), snapshot/amendment tables, and reference catalog map cleanly onto Postgres with row-level access scoped by project membership when the real adapter lands."
+ ],
+ "completeness_gaps": [
+  "NON-DRILLING ELEMENTS missing entirely: PRODUCTION & COMPLETION data (perforation intervals/shots-per-ft/phasing, gravel pack/frac stages, screens, packers, SSSV/downhole safety valves, gas lift mandrels, ESP/rod-pump/PCP artificial-lift specs, flow-control/sliding-sleeve devices, completion fluid). The goal says 'ALL non-drilling elements' and the entire completion/production string is absent.",
+  "WELLHEAD / XMAS TREE & SURFACE FACILITIES: no wellhead spool/casing-head/tubing-head dimensions or ratings, no Christmas tree config, no flowline/manifold/separator/tank-battery (surface production) data, no surface facility tie-in. BOP is covered (drilling) but the permanent wellhead/tree is not.",
+  "PLUG & ABANDONMENT / SUSPENSION: Well Status enum includes 'abandoned' but there are NO P&A barrier fields (cement plug placement/verification, barrier elements, abandonment reports, regulatory plug-back depths). A full lifecycle hub needs the end-of-life condition state.",
+  "REGULATORY / PERMITTING / IDENTIFIERS: no API well number / UWI / government well identifier field, no permit numbers, no regulatory body, no environmental/H2S zone classification, no spill/incident reporting fields. (Note: capture as a configurable generic 'regulatory identifier' field-def, NOT a specific jurisdiction's format.)",
+  "FORMATION / GEOLOGY / PETROPHYSICS thin: there is a single formation-plane depth/dip field, but no formation tops table (top/base per formation), no lithology, no pore-pressure/frac-gradient profile as a depth series (only point tests), no mud-loss/gas-show log, no LWD/wireline log curve registry beyond a sensor type enum. Anti-collision references offset wells but there is no OFFSET-WELL REGISTRY entity to hold neighboring trajectories.",
+  "FLUIDS beyond drilling mud: no cement-slurry property detail (only yield/excess/sacks), no spacer/chemical/additive inventory, no completion/packer/kill-fluid as a distinct fluid class, no produced-fluid (oil/gas/water) properties for the production condition-state.",
+  "HSE / SAFETY / QHSE: beyond dangerous-goods battery counts there are no HSE incident, JSA/permit-to-work, environmental, or H2S/sour-service fields — a gap for an enterprise operations hub claiming 'all non-drilling elements'.",
+  "COST / AFE / FINANCIAL: only a GL-code and a material-transfer cost roll-up exist. No AFE (authorization for expenditure) structure, no cost-vs-budget tracking, no day-rate/invoicing entity, no procurement/PO. (Project memory notes Cost/AFE is P2, so this may be intentionally deferred — flag as scope-boundary, not necessarily a defect.)",
+  "SAVE/LOAD/PUSH/RECALL coverage is strong in persistence_model but has gaps: (a) no explicit OPTIMISTIC-CONCURRENCY / write-conflict mechanism (ETag/If-Match version token) on the REST PUT/PATCH endpoints to prevent lost updates from concurrent editors — conflict resolution is mentioned only for offline template exchange, not for live concurrent API writes; (b) RECALL/copy-forward rules ('zero out accumulators, copy set-once') are described in prose but there is no declarative per-field-def 'recall_policy' attribute analogous to the write-policy split (immutable/mutable/rolling); (c) no soft-delete / restore / retention-policy story for deleted entities.",
+  "ENTERPRISE API for external AI — gaps: (a) NO RATE-LIMITING / QUOTA / THROTTLING spec for external AI consumers (429/Retry-After), critical when exposing compute endpoints to agents; (b) no PAGINATION/CURSOR contract defined on the list/tree GET endpoints (bulk export mentions pagination but per-resource collection paging is unspecified); (c) no IDEMPOTENCY-KEY header on POST create/compute to make agent retries safe (idempotency is asserted for compute but no key mechanism for create); (d) no OpenAPI/JSON-Schema/machine-readable contract or AI tool-manifest (function-calling schema) explicitly published so external AI can self-discover endpoints; (e) no field-level data-classification/redaction policy so PII-scoped personnel fields can be masked when an 'external' role or AI agent reads.",
+  "VALIDATION / BUSINESS-RULE ENGINE: validations are per-field inline strings, but there is no cross-field/constraint-rule resource (e.g., 'casing shoe TVD must be <= section TD', 'kill mud weight must exceed current MW') exposed as configurable rules — the goal of 'fully customizable' implies user-editable validation rules, not just hardcoded ones.",
+  "LOCALIZATION / i18n: unit-system negotiation is covered, but no language/locale, no timezone handling beyond a single BOL note, no number/date-format localization for a multi-region enterprise.",
+  "OBSERVABILITY for the API layer: audit-log and webhooks exist, but no health/readiness endpoint, no API versioning in the URL/path strategy (only X-Schema-Version header for payloads), and no deprecation/sunset policy for endpoints — needed for an enterprise API that external AI tooling will depend on long-term."
+ ],
+ "recommended_next": [
+  "Scrub the lone vendor-derived token: replace '300-RPM viscometer dial reading / 600-RPM viscometer dial reading' with 'Viscometer 300-RPM / 600-RPM dial readings (per API RP 13B)'. After that the catalog is fully IP-defensible.",
+  "Add the missing non-drilling condition-state groups as new field_def groups so 'ALL non-drilling elements' is actually satisfied: Completion/Production string (perfs, packers, SSSV, artificial lift), Wellhead/Tree & surface facilities, Plug & Abandonment barriers, Formation Tops table + offset-well registry, and a generic configurable Regulatory-Identifier field (jurisdiction-agnostic).",
+  "Harden the enterprise API contract for external AI: define rate-limiting (429/Retry-After), cursor pagination on all collection GETs, an Idempotency-Key header on POST create/compute, optimistic concurrency (ETag/If-Match) on writes, a published OpenAPI + AI function-calling manifest for self-discovery, and field-level redaction so PII-scoped fields are masked for external/AI scopes.",
+  "Promote recall and validation to declarative, customizable metadata on template_field_defs: add a per-field 'recall_policy' (carry-forward | zero | reset-draft) mirroring the write-policy split, and a user-editable cross-field constraint-rule resource so 'fully customizable' covers validation logic, not just field presence.",
+  "Add lifecycle/operational completeness: soft-delete + restore + retention policy, URL-path API versioning + deprecation/sunset policy, health/readiness endpoints, and i18n (locale/timezone/number-date format) for the multi-region enterprise. Confirm whether AFE/Cost and HSE are intentionally deferred (memory marks Cost/AFE as P2) or in-scope gaps.",
+  "Re-audit any future enum extensions: casing-grade and connection-type catalogs are 'extensible' — add a guardrail/lint so user-added catalog entries cannot reintroduce a vendor/product brand name into the shared reference layer."
+ ],
+ "modules": [
+  {
+   "module": "Build-to-Target Landing Calculator",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute the horizontal closure distance and azimuth bearing from the current wellbore survey position to a directional landing target, then determine the dogleg severity (build rate) required to arc from the current inclination to the target inclination over the remaining TVD interval. A sensitivity table sweeps target TVD offsets to show how required build rate changes with depth uncertainty. Horizontal dip/strike offsets are also reported to quantify above/below and right/left deviation from the target formation plane.",
+   "inputs": [
+    {
+     "name": "Current Northing",
+     "unit": "ft",
+     "typical_range": "-5000 to +5000"
+    },
+    {
+     "name": "Current Easting",
+     "unit": "ft",
+     "typical_range": "-5000 to +5000"
+    },
+    {
+     "name": "Target Northing",
+     "unit": "ft",
+     "typical_range": "-5000 to +5000"
+    },
+    {
+     "name": "Target Easting",
+     "unit": "ft",
+     "typical_range": "-5000 to +5000"
+    },
+    {
+     "name": "Current Inclination",
+     "unit": "deg",
+     "typical_range": "0 to 90"
+    },
+    {
+     "name": "Target Inclination",
+     "unit": "deg",
+     "typical_range": "0 to 95"
+    },
+    {
+     "name": "Current TVD",
+     "unit": "ft",
+     "typical_range": "5000 to 20000"
+    },
+    {
+     "name": "Target TVD",
+     "unit": "ft",
+     "typical_range": "5000 to 20000"
+    },
+    {
+     "name": "Target Dip Inclination",
+     "unit": "deg",
+     "typical_range": "0 to 90"
+    },
+    {
+     "name": "Target Direction Line (Azimuth)",
+     "unit": "deg",
+     "typical_range": "0 to 360"
+    },
+    {
+     "name": "TVD Sensitivity Step",
+     "unit": "ft",
+     "typical_range": "1 to 25"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Northing Difference (ΔN)",
+     "unit": "ft"
+    },
+    {
+     "name": "Easting Difference (ΔE)",
+     "unit": "ft"
+    },
+    {
+     "name": "Horizontal Closure Distance",
+     "unit": "ft"
+    },
+    {
+     "name": "Direction to Target (Azimuth)",
+     "unit": "deg"
+    },
+    {
+     "name": "Required Build Rate",
+     "unit": "deg/100ft"
+    },
+    {
+     "name": "Inclination Straight to Target",
+     "unit": "deg"
+    },
+    {
+     "name": "Above / Below Target Plane",
+     "unit": "ft"
+    },
+    {
+     "name": "Right / Left of Target Line",
+     "unit": "ft"
+    },
+    {
+     "name": "Build Rate Sensitivity Table (BR vs TVD offset)",
+     "unit": "deg/100ft"
+    }
+   ],
+   "formula_generic": "1. Horizontal closure: D = sqrt((N_target - N_current)^2 + (E_target - E_current)^2)\n2. Azimuth to target: θ = atan2(ΔE, ΔN) converted to 0–360° compass bearing\n3. Inclination straight to target: I_straight = atan2(D, TVD_target - TVD_current) [degrees]\n4. Build rate required (radius-of-curvature): BR = (I_target - I_current) [deg] * 100 / MD_build, where MD_build = R * (I_target - I_current) [rad] and R = (TVD_target - TVD_current) / (sin(I_target) - sin(I_current))\n5. Above/Below offset: perpendicular signed distance from current position to the target dip plane defined by Target Dip Inclination\n6. Right/Left offset: perpendicular signed distance from current position to the target direction line defined by Target Direction Line azimuth\n7. Sensitivity table: for each TVD offset step k, recompute TVD_target_k = TVD_target + k * step, recalculate BR_k using formula 4",
+   "value": "Enables the directional driller and drilling engineer to determine in real time whether the current well trajectory will intercept the geological target, and what corrective build rate to apply if it will not.",
+   "context": "Used during the landing phase of a directional or horizontal well, typically when the wellbore is within a few hundred to a few thousand feet of the target TVD and inclination adjustments must be made.",
+   "intent": "Replace a manual spreadsheet calculation with a registry-driven compute panel that accepts current survey data, target coordinates, and TVD uncertainty range, then outputs closure geometry, required dogleg, and a sensitivity sweep — supporting go/no-go landing decisions."
+  },
+  {
+   "module": "BOP Stack Dimensional Reference and MASICP Calculator",
+   "domain": "well_control",
+   "build_priority": "medium",
+   "confidence": "medium",
+   "purpose": "Tracks blowout preventer stack component elevations relative to the kelly bushing elevation (KBE), computes the KBE-to-mudline datum chain, applies a tubing head elevation correction for riser offset wells, and derives the maximum allowable shut-in casing pressure (MASICP) from casing burst pressure with a surface safety factor.",
+   "inputs": [
+    {
+     "name": "BOP Stack Component Elevations (from rotary bushing)",
+     "unit": "ft",
+     "typical_range": "0–100"
+    },
+    {
+     "name": "Riser Working Pressure Rating",
+     "unit": "psi",
+     "typical_range": "5000–15000"
+    },
+    {
+     "name": "Riser Nominal Size",
+     "unit": "in",
+     "typical_range": "7.625–21"
+    },
+    {
+     "name": "Riser Length",
+     "unit": "ft",
+     "typical_range": "10–200"
+    },
+    {
+     "name": "Tubing Head Elevation Correction",
+     "unit": "ft",
+     "typical_range": "0–200"
+    },
+    {
+     "name": "Original KBE to Tubing Head Distance",
+     "unit": "ft",
+     "typical_range": "0–100"
+    },
+    {
+     "name": "Present KBE to Tubing Head Distance",
+     "unit": "ft",
+     "typical_range": "0–200"
+    },
+    {
+     "name": "Tubing Head to Waterline Distance",
+     "unit": "ft",
+     "typical_range": "0–50"
+    },
+    {
+     "name": "Water Depth Below Surface",
+     "unit": "ft",
+     "typical_range": "10–500"
+    },
+    {
+     "name": "Casing Outer Diameter",
+     "unit": "in",
+     "typical_range": "4.5–20"
+    },
+    {
+     "name": "Casing Weight",
+     "unit": "lb/ft",
+     "typical_range": "13–100"
+    },
+    {
+     "name": "Casing Burst Pressure Rating",
+     "unit": "psi",
+     "typical_range": "2000–20000"
+    },
+    {
+     "name": "Safety Derate Factor",
+     "unit": "dimensionless",
+     "typical_range": "0.65–0.80"
+    },
+    {
+     "name": "Annular Preventer Size / Pressure Rating",
+     "unit": "in / psi"
+    },
+    {
+     "name": "Pipe Ram Size / Pressure Rating",
+     "unit": "in / psi"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "KBE to Mudline (present)",
+     "unit": "ft"
+    },
+    {
+     "name": "Maximum Allowable Shut-In Casing Pressure (MASICP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Tubing Head Elevation Correction (delta)",
+     "unit": "ft"
+    }
+   ],
+   "formula_generic": "Datum chain: KBE_to_mudline = KBE_to_TBG_head + TBG_head_to_waterline + waterline_depth_below_surface (all in consistent length units, positive downward). Tubing head elevation correction = present_KBE_elevation - original_KBE_elevation. MASICP (psi) = casing_burst_pressure_rating (psi) x safety_derate_factor (dimensionless, typically 0.65–0.80).",
+   "value": "Ensures well-control crews work from a single, auditable elevation reference and cannot inadvertently exceed the safe shut-in pressure limit for the weakest casing in the string.",
+   "context": "Offshore or elevated-structure well where the tubing head is not at the original rotary-bushing datum; a riser connects the subsea or elevated BOP stack to the rig floor. Elevation correction is required when the physical location of the tubing head changes (e.g., after riser installation or workover). The MASICP is typically set at a derate fraction (commonly 0.7) of the rated casing burst pressure to maintain a safety margin during shut-in.",
+   "intent": "Provides a single reference sheet for well-control personnel to confirm BOP stack geometry, establish the corrected mudline depth datum from KBE, and enforce a pressure ceiling on shut-in operations based on rated casing burst strength."
+  },
+  {
+   "module": "Bottoms-Up Strokes and Volume Calculator",
+   "domain": "hydraulics",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Computes the number of pump strokes and circulating volume (barrels) required to circulate formation fluid or a mud sample from total depth (or any given depth) back to surface, across a user-defined depth range at fixed depth increments. Produces a lookup table of bottoms-up strokes and barrels at each depth step for both open-hole annular geometry and cased-hole annular geometry.",
+   "inputs": [
+    {
+     "name": "Hole diameter (open hole)",
+     "unit": "in",
+     "typical_range": "6.0–26.0"
+    },
+    {
+     "name": "Drill pipe outer diameter",
+     "unit": "in",
+     "typical_range": "3.5–6.625"
+    },
+    {
+     "name": "Casing inner diameter",
+     "unit": "in",
+     "typical_range": "4.5–20.0"
+    },
+    {
+     "name": "Output per pump stroke (barrels per stroke)",
+     "unit": "bbl/stk",
+     "typical_range": "0.02–0.30"
+    },
+    {
+     "name": "Drill pipe internal capacity",
+     "unit": "bbl/ft",
+     "typical_range": "0.005–0.030"
+    },
+    {
+     "name": "Drill pipe displacement (steel)",
+     "unit": "bbl/ft",
+     "typical_range": "0.003–0.015"
+    },
+    {
+     "name": "Casing shoe / liner top depth (set depth)",
+     "unit": "ft",
+     "typical_range": "500–20000"
+    },
+    {
+     "name": "Starting depth (top of depth range)",
+     "unit": "ft",
+     "typical_range": "1000–30000"
+    },
+    {
+     "name": "Ending depth (bottom of depth range / TD)",
+     "unit": "ft",
+     "typical_range": "1000–30000"
+    },
+    {
+     "name": "Depth increment step",
+     "unit": "ft",
+     "typical_range": "50–500"
+    },
+    {
+     "name": "Washout factor (annular enlargement %)",
+     "unit": "%",
+     "typical_range": "0–30"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Bottoms-up strokes (annular, open hole segment)",
+     "unit": "strokes"
+    },
+    {
+     "name": "Drill pipe (string interior) strokes",
+     "unit": "strokes"
+    },
+    {
+     "name": "Total strokes (annular + string)",
+     "unit": "strokes"
+    },
+    {
+     "name": "Bottoms-up volume (annular, open hole segment)",
+     "unit": "bbl"
+    },
+    {
+     "name": "Drill pipe string volume",
+     "unit": "bbl"
+    },
+    {
+     "name": "Total circulating volume",
+     "unit": "bbl"
+    }
+   ],
+   "formula_generic": "\n1. Annular capacity (open-hole segment, bbl/ft):\n   Ann_cap_OH = (D_hole² - D_pipe_OD²) / 1029.4  [diameters in inches]\n   Adjusted for washout: Ann_cap_OH_adj = Ann_cap_OH × (1 + washout% / 100)\n\n2. Annular capacity (cased-hole segment, bbl/ft):\n   Ann_cap_CSG = (D_csg_ID² - D_pipe_OD²) / 1029.4\n\n3. Annular volume from total depth to surface:\n   V_ann = Ann_cap_OH_adj × (depth_TD - depth_csg_shoe) + Ann_cap_CSG × depth_csg_shoe\n\n4. Drill-string interior volume (capacity only, no displacement):\n   V_string = DP_cap_bbl_per_ft × depth_TD\n\n5. Bottoms-up strokes (annular):\n   BU_strks_ann = V_ann / (bbl_per_stroke)\n\n6. Drill-string strokes:\n   BU_strks_dp = V_string / (bbl_per_stroke)\n\n7. Totals:\n   Total_strks = BU_strks_ann + BU_strks_dp\n   Total_bbl   = V_ann + V_string\n\nSteps 1–7 are evaluated at each depth increment from starting depth to TD, producing a table.\n",
+   "value": "Gives the driller and mud engineer a real-time stroke/volume reference to time out lag (the delay between a downhole event and surface observation), confirm mud returns, detect kicks early, and plan circulating operations before a wiper trip or casing run.",
+   "context": "Used on every well during drilling-out operations, kick/well-control monitoring, mud tracer injection timing, and pre-cement displacement planning; one of the highest-frequency daily-use calculations on a rig floor.",
+   "intent": "Port as a tabular compute panel that accepts geometry inputs once, then renders a scrollable depth-indexed table of strokes and barrels covering the active hole interval, suitable for printing or pinning to the driller's console."
+  },
+  {
+   "module": "Directional Survey Calculator — Average Angle Method",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute cumulative wellbore position (TVD, N/S departure, E/W departure, Vertical Section) and dogleg severity at each survey station using the Average Angle (Average Inclination) method, given pairs of measured depth, inclination, and azimuth readings.",
+   "inputs": [
+    {
+     "name": "Measured Depth (current station)",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Measured Depth (previous station)",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Inclination (current station)",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Inclination (previous station)",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Azimuth (current station)",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Azimuth (previous station)",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "TVD (previous station, cumulative)",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "N/S departure (previous station, cumulative)",
+     "unit": "ft",
+     "typical_range": "-5000 – 5000"
+    },
+    {
+     "name": "E/W departure (previous station, cumulative)",
+     "unit": "ft",
+     "typical_range": "-5000 – 5000"
+    },
+    {
+     "name": "Vertical Section azimuth reference",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Course Length (CL)",
+     "unit": "ft"
+    },
+    {
+     "name": "Average Inclination",
+     "unit": "deg"
+    },
+    {
+     "name": "Delta TVD",
+     "unit": "ft"
+    },
+    {
+     "name": "Cumulative TVD",
+     "unit": "ft"
+    },
+    {
+     "name": "Cumulative N/S Departure",
+     "unit": "ft"
+    },
+    {
+     "name": "Cumulative E/W Departure",
+     "unit": "ft"
+    },
+    {
+     "name": "Vertical Section (VS)",
+     "unit": "ft"
+    },
+    {
+     "name": "Dogleg Severity (DLS)",
+     "unit": "deg/100ft"
+    }
+   ],
+   "formula_generic": "\nCourse Length: CL = MD_n - MD_(n-1)\n\nAverage Inclination: Inc_avg = (Inc_n + Inc_(n-1)) / 2\nAverage Azimuth: Azi_avg = (Azi_n + Azi_(n-1)) / 2\n\nDelta TVD: ΔTVD = CL × cos(Inc_avg)\nDelta Horizontal (total): ΔHoriz = CL × sin(Inc_avg)\n\nDelta North: ΔN = ΔHoriz × cos(Azi_avg)\nDelta East: ΔE = ΔHoriz × sin(Azi_avg)\n\nCumulative TVD_n = TVD_(n-1) + ΔTVD\nCumulative N_n = N_(n-1) + ΔN\nCumulative E_n = E_(n-1) + ΔE\n\nVertical Section: VS = sqrt(ΔN² + ΔE²) projected onto a reference azimuth plane (dot product of cumulative horizontal vector onto VS azimuth unit vector)\n\nDogleg Severity: DLS = (100 / CL) × arccos[ cos(Inc_n)×cos(Inc_(n-1)) + sin(Inc_n)×sin(Inc_(n-1))×cos(Azi_n - Azi_(n-1)) ]\n(sign convention: North/East = positive; South/West = negative)\n",
+   "value": "Gives drillers and directional hands a station-by-station wellbore position and tortuosity picture without requiring the more complex Minimum Curvature method — sufficient for quick field checks and training scenarios.",
+   "context": "Worksheet contains four survey stations with explicit worked-example narration of the Average Angle TVD step, confirming pedagogical/field-reference intent alongside operational use.",
+   "intent": "Port into a registry-driven compute panel as a multi-row survey table: user enters MD/Inc/Azi per station, panel auto-propagates cumulative position and DLS down the survey ladder."
+  },
+  {
+   "module": "Directional Drilling Survey & Trajectory Formulas",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute borehole trajectory parameters — inclination (dip) rate, build/drop rates, radius of curvature, TVD projections, horizontal coordinates, vertical section, closure distance, and measured-depth estimates — to plan and monitor a directional or horizontal well from kick-off through TD.",
+   "inputs": [
+    {
+     "name": "Measured Depth (current)",
+     "unit": "ft",
+     "typical_range": "0–25000"
+    },
+    {
+     "name": "Measured Depth (previous survey)",
+     "unit": "ft",
+     "typical_range": "0–25000"
+    },
+    {
+     "name": "True Vertical Depth (current)",
+     "unit": "ft",
+     "typical_range": "0–20000"
+    },
+    {
+     "name": "True Vertical Depth (previous survey)",
+     "unit": "ft",
+     "typical_range": "0–20000"
+    },
+    {
+     "name": "Inclination Angle (current)",
+     "unit": "degrees",
+     "typical_range": "0–120"
+    },
+    {
+     "name": "Inclination Angle (previous survey)",
+     "unit": "degrees",
+     "typical_range": "0–120"
+    },
+    {
+     "name": "Target Inclination Angle",
+     "unit": "degrees",
+     "typical_range": "0–120"
+    },
+    {
+     "name": "Target TVD",
+     "unit": "ft",
+     "typical_range": "0–20000"
+    },
+    {
+     "name": "Azimuth (current / closure direction)",
+     "unit": "degrees",
+     "typical_range": "0–360"
+    },
+    {
+     "name": "Proposed Azimuth",
+     "unit": "degrees",
+     "typical_range": "0–360"
+    },
+    {
+     "name": "North/South Coordinate (current)",
+     "unit": "ft",
+     "typical_range": "-10000–10000"
+    },
+    {
+     "name": "North/South Coordinate (target)",
+     "unit": "ft",
+     "typical_range": "-10000–10000"
+    },
+    {
+     "name": "East/West Coordinate (current)",
+     "unit": "ft",
+     "typical_range": "-10000–10000"
+    },
+    {
+     "name": "East/West Coordinate (target)",
+     "unit": "ft",
+     "typical_range": "-10000–10000"
+    },
+    {
+     "name": "Vertical Section (current)",
+     "unit": "ft",
+     "typical_range": "0–15000"
+    },
+    {
+     "name": "Proposed Vertical Section (target)",
+     "unit": "ft",
+     "typical_range": "0–15000"
+    },
+    {
+     "name": "Dip Angle",
+     "unit": "degrees",
+     "typical_range": "0–60"
+    },
+    {
+     "name": "Course Length between surveys",
+     "unit": "ft",
+     "typical_range": "30–300"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Dip (Inclination) Rate",
+     "unit": "degrees/100 ft"
+    },
+    {
+     "name": "Build-Up Rate Needed",
+     "unit": "degrees/100 ft"
+    },
+    {
+     "name": "Actual Build / Drop Rate",
+     "unit": "degrees/100 ft"
+    },
+    {
+     "name": "Radius of Curvature",
+     "unit": "ft"
+    },
+    {
+     "name": "New TVD (projected)",
+     "unit": "ft"
+    },
+    {
+     "name": "Tangent Length",
+     "unit": "ft"
+    },
+    {
+     "name": "Measured Depth to End of Curve",
+     "unit": "ft"
+    },
+    {
+     "name": "Measured Depth to TD (horizontal)",
+     "unit": "ft"
+    },
+    {
+     "name": "Direction to Target (azimuth needed)",
+     "unit": "degrees"
+    },
+    {
+     "name": "North/South End-of-Hole Coordinate",
+     "unit": "ft"
+    },
+    {
+     "name": "East/West End-of-Hole Coordinate",
+     "unit": "ft"
+    },
+    {
+     "name": "End-of-Hole Vertical Section",
+     "unit": "ft"
+    },
+    {
+     "name": "Proposed End-of-Hole Azimuth",
+     "unit": "degrees"
+    },
+    {
+     "name": "TVD Change at Hold Angle",
+     "unit": "ft"
+    },
+    {
+     "name": "Distance Left/Right of Line on Direction",
+     "unit": "ft"
+    },
+    {
+     "name": "Vertical Section (from closure)",
+     "unit": "ft"
+    },
+    {
+     "name": "Closure Distance",
+     "unit": "ft"
+    },
+    {
+     "name": "KB TVD (dip-corrected)",
+     "unit": "ft"
+    }
+   ],
+   "formula_generic": "\n1. DIP RATE: arccos(delta_TVD / course_length); equivalently, cos(inclination) = delta_TVD / delta_MD.\n\n2. TVD CHANGE AT HOLD ANGLE: delta_TVD = cos(inclination) * delta_MD.\n\n3. BUILD-UP RATE NEEDED (degrees/100 ft): BUR_needed = [(sin(I_target) - sin(I_current)) / delta_TVD_remaining] * 5730.\n\n4. ACTUAL BUILD / DROP / WALK RATE: rate = [(I2 - I1) / (MD2 - MD1)] * 100 (degrees per 100 ft).\n\n5. RADIUS OF CURVATURE: R = 5730 / BUR (degrees/100 ft).\n\n6. NEW TVD (radius-of-curvature method): new_TVD = present_TVD + [(sin(I2) - sin(I1)) * 5730 / BUR].\n\n7. TANGENT LENGTH: tan_len = [(sin(I_target) - sin(I_current)) + (EOC_TVD - present_TVD)] / cos(I_current).\n\n8. MEASURED DEPTH TO END OF CURVE: delta_MD = [(I_EOC - I_current) / BUR] * 100.\n\n9. DIRECTION TO TARGET: bearing = arctan[(E2 - E1) / (N2 - N1)] +/- 180 or 360 depending on quadrant.\n\n10. END-OF-HOLE VERTICAL SECTION (closure check): VS = sqrt(N_EOH^2 + E_EOH^2).\n\n11. PROPOSED AZIMUTH CHECK: az = arctan(E_EOH / N_EOH) +/- 180 or 360.\n\n12. N/S COORDINATE (projection): N = cos(proposed_azimuth) * vertical_section.\n\n13. E/W COORDINATE (projection): E = sin(proposed_azimuth) * vertical_section.\n\n14. MD TO TD (horizontal well): delta_MD = (VS_target - VS_current) / sin(inclination).\n\n15. DISTANCE LEFT/RIGHT OF LINE: d = sin(closure_azimuth - proposed_azimuth) * closure_distance.\n\n16. VERTICAL SECTION (from closure): VS = cos(closure_azimuth - proposed_azimuth) * closure_distance.\n\n17. CLOSURE DISTANCE: closure = sqrt(E^2 + N^2).\n\n18. KB TVD (dip-corrected, down-dip): KB_TVD = tan(dip_angle) * vertical_section - present_TVD; up-dip wells add present_TVD instead of subtracting.\n",
+   "value": "Consolidates 15+ routine directional survey hand calculations into one panel, eliminating manual transcription errors between survey stations and accelerating real-time trajectory correction decisions at the wellsite.",
+   "context": "Standard minimum-curvature / radius-of-curvature directional drilling math taught in any IADC Directional Drilling curriculum; all formulas are publicly documented in SPE/IADC literature and industry textbooks.",
+   "intent": "Enable a driller or directional hand to enter two survey stations plus a target definition and instantly obtain corrective action parameters (needed BUR, direction, tangent length, projected TVD) without relying on a proprietary MWD software seat."
+  },
+  {
+   "module": "Wellbore Volume and Tripping Calculations",
+   "domain": "volumes",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute fluid volumes for pits, pipe, and annular spaces; determine pump strokes and circulation time; calculate tubular buoyancy, ton-mile fatigue accumulation, steel displacement, and pre-trip slug sizing — covering the core arithmetic a driller or company man needs at the rig floor for well control awareness and tubular management.",
+   "inputs": [
+    {
+     "name": "Tank Length",
+     "unit": "ft",
+     "typical_range": "10–100"
+    },
+    {
+     "name": "Tank Width",
+     "unit": "ft",
+     "typical_range": "4–20"
+    },
+    {
+     "name": "Tank Depth (fluid level)",
+     "unit": "ft",
+     "typical_range": "1–15"
+    },
+    {
+     "name": "Cylindrical Tank Diameter",
+     "unit": "ft",
+     "typical_range": "5–30"
+    },
+    {
+     "name": "Pipe Inner Diameter (ID)",
+     "unit": "in",
+     "typical_range": "2.0–6.0"
+    },
+    {
+     "name": "Hole / Borehole Diameter",
+     "unit": "in",
+     "typical_range": "3.5–26"
+    },
+    {
+     "name": "Tubular Outer Diameter (OD)",
+     "unit": "in",
+     "typical_range": "2.375–13.375"
+    },
+    {
+     "name": "Volume to Pump",
+     "unit": "bbl",
+     "typical_range": "50–2000"
+    },
+    {
+     "name": "Pump Output per Stroke",
+     "unit": "bbl/stroke",
+     "typical_range": "0.05–0.25"
+    },
+    {
+     "name": "Pump Rate (SPM)",
+     "unit": "strokes/min",
+     "typical_range": "20–120"
+    },
+    {
+     "name": "Mud Weight",
+     "unit": "ppg",
+     "typical_range": "8.33–20"
+    },
+    {
+     "name": "Tubular Dry Weight",
+     "unit": "lbs/ft",
+     "typical_range": "6–350"
+    },
+    {
+     "name": "Drill String Total Length",
+     "unit": "ft",
+     "typical_range": "1000–30000"
+    },
+    {
+     "name": "Average Stand Length",
+     "unit": "ft",
+     "typical_range": "60–100"
+    },
+    {
+     "name": "Block + Hook + String Weight (M)",
+     "unit": "lbs",
+     "typical_range": "2000–80000"
+    },
+    {
+     "name": "Pipe Capacity",
+     "unit": "bbl/ft",
+     "typical_range": "0.004–0.035"
+    },
+    {
+     "name": "Slug Weight",
+     "unit": "ppg",
+     "typical_range": "10–20"
+    },
+    {
+     "name": "Dry Pipe Length to Keep Dry (L_dry)",
+     "unit": "ft",
+     "typical_range": "50–500"
+    },
+    {
+     "name": "Casing OD",
+     "unit": "in",
+     "typical_range": "4.5–20"
+    },
+    {
+     "name": "Casing Minimum Yield Strength",
+     "unit": "psi",
+     "typical_range": "40000–125000"
+    },
+    {
+     "name": "Casing Wall Thickness",
+     "unit": "in",
+     "typical_range": "0.25–1.0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Rectangular Tank Volume",
+     "unit": "bbl"
+    },
+    {
+     "name": "Cylindrical Tank Volume",
+     "unit": "bbl"
+    },
+    {
+     "name": "Pipe Capacity",
+     "unit": "bbl/ft"
+    },
+    {
+     "name": "Annular Volume",
+     "unit": "bbl/ft"
+    },
+    {
+     "name": "Dual-Annulus Volume (two strings)",
+     "unit": "bbl/ft"
+    },
+    {
+     "name": "Strokes Required to Pump Volume",
+     "unit": "strokes"
+    },
+    {
+     "name": "Circulation Time",
+     "unit": "minutes"
+    },
+    {
+     "name": "Buoyancy Factor",
+     "unit": "dimensionless"
+    },
+    {
+     "name": "Buoyed Weight of Tubular",
+     "unit": "lbs/ft"
+    },
+    {
+     "name": "Round-Trip Ton-Miles",
+     "unit": "ton-miles"
+    },
+    {
+     "name": "Drilling Ton-Miles Increment",
+     "unit": "ton-miles"
+    },
+    {
+     "name": "Coring Ton-Miles Increment",
+     "unit": "ton-miles"
+    },
+    {
+     "name": "Casing Running Ton-Miles",
+     "unit": "ton-miles"
+    },
+    {
+     "name": "Wiper-Trip Ton-Miles",
+     "unit": "ton-miles"
+    },
+    {
+     "name": "Steel Displacement",
+     "unit": "bbl/ft"
+    },
+    {
+     "name": "Slug Volume Required",
+     "unit": "bbl"
+    },
+    {
+     "name": "Casing Burst Pressure Rating",
+     "unit": "psi"
+    }
+   ],
+   "formula_generic": "\nRECTANGULAR TANK VOLUME (bbl): V = (L_ft × W_ft × D_ft) / 5.6146\n\nCYLINDRICAL TANK VOLUME (bbl): V = (0.7854 × Dia_ft² × D_ft) / 5.6146\n\nPIPE CAPACITY (bbl/ft): C_pipe = ID_in² / 1029.0\n\nANNULAR VOLUME (bbl/ft): C_ann = (Dh_in² − OD_in²) / 1029.0\n\nDUAL-ANNULUS VOLUME (bbl/ft) with outer casing D1 and two inner strings D2, D3:\nC_dual = (D1² − D2² − D3²) / 1029.0\n\nSTROKES TO PUMP VOLUME: N_strokes = V_bbl / Q_bbl_per_stroke\n\nCIRCULATION TIME (min): t = N_strokes / SPM\n\nBUOYANCY FACTOR (steel in water-base mud): BF = (65.44 − MW_ppg) / 65.44\n  [Replace 65.44 with 7.856 when using specific-gravity inputs; replace with 490 for oil-base mud]\n\nBUOYED WEIGHT (lbs/ft): W_buoyed = W_dry_lbsft × BF\n\nROUND-TRIP TON-MILES: TM = [W × D × (D + L) + D × (M + 0.5 × C)] / 10,560,000\n  where W = buoyed wt/ft of DP (lbs/ft), D = total string length (ft), L = avg stand length (ft),\n  M = block + hook + string weight (lbs), C = buoyed wt of equal length of DP (lbs)\n\nDRILLING TON-MILES INCREMENT: ΔTM_drill = (TM_after_drill − TM_before_drill) × 3\n\nCORING TON-MILES INCREMENT: ΔTM_core = (TM_after_core − TM_before_core) × 2\n\nCASING TON-MILES: TM_csg = (Block_wt_lbs + Total_buoyed_csg_lbs) × Shoe_depth_ft / 5,280,000\n\nWIPER-TRIP TON-MILES: TM_wiper = (String_wt_at_half_stands × Wiper_stands) + (Block_wt × Wiper_stands)\n\nMIXED-STRING AVERAGE BUOYED WT (lbs/ft): W_avg = Σ(L_i × W_i) / Σ(L_i)\n\nSTEEL DISPLACEMENT (bbl/ft): Disp = W_dry_lbsft / 2747.0\n  [Reference: 2747 lbs of steel displaces 1 bbl]\n\nSLUG VOLUME (bbl): V_slug = (MW_ppg × L_dry_ft × C_pipe_bblft) / (Slug_wt_ppg − MW_ppg)\n\nCASING BURST PRESSURE (psi): P_burst = 1.75 × MinYield_psi × WallThickness_in / OD_in\n",
+   "value": "Covers the most-used rig-floor arithmetic for circulating, tripping, and casing operations in a single reference sheet — every formula here feeds real-time well control awareness, drill-string fatigue tracking, and kill-mud volume calculations.",
+   "context": "Sheet is a standalone field reference combining Part 1 (fluid volume arithmetic for tanks, pipe, and annuli plus pump-stroke/time conversion) with Part 2 (tripping mechanics: buoyancy, ton-mile fatigue for five operation types, steel displacement, and slug sizing). Reference tables for drill pipe, HWDP, casing, and drill collar OD/ID/weight/capacity are embedded for lookup. The casing burst formula uses the standard API design factor of 1.75 at 100% rating. All constants (1029, 5.6146, 65.44, 2747) are industry-standard unit-conversion coefficients.",
+   "intent": "Port these calculations into a registry-driven compute panel so drillers and well-site engineers can interactively solve for volumes, pump strokes, buoyed weights, ton-mile fatigue accumulation, slug sizing, and casing burst ratings without manual arithmetic — with reference lookup tables for standard tubular sizes."
+  },
+  {
+   "module": "Formation and Casing Pressure Integrity Test",
+   "domain": "well_control",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Record surface pump pressure versus injected volume during a casing integrity test and/or leak-off test at the casing shoe, then compute the equivalent mud weight (EMW) gradient at shoe depth to verify the formation can safely support the planned mud weight before drilling the next hole section.",
+   "inputs": [
+    {
+     "name": "True Vertical Depth of shoe (TVD)",
+     "unit": "ft",
+     "typical_range": "1000–25000"
+    },
+    {
+     "name": "Measured Depth of float shoe (MD)",
+     "unit": "ft",
+     "typical_range": "1000–30000"
+    },
+    {
+     "name": "Active mud weight (MW)",
+     "unit": "ppg",
+     "typical_range": "8.5–18.0"
+    },
+    {
+     "name": "Mud plastic viscosity (PV)",
+     "unit": "cP",
+     "typical_range": "5–60"
+    },
+    {
+     "name": "Mud yield point (YP)",
+     "unit": "lbf/100 ft²",
+     "typical_range": "5–50"
+    },
+    {
+     "name": "Mud apparent viscosity / 600-RPM viscometer dial reading",
+     "unit": "cP",
+     "typical_range": "10–80"
+    },
+    {
+     "name": "API fluid loss",
+     "unit": "mL/30 min",
+     "typical_range": "1–15"
+    },
+    {
+     "name": "Gel strength 10-sec",
+     "unit": "lbf/100 ft²",
+     "typical_range": "2–30"
+    },
+    {
+     "name": "Gel strength 10-min",
+     "unit": "lbf/100 ft²",
+     "typical_range": "5–50"
+    },
+    {
+     "name": "Pump rate during test",
+     "unit": "bbl/min",
+     "typical_range": "0.1–1.0"
+    },
+    {
+     "name": "Cumulative volume pumped (per pressure step)",
+     "unit": "bbl",
+     "typical_range": "0–30"
+    },
+    {
+     "name": "Observed surface pressure (per volume step)",
+     "unit": "psi",
+     "typical_range": "0–3500"
+    },
+    {
+     "name": "Predicted fracture gradient",
+     "unit": "ppg",
+     "typical_range": "9.0–19.0"
+    },
+    {
+     "name": "Maximum allowable surface pressure limit (jug limit)",
+     "unit": "psi",
+     "typical_range": "500–3500"
+    },
+    {
+     "name": "RKB to mud line depth (for offshore offset)",
+     "unit": "ft",
+     "typical_range": "0–2000"
+    },
+    {
+     "name": "RKB to mean water level",
+     "unit": "ft",
+     "typical_range": "0–12000"
+    },
+    {
+     "name": "Casing size",
+     "unit": "in",
+     "typical_range": "4.5–20"
+    },
+    {
+     "name": "Casing weight",
+     "unit": "lb/ft",
+     "typical_range": "13–130"
+    },
+    {
+     "name": "Casing grade",
+     "unit": "text",
+     "typical_range": "J-55 / N-80 / P-110 / Q-125"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Hydrostatic pressure at shoe",
+     "unit": "psi"
+    },
+    {
+     "name": "Total pressure at shoe at leak-off",
+     "unit": "psi"
+    },
+    {
+     "name": "Tested gradient (EMW) at shoe",
+     "unit": "ppg"
+    },
+    {
+     "name": "Leak-off pressure (surface)",
+     "unit": "psi"
+    },
+    {
+     "name": "Pressure vs. volume test curve data",
+     "unit": "psi vs. bbl"
+    },
+    {
+     "name": "Formation integrity / leak-off test classification",
+     "unit": "text (PASS/FAIL/FIT/LOT)"
+    }
+   ],
+   "formula_generic": "\n1. Hydrostatic pressure at shoe:\n   P_hydro (psi) = 0.052 × MW (ppg) × TVD (ft)\n\n2. Total bottomhole pressure at the moment of surface pressure reading:\n   P_BHP (psi) = P_surface (psi) + P_hydro (psi)\n\n3. Tested equivalent mud weight gradient at shoe:\n   EMW (ppg) = P_BHP (psi) / [0.052 × TVD (ft)]\n             = [P_surface + 0.052 × MW × TVD] / [0.052 × TVD]\n\n4. Leak-off point identification:\n   Plot cumulative volume pumped (x-axis, bbl) vs. surface pressure (y-axis, psi).\n   The leak-off pressure is the surface pressure at which the P-V curve first departs\n   from linearity (inflection point), indicating the formation begins accepting fluid.\n\n5. Pass/fail determination:\n   If EMW_tested >= MW_planned_next_section → PASS (shoe can support planned mud weight)\n   If EMW_tested < MW_planned_next_section → FAIL (insufficient fracture gradient margin)\n",
+   "value": "Prevents drilling into an under-supported formation; establishes the fracture gradient input used in all subsequent kick tolerance and well control calculations for the hole section below the tested shoe.",
+   "context": "Run immediately after cementing and drilling out the casing shoe, prior to drilling ahead. Provides the upper bound of the mud weight window used for well control and kick tolerance planning. Two sub-tests are typically recorded: a casing integrity check (pressure-holds the cemented string) and a formation leak-off or pressure integrity test (pressures the open formation at the shoe).",
+   "intent": "Confirm casing shoe integrity and establish the maximum allowable mud weight window for the next open-hole section by identifying the pressure at which the formation accepts fluid (leak-off point) and converting that to a gradient in ppg EMW."
+  },
+  {
+   "module": "Wellbore Volumetrics, Kick Detection, and Well Control Calculator",
+   "domain": "well_control",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Integrated drilling engineering workbook that computes drill-string and annular capacities/volumes for a tapered multi-section string, pump stroke accounting, wellbore hydraulics, well-control kill pressures (ICP/FCP), kick tolerance, minimum curvature directional survey propagation, gas-migration rates, slug calculations, cuttings volumes, barite weighting, stuck-pipe free-point estimation, cement volume design, and a step-down choke pressure schedule for the driller's method — all cross-linked from a single string-data input sheet.",
+   "inputs": [
+    {
+     "name": "Drill pipe OD (each section)",
+     "unit": "in",
+     "typical_range": "2.375–6.625"
+    },
+    {
+     "name": "Drill pipe ID (each section)",
+     "unit": "in",
+     "typical_range": "1.8–5.5"
+    },
+    {
+     "name": "Drill pipe length (each section)",
+     "unit": "ft",
+     "typical_range": "0–10000"
+    },
+    {
+     "name": "HWDP OD",
+     "unit": "in",
+     "typical_range": "3.5–6.5"
+    },
+    {
+     "name": "HWDP ID",
+     "unit": "in",
+     "typical_range": "2.0–3.5"
+    },
+    {
+     "name": "HWDP length",
+     "unit": "ft",
+     "typical_range": "0–2000"
+    },
+    {
+     "name": "Drill collar / directional assembly OD",
+     "unit": "in",
+     "typical_range": "4.0–9.5"
+    },
+    {
+     "name": "Drill collar / directional assembly ID",
+     "unit": "in",
+     "typical_range": "1.5–3.0"
+    },
+    {
+     "name": "Drill collar / directional assembly length",
+     "unit": "ft",
+     "typical_range": "0–1500"
+    },
+    {
+     "name": "Bit size",
+     "unit": "in",
+     "typical_range": "4.75–26"
+    },
+    {
+     "name": "Bit depth (measured)",
+     "unit": "ft",
+     "typical_range": "0–30000"
+    },
+    {
+     "name": "Casing ID (caliper)",
+     "unit": "in",
+     "typical_range": "4.5–20"
+    },
+    {
+     "name": "Liner ID",
+     "unit": "in",
+     "typical_range": "4.0–10"
+    },
+    {
+     "name": "Top of liner (measured depth)",
+     "unit": "ft",
+     "typical_range": "0–20000"
+    },
+    {
+     "name": "Liner shoe (measured depth)",
+     "unit": "ft",
+     "typical_range": "0–20000"
+    },
+    {
+     "name": "Casing shoe TVD",
+     "unit": "ft",
+     "typical_range": "0–20000"
+    },
+    {
+     "name": "Present mud weight",
+     "unit": "ppg",
+     "typical_range": "8.33–20"
+    },
+    {
+     "name": "Shut-in drillpipe pressure (SIDPP)",
+     "unit": "psi",
+     "typical_range": "0–3000"
+    },
+    {
+     "name": "Shut-in casing pressure (SICP)",
+     "unit": "psi",
+     "typical_range": "0–3000"
+    },
+    {
+     "name": "Pit volume increase (kick gain)",
+     "unit": "bbl",
+     "typical_range": "0–100"
+    },
+    {
+     "name": "Slow circulating rate pressure (SCR)",
+     "unit": "psi",
+     "typical_range": "100–1500"
+    },
+    {
+     "name": "Slow circulating rate",
+     "unit": "spm",
+     "typical_range": "20–60"
+    },
+    {
+     "name": "Pump liner size",
+     "unit": "in",
+     "typical_range": "4–7"
+    },
+    {
+     "name": "Pump stroke length",
+     "unit": "in",
+     "typical_range": "8–18"
+    },
+    {
+     "name": "Pump efficiency",
+     "unit": "%",
+     "typical_range": "85–98"
+    },
+    {
+     "name": "Full pump rate",
+     "unit": "spm",
+     "typical_range": "60–200"
+    },
+    {
+     "name": "Leak-off / LOT mud weight equivalent",
+     "unit": "ppg",
+     "typical_range": "10–22"
+    },
+    {
+     "name": "Choke line friction loss at SCR",
+     "unit": "psi",
+     "typical_range": "0–200"
+    },
+    {
+     "name": "Slug weight",
+     "unit": "ppg",
+     "typical_range": "10–20"
+    },
+    {
+     "name": "Feet of dry pipe desired (slug calc)",
+     "unit": "ft",
+     "typical_range": "50–500"
+    },
+    {
+     "name": "Survey station: along-hole depth (AHD)",
+     "unit": "ft",
+     "typical_range": "0–30000"
+    },
+    {
+     "name": "Survey station: inclination",
+     "unit": "deg",
+     "typical_range": "0–90"
+    },
+    {
+     "name": "Survey station: azimuth",
+     "unit": "deg",
+     "typical_range": "0–360"
+    },
+    {
+     "name": "Open hole porosity (cuttings calc)",
+     "unit": "%",
+     "typical_range": "10–35"
+    },
+    {
+     "name": "Interval drilled (cuttings calc)",
+     "unit": "ft",
+     "typical_range": "1–5000"
+    },
+    {
+     "name": "Target mud weight increase (barite)",
+     "unit": "ppg",
+     "typical_range": "8.5–22"
+    },
+    {
+     "name": "Active pit volume",
+     "unit": "bbl",
+     "typical_range": "100–2000"
+    },
+    {
+     "name": "Pipe stretch (stuck pipe)",
+     "unit": "in",
+     "typical_range": "1–100"
+    },
+    {
+     "name": "Overpull force (stuck pipe)",
+     "unit": "1000 lbf",
+     "typical_range": "5–200"
+    },
+    {
+     "name": "Drill pipe free-point constant (by weight class)",
+     "unit": "dimensionless",
+     "typical_range": "3260–16575"
+    },
+    {
+     "name": "Casing burst rating",
+     "unit": "psi",
+     "typical_range": "2000–20000"
+    },
+    {
+     "name": "Casing collapse rating",
+     "unit": "psi",
+     "typical_range": "1000–15000"
+    },
+    {
+     "name": "Gas initial pressure P1 (Boyle's law)",
+     "unit": "psi",
+     "typical_range": "500–5000"
+    },
+    {
+     "name": "Gas initial volume V1 (Boyle's law)",
+     "unit": "bbl",
+     "typical_range": "0.1–50"
+    },
+    {
+     "name": "Gas final pressure P2 (Boyle's law)",
+     "unit": "psi",
+     "typical_range": "500–5000"
+    },
+    {
+     "name": "Cement yield",
+     "unit": "cu ft/sk",
+     "typical_range": "0.9–2.0"
+    },
+    {
+     "name": "Excess cement factor",
+     "unit": "%",
+     "typical_range": "10–100"
+    },
+    {
+     "name": "Safety margin (MAASP)",
+     "unit": "psi",
+     "typical_range": "0–200"
+    },
+    {
+     "name": "Assumed influx EMW (kick tolerance)",
+     "unit": "ppg",
+     "typical_range": "0.1–10"
+    },
+    {
+     "name": "Average hole angle (kick tolerance)",
+     "unit": "deg",
+     "typical_range": "0–90"
+    },
+    {
+     "name": "Riser ID (subsea)",
+     "unit": "in",
+     "typical_range": "16–24"
+    },
+    {
+     "name": "Choke line ID (subsea)",
+     "unit": "in",
+     "typical_range": "2–4"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Pipe capacity (each section)",
+     "unit": "bbl/ft"
+    },
+    {
+     "name": "Annular capacity (each section per hole/casing interval)",
+     "unit": "bbl/ft"
+    },
+    {
+     "name": "Annular volume (each section)",
+     "unit": "bbl"
+    },
+    {
+     "name": "String internal volume (surface to bit)",
+     "unit": "bbl"
+    },
+    {
+     "name": "Total annular volume (bit to surface)",
+     "unit": "bbl"
+    },
+    {
+     "name": "Total circulating volume",
+     "unit": "bbl"
+    },
+    {
+     "name": "Pump output per stroke",
+     "unit": "bbl/stk"
+    },
+    {
+     "name": "Surface-to-bit strokes",
+     "unit": "strokes"
+    },
+    {
+     "name": "Bit-to-surface strokes",
+     "unit": "strokes"
+    },
+    {
+     "name": "Total circulation strokes",
+     "unit": "strokes"
+    },
+    {
+     "name": "Surface-to-bit lag time",
+     "unit": "min"
+    },
+    {
+     "name": "Total circulation time",
+     "unit": "min"
+    },
+    {
+     "name": "Annular velocity (each section)",
+     "unit": "ft/min"
+    },
+    {
+     "name": "Hydrostatic pressure at bit",
+     "unit": "psi"
+    },
+    {
+     "name": "Initial circulating pressure (ICP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Final circulating pressure (FCP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Kill mud weight (KMW)",
+     "unit": "ppg"
+    },
+    {
+     "name": "Maximum allowable annular surface pressure (MAASP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Subsea circulating casing pressure (CCP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Step-down choke pressure schedule (stroke vs. pressure table)",
+     "unit": "psi per 100 strokes"
+    },
+    {
+     "name": "Kick tolerance on-bottom",
+     "unit": "bbl"
+    },
+    {
+     "name": "Kick tolerance circulating-out",
+     "unit": "bbl"
+    },
+    {
+     "name": "Height of influx in annulus",
+     "unit": "ft"
+    },
+    {
+     "name": "Estimated influx type (gas / oil / saltwater)",
+     "unit": "qualitative (ppg EMW range)"
+    },
+    {
+     "name": "Gas migration rate (open hole and cased sections)",
+     "unit": "ft/hr"
+    },
+    {
+     "name": "Casing pressure increase from gas migration",
+     "unit": "psi/hr"
+    },
+    {
+     "name": "Slug length in drill pipe",
+     "unit": "ft"
+    },
+    {
+     "name": "Slug volume to pump",
+     "unit": "bbl"
+    },
+    {
+     "name": "Pit gain after slugging",
+     "unit": "bbl"
+    },
+    {
+     "name": "Survey TVD per station (minimum curvature)",
+     "unit": "ft"
+    },
+    {
+     "name": "Survey East offset per station",
+     "unit": "ft"
+    },
+    {
+     "name": "Survey North offset per station",
+     "unit": "ft"
+    },
+    {
+     "name": "Plan horizontal distance (vertical section)",
+     "unit": "ft"
+    },
+    {
+     "name": "Dog-leg severity per station",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Ratio factor (minimum curvature RF)",
+     "unit": "dimensionless"
+    },
+    {
+     "name": "Cuttings volume removed",
+     "unit": "bbl"
+    },
+    {
+     "name": "Volume increase from barite weighting",
+     "unit": "bbl per 100 bbl"
+    },
+    {
+     "name": "Barite sacks required",
+     "unit": "sacks"
+    },
+    {
+     "name": "Free pipe depth (stuck pipe)",
+     "unit": "ft"
+    },
+    {
+     "name": "Corrected casing test pressure at surface",
+     "unit": "psi"
+    },
+    {
+     "name": "Casing burst at 70% rating",
+     "unit": "psi"
+    },
+    {
+     "name": "Casing collapse at 70% rating",
+     "unit": "psi"
+    },
+    {
+     "name": "Gas volume at new pressure (Boyle's law)",
+     "unit": "bbl"
+    },
+    {
+     "name": "Cement sacks required (open hole + shoe track)",
+     "unit": "sacks"
+    },
+    {
+     "name": "Cement volume (open hole, casing x liner, shoe track)",
+     "unit": "bbl"
+    }
+   ],
+   "formula_generic": "\n1. PIPE / ANNULAR CAPACITY (bbl/ft): C = (D_outer^2 - D_inner^2) / 1029.4, where D values are in inches. Internal pipe capacity uses D_inner only: C = D_ID^2 / 1029.4.\n\n2. PUMP OUTPUT (bbl/stk, triplex): Q = 3 × (π/4) × (liner_dia_in/12)^2 × (stroke_length_in/12) × efficiency/100 × 42. Simplified field form: Q = 0.000324 × liner_dia^2 × stroke_len × Efc%.\n\n3. HYDROSTATIC PRESSURE: P_h = MW × 0.052 × TVD (psi), where MW is in ppg and TVD in feet.\n\n4. INITIAL CIRCULATING PRESSURE (ICP): ICP = SCR_pressure + SIDPP.\n\n5. KILL MUD WEIGHT (KMW): KMW = SIDPP / (0.052 × TVD_bit) + MW_present.\n\n6. FINAL CIRCULATING PRESSURE (FCP): FCP = SCR_pressure × (KMW / MW_present).\n\n7. MAASP: MAASP = (LOT_MW - MW_present) × 0.052 × shoe_TVD − safety_margin.\n\n8. STROKES: Strokes = Volume (bbl) / Pump output (bbl/stk). Time (min) = Strokes / pump_rate_spm.\n\n9. ANNULAR VELOCITY (ft/min): AV = pump_flow_rate_gpm / (0.0973 × (D_hole^2 - D_pipe^2)), or equivalently AV = Q_bpm × 917.4 / (D_hole^2 - D_pipe^2).\n\n10. MINIMUM CURVATURE SURVEY (per IADC standard):\n    DL = arccos[cos(Inc2 - Inc1) - sin(Inc1)×sin(Inc2)×(1 - cos(Az2 - Az1))]\n    RF = (2/DL) × tan(DL/2), with RF → 1 when DL → 0.\n    delta_TVD = (L/2) × (cos(Inc1) + cos(Inc2)) × RF\n    delta_North = (L/2) × (sin(Inc1)×cos(Az1) + sin(Inc2)×cos(Az2)) × RF\n    delta_East  = (L/2) × (sin(Inc1)×sin(Az1) + sin(Inc2)×sin(Az2)) × RF\n\n11. KICK TOLERANCE (bbl on-bottom): KT = Annular_capacity_at_shoe × [(MAASP / (0.052 × shoe_TVD)) / (influx_density_delta)] evaluated for the critical annular section; separate calculation for circulating-out condition accounting for influx migration to shallower section.\n\n12. INFLUX HEIGHT: h_influx = pit_gain_bbl / annular_capacity_bpf.\n\n13. GAS MIGRATION RATE (ft/hr): Rate = casing_pressure_increase_psi_hr / (0.052 × influx_gradient_ppg).\n\n14. SLUG CALCULATION: Length_dry_pipe_ft = (slug_wt - MW) × 0.052 × desired_dry_ft / (slug_wt × 0.052); Volume_slug_bbl = desired_dry_ft × pipe_capacity_bpf.\n\n15. FREE POINT (stuck pipe): Feet_free = (stretch_in × free_point_constant) / (overpull_1000lbf × 1000).\n\n16. BOYLE'S LAW (isothermal gas): P1 × V1 = P2 × V2.\n\n17. BARITE WEIGHTING: Sacks_barite = (MW_new - MW_present) × 1470 × system_vol_bbl / (35 - MW_new), where 1470 and 35 are standard barite constants.\n\n18. CUTTINGS VOLUME: V_cuttings_bbl = (D_bit^2 × π/4 × interval_ft × (1 - porosity/100)) / 9702.\n\n19. STEP-DOWN PRESSURE SCHEDULE: P_strokes = ICP - [(ICP - FCP) / strokes_to_bit] × cumulative_strokes. Each 100-stroke row shows linearly interpolated target circulating pressure.\n\n20. SUBSEA CCP: CCP = SICP - CLFL (choke line friction losses at kill rate).\n",
+   "value": "Well control kill-sheet math is the single highest-consequence calculation a driller performs; errors in ICP, FCP, or KMW directly risk a blowout, making this module safety-critical rather than just operational.",
+   "context": "Sheet integrates a tapered-string volumetrics engine with a kick-sheet, kick-tolerance worksheet, directional minimum-curvature survey, subsea step-down chart, and ancillary calcs (slug, barite weighting, stuck pipe, cement, gas migration) — all driven from one shared string-data input panel; the directional survey table feeds kick TVD and shoe TVD into kill-pressure calcs, reflecting a deviated/extended-reach well scenario.",
+   "intent": "Replace a manually maintained multi-tab Excel workbook with a registry-driven, validation-enforced compute panel that cross-links string geometry, directional survey, and well-control kill parameters in real time, eliminating manual transcription errors between tabs."
+  },
+  {
+   "module": "Horizontal Well Build-Up Rate and Steering Calculator",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Computes the required build rate (deg/100 ft), azimuth correction, and spatial relationship between the current bit position and one or more target windows during the build-up and horizontal sections of a horizontal well, enabling real-time directional steering decisions.",
+   "inputs": [
+    {
+     "name": "Bit Inclination",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Bit TVD",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Bit North/South Departure",
+     "unit": "ft",
+     "typical_range": "-5000 – +5000"
+    },
+    {
+     "name": "Bit East/West Departure",
+     "unit": "ft",
+     "typical_range": "-5000 – +5000"
+    },
+    {
+     "name": "Bit Vertical Section",
+     "unit": "ft",
+     "typical_range": "0 – 10000"
+    },
+    {
+     "name": "Target Top TVD",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Target Center TVD",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Target Bottom TVD",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Target North/South Departure",
+     "unit": "ft",
+     "typical_range": "-5000 – +5000"
+    },
+    {
+     "name": "Target East/West Departure",
+     "unit": "ft",
+     "typical_range": "-5000 – +5000"
+    },
+    {
+     "name": "Proposed Target Azimuth",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Target Inclination",
+     "unit": "deg",
+     "typical_range": "85 – 95"
+    },
+    {
+     "name": "Landing Point Vertical Section (Proposal)",
+     "unit": "ft",
+     "typical_range": "0 – 10000"
+    },
+    {
+     "name": "Landing Point Inclination (Proposal)",
+     "unit": "deg",
+     "typical_range": "85 – 95"
+    },
+    {
+     "name": "Landing Point TVD (Proposal)",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Build Rate to Top Target",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Build Rate to Center Target",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Build Rate to Bottom Target",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Distance to Center of Target (per target)",
+     "unit": "ft"
+    },
+    {
+     "name": "Azimuth Required to Center of Target (per target)",
+     "unit": "deg"
+    },
+    {
+     "name": "Horizontal Departure from Target Line (per target)",
+     "unit": "ft"
+    },
+    {
+     "name": "High / Low Distance to Target TVD",
+     "unit": "ft"
+    },
+    {
+     "name": "Present Target Line TVD",
+     "unit": "ft"
+    }
+   ],
+   "formula_generic": "\nBuild Rate (deg/100 ft) = (Target_INC - Bit_INC) / (Measured_Depth_to_Target - Bit_MD) × 100\n\nwhere Measured_Depth_to_Target is back-calculated from target TVD using the arc assumption. More precisely, using the radius-of-curvature / minimum-curvature relationship:\n\nR (ft) = 18000 / (π × Build_Rate)\nTVD_gain = R × (sin(Target_INC) - sin(Bit_INC))\nHorizontal_gain = R × (cos(Bit_INC) - cos(Target_INC))\n\nAzimuth to target = atan2(ΔEast, ΔNorth), adjusted to 0–360 convention\nDistance to target center = sqrt(ΔNorth² + ΔEast²) in the horizontal plane\nHorizontal departure from target line = perpendicular offset from the proposed target azimuth line to the current bit horizontal position\nHigh/Low = Target_Center_TVD - Bit_TVD (positive = bit is high/shallow, negative = bit is low/deep)\n",
+   "value": "Enables the directional driller and company man to read, in real time, exactly how aggressively to build angle and which azimuth to steer in order to land in a defined target window, and to track lateral deviation from the planned target line once in the horizontal section.",
+   "context": "Used during build-up to horizontal entry (EOB) and throughout the lateral section; supports at least two independently defined target windows so the driller can evaluate primary vs. contingency landing zones in a single panel.",
+   "intent": "Replace a manually maintained, static spreadsheet with a live compute panel that ingests survey data from each survey station and instantly recalculates required build rate and steering direction, reducing transcription errors and decision latency at the rig site."
+  },
+  {
+   "module": "Horizontal Well Directional Survey — Minimum Curvature Calculator",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute wellbore position (TVD, northing, easting, vertical section) and quality indicators (dogleg severity, closure, build rate, horizontal distance to target, high/low to target) at each survey station along a horizontal lateral using the Minimum Curvature Method. The workbook is segmented by VS-interval tabs, each chaining from the previous tie-in station, and projects all stations to a fixed surface target azimuth and target coordinates to report steering guidance metrics.",
+   "inputs": [
+    {
+     "name": "Measured Depth (MD)",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Inclination (INC)",
+     "unit": "deg",
+     "typical_range": "0 – 180"
+    },
+    {
+     "name": "Azimuth (AZM)",
+     "unit": "deg (magnetic)",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Magnetic-to-Grid Correction",
+     "unit": "deg",
+     "typical_range": "-5 – +5"
+    },
+    {
+     "name": "KB Elevation",
+     "unit": "ft",
+     "typical_range": "0 – 5000"
+    },
+    {
+     "name": "Target Northing (+N/-S)",
+     "unit": "ft",
+     "typical_range": "-20000 – +20000"
+    },
+    {
+     "name": "Target Easting (+E/-W)",
+     "unit": "ft",
+     "typical_range": "-20000 – +20000"
+    },
+    {
+     "name": "Vertical Section Azimuth (VS AZ)",
+     "unit": "deg (grid)",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Target High/Low Offset (Enter Trgt +HI/-LO)",
+     "unit": "ft",
+     "typical_range": "-500 – +500"
+    },
+    {
+     "name": "Tie-In MD, INC, AZM, TVD, N/S, E/W, VS",
+     "unit": "ft / deg / ft",
+     "typical_range": "varies by well"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "True Vertical Depth (TVD)",
+     "unit": "ft"
+    },
+    {
+     "name": "Vertical Section (VS)",
+     "unit": "ft"
+    },
+    {
+     "name": "Northing (+N/-S)",
+     "unit": "ft"
+    },
+    {
+     "name": "Easting (+E/-W)",
+     "unit": "ft"
+    },
+    {
+     "name": "Dogleg per Unit Length (DGLG)",
+     "unit": "deg/ft"
+    },
+    {
+     "name": "Dogleg Severity (DL)",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Ratio Factor (RF)",
+     "unit": "dimensionless"
+    },
+    {
+     "name": "Closure Angle",
+     "unit": "deg"
+    },
+    {
+     "name": "Closure Distance",
+     "unit": "ft"
+    },
+    {
+     "name": "Right/Left of VS Plane (Burn / +RT/-LT)",
+     "unit": "ft"
+    },
+    {
+     "name": "Azimuth to Target",
+     "unit": "deg"
+    },
+    {
+     "name": "Horizontal Distance to Target",
+     "unit": "ft"
+    },
+    {
+     "name": "High/Low to Target (+HI/-LO)",
+     "unit": "ft"
+    },
+    {
+     "name": "KB-Referenced TVD (KBTVD)",
+     "unit": "ft"
+    },
+    {
+     "name": "Build Rate (BUR)",
+     "unit": "deg/100 ft"
+    }
+   ],
+   "formula_generic": "Minimum Curvature Method (industry standard per API/IADC):\n\n1. Delta-angle (DL) between consecutive stations i and i+1:\n   cos(DL) = cos(INC2 - INC1) - sin(INC1)*sin(INC2)*(1 - cos(AZM2 - AZM1))\n   DL_severity = DL * (100 / delta_MD)   [deg/100 ft]\n\n2. Ratio Factor (RF):\n   RF = (2 / DL) * tan(DL / 2)   [if DL != 0; else RF = 1]\n\n3. Position increments over interval:\n   delta_TVD = (delta_MD / 2) * (cos(INC1) + cos(INC2)) * RF\n   delta_N   = (delta_MD / 2) * (sin(INC1)*cos(AZM1) + sin(INC2)*cos(AZM2)) * RF\n   delta_E   = (delta_MD / 2) * (sin(INC1)*sin(AZM1) + sin(INC2)*sin(AZM2)) * RF\n\n4. Vertical Section (projection onto VS azimuth plane):\n   VS = N*cos(VS_AZM) + E*sin(VS_AZM)\n\n5. Closure (origin to current position):\n   CL_DIST = sqrt(N^2 + E^2)\n   CL_ANG  = atan2(E, N)  [grid azimuth]\n\n6. Burn (lateral offset from VS plane):\n   Burn = E*cos(VS_AZM) - N*sin(VS_AZM)\n\n7. Distance and bearing to target:\n   dN = N_target - N_current;  dE = E_target - E_current\n   HD_to_target = sqrt(dN^2 + dE^2)\n   AZM_to_target = atan2(dE, dN)  [grid, converted to magnetic via correction]\n\nAll azimuths corrected from magnetic to grid by subtracting the grid correction constant.",
+   "value": "Provides real-time positional status and remaining-distance-to-target guidance for each survey station in a horizontal well; the primary steering reference document used at the wellsite during lateral drilling.",
+   "context": "Structured as multiple chained tab-segments keyed by VS range (e.g., 620–2900 VS, 2900–4750 VS, 4750–6000 VS), each initialised from the previous segment's tie-in; supports very long laterals (6000+ ft VS) without column overflow.",
+   "intent": "Replace manual multi-tab chained spreadsheets with a single registry-driven compute panel that ingests survey station pairs, applies the Minimum Curvature algorithm incrementally, and outputs both cumulative position columns and real-time steering guidance metrics against a fixed target."
+  },
+  {
+   "module": "Pump Lag Strokes and Well Control Kill Sheet",
+   "domain": "well_control",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Calculates pump lag strokes (surface-to-bit and bit-to-surface) from annular and drill string volumes, then supports a standard well control kill sheet: kill weight mud, initial circulating pressure, final circulating pressure, maximum allowable casing pressure, and a pressure decline schedule across the drill string strokes interval.",
+   "inputs": [
+    {
+     "name": "Hole Diameter",
+     "unit": "in",
+     "typical_range": "6.0 – 17.5"
+    },
+    {
+     "name": "Casing Inner Diameter",
+     "unit": "in",
+     "typical_range": "4.5 – 20.0"
+    },
+    {
+     "name": "Casing Length (to shoe)",
+     "unit": "ft",
+     "typical_range": "500 – 10000"
+    },
+    {
+     "name": "Liner 1 Inner Diameter",
+     "unit": "in",
+     "typical_range": "3.5 – 9.0"
+    },
+    {
+     "name": "Liner 1 Length",
+     "unit": "ft",
+     "typical_range": "0 – 5000"
+    },
+    {
+     "name": "Liner 2 Inner Diameter",
+     "unit": "in",
+     "typical_range": "3.5 – 9.0"
+    },
+    {
+     "name": "Liner 2 Length",
+     "unit": "ft",
+     "typical_range": "0 – 5000"
+    },
+    {
+     "name": "Drill Pipe 1 Outer Diameter",
+     "unit": "in",
+     "typical_range": "3.5 – 6.625"
+    },
+    {
+     "name": "Drill Pipe 1 Inner Diameter",
+     "unit": "in",
+     "typical_range": "2.75 – 5.965"
+    },
+    {
+     "name": "Drill Pipe 1 Length",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Drill Pipe 2 Outer Diameter",
+     "unit": "in",
+     "typical_range": "3.5 – 6.625"
+    },
+    {
+     "name": "Drill Pipe 2 Inner Diameter",
+     "unit": "in",
+     "typical_range": "2.75 – 5.965"
+    },
+    {
+     "name": "Drill Pipe 2 Length",
+     "unit": "ft",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Heavy Weight Drill Pipe Outer Diameter",
+     "unit": "in",
+     "typical_range": "3.5 – 6.625"
+    },
+    {
+     "name": "Heavy Weight Drill Pipe Inner Diameter",
+     "unit": "in",
+     "typical_range": "2.0 – 4.0"
+    },
+    {
+     "name": "Heavy Weight Drill Pipe Length",
+     "unit": "ft",
+     "typical_range": "0 – 2000"
+    },
+    {
+     "name": "Drill Collar Outer Diameter",
+     "unit": "in",
+     "typical_range": "3.5 – 11.0"
+    },
+    {
+     "name": "Drill Collar Inner Diameter",
+     "unit": "in",
+     "typical_range": "1.5 – 4.0"
+    },
+    {
+     "name": "Drill Collar Length",
+     "unit": "ft",
+     "typical_range": "0 – 1000"
+    },
+    {
+     "name": "Total Measured Depth",
+     "unit": "ft",
+     "typical_range": "1000 – 30000"
+    },
+    {
+     "name": "Pump 1 Output (strokes basis)",
+     "unit": "bbl/stroke",
+     "typical_range": "0.05 – 0.25"
+    },
+    {
+     "name": "Pump 2 Output (strokes basis)",
+     "unit": "bbl/stroke",
+     "typical_range": "0.05 – 0.25"
+    },
+    {
+     "name": "Survey Measured Depth",
+     "unit": "ft",
+     "typical_range": "1000 – 30000"
+    },
+    {
+     "name": "Survey True Vertical Depth",
+     "unit": "ft",
+     "typical_range": "1000 – 20000"
+    },
+    {
+     "name": "Survey Inclination Angle",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Casing Shoe TVD",
+     "unit": "ft",
+     "typical_range": "500 – 15000"
+    },
+    {
+     "name": "Leak-Off / Shoe Test Equivalent Mud Weight",
+     "unit": "ppg",
+     "typical_range": "9.0 – 18.0"
+    },
+    {
+     "name": "Active Mud Weight",
+     "unit": "ppg",
+     "typical_range": "7.0 – 18.0"
+    },
+    {
+     "name": "Shut-In Drill Pipe Pressure (SIDPP)",
+     "unit": "psi",
+     "typical_range": "0 – 2000"
+    },
+    {
+     "name": "Slow Pump Rate Pressure — Pump 1",
+     "unit": "psi",
+     "typical_range": "200 – 1500"
+    },
+    {
+     "name": "Slow Pump Rate — Pump 1",
+     "unit": "spm",
+     "typical_range": "20 – 60"
+    },
+    {
+     "name": "Slow Pump Rate Pressure — Pump 2",
+     "unit": "psi",
+     "typical_range": "200 – 1500"
+    },
+    {
+     "name": "Slow Pump Rate — Pump 2",
+     "unit": "spm",
+     "typical_range": "20 – 60"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Hole (Open Hole) Capacity",
+     "unit": "bbl"
+    },
+    {
+     "name": "Casing Annular Capacity",
+     "unit": "bbl"
+    },
+    {
+     "name": "Total Annular Volume",
+     "unit": "bbl"
+    },
+    {
+     "name": "Drill String Internal Capacity",
+     "unit": "bbl"
+    },
+    {
+     "name": "Drill String Displacement",
+     "unit": "bbl"
+    },
+    {
+     "name": "Surface-to-Bit Lag Strokes — Pump 1",
+     "unit": "strokes"
+    },
+    {
+     "name": "Bit-to-Surface Lag Strokes — Pump 1",
+     "unit": "strokes"
+    },
+    {
+     "name": "Surface-to-Bit Lag Strokes — Pump 2",
+     "unit": "strokes"
+    },
+    {
+     "name": "Bit-to-Surface Lag Strokes — Pump 2",
+     "unit": "strokes"
+    },
+    {
+     "name": "Projected TVD at target depths",
+     "unit": "ft"
+    },
+    {
+     "name": "Projected Bottoms-Up Volume at target depths",
+     "unit": "bbl"
+    },
+    {
+     "name": "Kill Weight Mud (KWM)",
+     "unit": "ppg"
+    },
+    {
+     "name": "Initial Circulating Pressure (ICP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Final Circulating Pressure (FCP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Maximum Allowable Casing Pressure (MCP)",
+     "unit": "psi"
+    },
+    {
+     "name": "Pressure Decline Schedule (stroke vs. target pressure table)",
+     "unit": "psi @ stroke interval"
+    }
+   ],
+   "formula_generic": "\nAnnular capacity per foot (bbl/ft) = (D_hole² - D_pipe_OD²) / 1029.4, where diameters are in inches.\nPipe internal capacity per foot (bbl/ft) = D_ID² / 1029.4.\nPipe displacement per foot (bbl/ft) = (D_OD² - D_ID²) / 1029.4.\nSegment volume (bbl) = capacity_per_foot × segment_length.\nSurface-to-bit strokes = Drill_String_Internal_Capacity (bbl) / Pump_Output (bbl/stroke).\nBit-to-surface strokes = Total_Annular_Volume (bbl) / Pump_Output (bbl/stroke).\nTVD projection uses the average-angle method from last survey station: TVD_new = TVD_survey + (MD_new - MD_survey) × cos(inclination).\nKill Weight Mud: KWM (ppg) = SIDPP / (0.052 × TVD_ft) + MW_active.\nInitial Circulating Pressure: ICP (psi) = SIDPP + Slow_Pump_Pressure.\nFinal Circulating Pressure: FCP (psi) = Slow_Pump_Pressure × (KWM / MW_active).\nMaximum Allowable Casing Pressure: MCP (psi) = (LOT_EMW - MW_active) × 0.052 × TVD_shoe.\nPressure decline schedule: pressure decreases linearly from ICP to FCP over the surface-to-bit stroke count, tabulated at equal stroke intervals (typically 10% increments).\n",
+   "value": "Enables accurate timing of influx-fluid circulation to surface and supports the driller's and wait-and-weight well control methods in a single integrated worksheet.",
+   "context": "Combines two standard field documents — the lag sheet and the kill sheet — that are always used together during a well control event; housing them together reduces transcription error under time pressure.",
+   "intent": "Give the driller and company man a pre-filled, depth-projected reference so kill-mud weight, circulating pressures, and lag strokes are already calculated before a kick is taken, not computed during the emergency."
+  },
+  {
+   "module": "Downhole Motor Job Material Transfer and Cost Summary",
+   "domain": "directional_survey",
+   "build_priority": "low",
+   "confidence": "medium",
+   "purpose": "Track equipment dispatched to and from a wellsite for a directional motor run, and roll up motor rental, footage, inspection, standby, and loss-in-hole charges into a single job cost summary.",
+   "inputs": [
+    {
+     "name": "Hole Section Depth In",
+     "unit": "ft MD",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Hole Section Depth Out",
+     "unit": "ft MD",
+     "typical_range": "0 – 20000"
+    },
+    {
+     "name": "Total Footage Drilled",
+     "unit": "ft",
+     "typical_range": "0 – 15000"
+    },
+    {
+     "name": "Hours Below Rotary Table",
+     "unit": "hr",
+     "typical_range": "0 – 500"
+    },
+    {
+     "name": "Total Drill and Circulation Hours",
+     "unit": "hr",
+     "typical_range": "0 – 500"
+    },
+    {
+     "name": "Motor Rental Rate",
+     "unit": "USD/hr",
+     "typical_range": "100 – 2000"
+    },
+    {
+     "name": "Motor Insurance / Loss-in-Hole Cost",
+     "unit": "USD",
+     "typical_range": "0 – 500000"
+    },
+    {
+     "name": "Standby Rental Rate",
+     "unit": "USD/day",
+     "typical_range": "50 – 1000"
+    },
+    {
+     "name": "Standby Days",
+     "unit": "days",
+     "typical_range": "0 – 60"
+    },
+    {
+     "name": "Inspection Charge per Motor Run",
+     "unit": "USD/run",
+     "typical_range": "0 – 5000"
+    },
+    {
+     "name": "Number of Motor Runs",
+     "unit": "count",
+     "typical_range": "1 – 10"
+    },
+    {
+     "name": "Tool Transportation Charges",
+     "unit": "USD",
+     "typical_range": "0 – 10000"
+    },
+    {
+     "name": "Tool Repair Charges",
+     "unit": "USD",
+     "typical_range": "0 – 50000"
+    },
+    {
+     "name": "Other Charges",
+     "unit": "USD",
+     "typical_range": "0 – 50000"
+    },
+    {
+     "name": "Tax Rate",
+     "unit": "%",
+     "typical_range": "0 – 10"
+    },
+    {
+     "name": "Item Quantity Shipped",
+     "unit": "ea",
+     "typical_range": "1 – 20"
+    },
+    {
+     "name": "Tool OD (motor / collar / stabilizer)",
+     "unit": "in",
+     "typical_range": "2.875 – 12.25"
+    },
+    {
+     "name": "Motor Flow Rate",
+     "unit": "gal/min",
+     "typical_range": "100 – 1200"
+    },
+    {
+     "name": "Mud Weight",
+     "unit": "ppg",
+     "typical_range": "7 – 18"
+    },
+    {
+     "name": "Circulating Temperature",
+     "unit": "°F",
+     "typical_range": "80 – 350"
+    },
+    {
+     "name": "Static Temperature",
+     "unit": "°F",
+     "typical_range": "80 – 400"
+    },
+    {
+     "name": "Max Weight on Bit",
+     "unit": "klbf",
+     "typical_range": "5 – 100"
+    },
+    {
+     "name": "Max Bit Pressure Drop",
+     "unit": "psi",
+     "typical_range": "200 – 2000"
+    },
+    {
+     "name": "Motor Bend Angle",
+     "unit": "deg",
+     "typical_range": "0 – 3"
+    },
+    {
+     "name": "Build Rate Achieved",
+     "unit": "deg/100ft",
+     "typical_range": "0 – 20"
+    },
+    {
+     "name": "Rate of Penetration",
+     "unit": "ft/hr",
+     "typical_range": "5 – 500"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Total Hours Below Rotary Table",
+     "unit": "hr"
+    },
+    {
+     "name": "Motor Rental Cost",
+     "unit": "USD"
+    },
+    {
+     "name": "Standby Rental Cost",
+     "unit": "USD"
+    },
+    {
+     "name": "Total Inspection Charges",
+     "unit": "USD"
+    },
+    {
+     "name": "Loss-in-Hole Coverage Cost",
+     "unit": "USD"
+    },
+    {
+     "name": "Subtotal Charges (pre-tax)",
+     "unit": "USD"
+    },
+    {
+     "name": "Tax Amount",
+     "unit": "USD"
+    },
+    {
+     "name": "Total Job Charges",
+     "unit": "USD"
+    },
+    {
+     "name": "Material Transfer Record (item manifest)",
+     "unit": "text/list"
+    }
+   ],
+   "formula_generic": "\nMotor Rental Cost = Hours_Below_Rotary_Table x Cost_per_Hour\n\nStandby Rental Cost = Standby_Days x Standby_Cost_per_Day\n\nTotal Inspection Charges = Number_of_Motor_Runs x Inspection_Charge_per_Run\n\nSubtotal = Motor_Rental_Cost + Standby_Rental_Cost + Total_Inspection_Charges + Tool_Transportation_Charges + Tool_Repair_Charges + LIH_Coverage_Cost + Other_Charges\n\nTax_Amount = Subtotal x (Tax_Rate / 100)\n\nTotal_Job_Charges = Subtotal + Tax_Amount\n\nThe material transfer sheet itself performs no arithmetic; it is a chain-of-custody manifest listing item number, quantity shipped, serial numbers, tool size, and description for each piece of downhole equipment dispatched between depot and wellsite.\n",
+   "value": "Provides an auditable equipment dispatch record and a rolled-up cost statement for a directional motor job across multiple hole sections, supporting field invoicing and loss-in-hole insurance claims.",
+   "context": "The workbook covers a multi-section horizontal well with three hole sizes (12.25 in, 8.5 in, 6.125 in), each requiring a separate downhole motor. The Motor Summary and LIH Cost sheets aggregate rental, inspection, standby, and LIH charges across all runs into a single billable total.",
+   "intent": "Enable a service company's directional division to generate a shipment manifest and a complete job cost summary — from equipment pickup through return — in a single linked workbook, replacing manual paper forms."
+  },
+  {
+   "module": "Motor Build Rate Predictor (IDR)",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute the ideal deflection rate (IDR) of a mud motor BHA from component geometry and bend angle, then generate a slide-distance lookup table for any target dogleg severity over a given course length.",
+   "inputs": [
+    {
+     "name": "Span 1 distance (bit to first contact)",
+     "unit": "ft",
+     "typical_range": "15–30"
+    },
+    {
+     "name": "Span 1 contact diameter",
+     "unit": "in",
+     "typical_range": "6.0–17.5"
+    },
+    {
+     "name": "Span 2 distance (first to second contact)",
+     "unit": "ft",
+     "typical_range": "4–10"
+    },
+    {
+     "name": "Span 2 contact diameter",
+     "unit": "in",
+     "typical_range": "6.0–17.5"
+    },
+    {
+     "name": "Motor bend angle",
+     "unit": "deg",
+     "typical_range": "0.5–3.0"
+    },
+    {
+     "name": "Span 3 distance (second contact to upper body)",
+     "unit": "ft",
+     "typical_range": "2–6"
+    },
+    {
+     "name": "Span 3 contact diameter",
+     "unit": "in",
+     "typical_range": "6.0–17.5"
+    },
+    {
+     "name": "Hole / bit diameter",
+     "unit": "in",
+     "typical_range": "6.0–17.5"
+    },
+    {
+     "name": "Motor efficiency factor",
+     "unit": "decimal fraction",
+     "typical_range": "0.50–1.00"
+    },
+    {
+     "name": "Course length",
+     "unit": "ft",
+     "typical_range": "30–100"
+    },
+    {
+     "name": "Target DLS range (min to max, step)",
+     "unit": "deg/100 ft",
+     "typical_range": "0–10, step 0.25"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Projected build rate (IDR)",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Effective build rate (IDR × efficiency)",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Slide distance for each target DLS",
+     "unit": "ft"
+    }
+   ],
+   "formula_generic": "1. IDR (deg/100 ft) = (bend_angle_deg / L_eff_ft) × 100, where L_eff is the effective moment-arm length derived from the three BHA contact-point spans and their clearance geometry relative to the borehole wall (standard three-point-contact IDR model). 2. Effective IDR = IDR × efficiency_factor. 3. Slide distance (ft) = (Target_DLS / Effective_IDR) × Course_Length. A lookup table iterates Target_DLS from 0 to ~10 deg/100 ft in 0.25 increments to fill a slide-vs-DLS grid.",
+   "value": "Eliminates manual trial-and-error slide calculations on the rig; gives the directional driller an instant slide-distance target for any desired build rate before or during the slide.",
+   "context": "Standard pre-job or real-time BHA planning tool; two scenario tabs suggest it is run once per BHA configuration and archived with the well file.",
+   "intent": "Give the directional driller a single reference card: for a specific motor/BHA, how many feet must I slide to achieve a given DLS over my chosen course length."
+  },
+  {
+   "module": "Directional Projection (Toolface-Based Azimuth Solver)",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Projects a wellbore's ending inclination and azimuth after a defined course interval given a dogleg severity, course length, starting inclination, and toolface orientation; then back-solves the toolface/azimuth required to intersect a target coordinate pair.",
+   "inputs": [
+    {
+     "name": "Dogleg Severity (DLS)",
+     "unit": "deg/100 ft",
+     "typical_range": "0 – 30"
+    },
+    {
+     "name": "Course Length",
+     "unit": "ft",
+     "typical_range": "10 – 90"
+    },
+    {
+     "name": "Inclination at Start (Inc1)",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Toolface Angle",
+     "unit": "deg (magnetic or gravity)",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Azimuth at Start (Azm1)",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Target Northing",
+     "unit": "ft (N+/S-)",
+     "typical_range": "project-specific"
+    },
+    {
+     "name": "Target Easting",
+     "unit": "ft (E+/W-)",
+     "typical_range": "project-specific"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Inclination at End (Inc2)",
+     "unit": "deg"
+    },
+    {
+     "name": "Azimuth at End (Azm2)",
+     "unit": "deg"
+    },
+    {
+     "name": "Turn (delta-azimuth over course)",
+     "unit": "deg"
+    },
+    {
+     "name": "Course Northing Displacement",
+     "unit": "ft"
+    },
+    {
+     "name": "Course Easting Displacement",
+     "unit": "ft"
+    },
+    {
+     "name": "Azimuth Needed to Target",
+     "unit": "deg"
+    }
+   ],
+   "formula_generic": "\n1. Dogleg angle per course interval:\n   DL (deg) = DLS × (Course_Length / 100)\n\n2. Ending inclination (spherical trigonometry on the wellbore arc):\n   cos(Inc2) = cos(Inc1) × cos(DL) + sin(Inc1) × sin(DL) × cos(TF)\n   Inc2 = arccos(result)\n\n3. Turn (delta azimuth) over the course:\n   sin(Turn) = sin(DL) × sin(TF) / sin(Inc2)\n   Azm2 = Azm1 + Turn  (sign convention: TF right-of-high-side = positive turn)\n\n4. Course displacement (minimum-curvature or tangential):\n   dN = (Course_Length / 2) × (sin(Inc1)×cos(Azm1) + sin(Inc2)×cos(Azm2)) × RF\n   dE = (Course_Length / 2) × (sin(Inc1)×sin(Azm1) + sin(Inc2)×sin(Azm2)) × RF\n   where RF (ratio factor) = 2/DL × tan(DL/2)  [minimum-curvature; RF=1 for tangential]\n\n5. Azimuth needed to reach target from current position:\n   AzmNeeded = atan2((TargetE - CourseE), (TargetN - CourseN))  [converted to 0-360 bearing]\n",
+   "value": "Enables a directional driller or MWD hand to project the bit's landing azimuth and inclination for any planned course segment, and immediately back-calculate the toolface or azimuth adjustment required to steer toward a target — the core real-time steering decision tool at the rig.",
+   "context": "Commonly called an \"Ouija Board\" projection in the field; used continuously during sliding/rotating intervals to anticipate where the wellbore will land and what correction is needed; inputs update as each new survey station is received from the MWD tool.",
+   "intent": "Reduce the cognitive load on the directional driller by automating the spherical-trig projection loop so steering decisions can be made in seconds rather than minutes of manual calculation."
+  },
+  {
+   "module": "Drillstring Overpull Capacity Calculator",
+   "domain": "tubular",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Determines the maximum safe overpull force available at surface when pulling on a stuck or landed drillstring or casing string, ensuring tensile loads on the weakest pipe in the string do not exceed the rated pipe yield strength reduced by a design factor.",
+   "inputs": [
+    {
+     "name": "Mud Weight",
+     "unit": "ppg",
+     "typical_range": "8.5–18.0"
+    },
+    {
+     "name": "Buoyancy Factor",
+     "unit": "dimensionless",
+     "typical_range": "0.65–0.90"
+    },
+    {
+     "name": "Measured Depth to TD",
+     "unit": "ft",
+     "typical_range": "5,000–30,000"
+    },
+    {
+     "name": "BHA Component Air Weight per Unit Length",
+     "unit": "lb/ft",
+     "typical_range": "20–150"
+    },
+    {
+     "name": "BHA Component Length",
+     "unit": "ft",
+     "typical_range": "0–3,000"
+    },
+    {
+     "name": "Drill Pipe / Casing Air Weight per Unit Length",
+     "unit": "lb/ft",
+     "typical_range": "13–90"
+    },
+    {
+     "name": "Drill Pipe / Casing Length (per section)",
+     "unit": "ft",
+     "typical_range": "0–25,000"
+    },
+    {
+     "name": "Block (Hook) Weight",
+     "unit": "lb",
+     "typical_range": "50,000–200,000"
+    },
+    {
+     "name": "Pipe Minimum Yield Strength",
+     "unit": "lb",
+     "typical_range": "200,000–1,200,000"
+    },
+    {
+     "name": "Design Factor (tension)",
+     "unit": "dimensionless",
+     "typical_range": "0.75–1.00"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "BHA Buoyed Weight",
+     "unit": "lb"
+    },
+    {
+     "name": "Drill Pipe / Casing Section Buoyed Weight",
+     "unit": "lb"
+    },
+    {
+     "name": "Total String Buoyed Weight",
+     "unit": "lb"
+    },
+    {
+     "name": "Surface Indicator Weight (WOH)",
+     "unit": "lb"
+    },
+    {
+     "name": "Allowable Pipe Yield Load (design-factor-adjusted)",
+     "unit": "lb"
+    },
+    {
+     "name": "Available Overpull",
+     "unit": "lb"
+    }
+   ],
+   "formula_generic": "\n1. Buoyancy Factor: BF = 1 - (mud_weight_ppg / 65.5)\n2. Component Buoyed Weight: W_buoy = air_weight_lb_ft × length_ft × BF\n3. Total String Buoyed Weight: W_string = Σ(W_buoy) for all BHA and pipe sections\n4. Surface Indicator Weight (hook load in free-rotating static condition): W_indicator = W_string + block_weight\n5. Allowable Pipe Yield: F_allow = min_yield_strength × design_factor\n6. Available Overpull: OP = F_allow - W_indicator\n(For multi-section strings, OP is computed separately for each pipe grade using that section's yield rating; the governing limit is the minimum across all sections in the string.)",
+   "value": "Prevents exceeding pipe tensile limits during stuck-pipe or casing-landing operations, giving the driller a clear maximum pull force at surface.",
+   "context": "Applied at each casing point and for each unique string configuration (open hole drill, liner run, casing cementing string) where string composition or mud weight changes.",
+   "intent": "Enables pre-job risk assessment of tensile margin so the driller knows how hard to pull before risking parted pipe, and supports go/no-go decisions on overpull attempts."
+  },
+  {
+   "module": "Drill String Pipe Tally (Running Tally)",
+   "domain": "directional_survey",
+   "build_priority": "medium",
+   "confidence": "high",
+   "purpose": "Track each individual pipe joint added to the drill string during a run, accumulating stand length, cumulative pipe-in-hole length, estimated hole depth, and MWD survey depth as each joint or stand is picked up. Supports real-time depth management and stand/joint numbering for multiple pipe types (drill pipe, HWDP, drill collars, jars) across BHA runs.",
+   "inputs": [
+    {
+     "name": "Joint Number",
+     "unit": "count",
+     "typical_range": "1 – 300+"
+    },
+    {
+     "name": "Individual Joint (Pipe) Length",
+     "unit": "ft (×0.01 in raw data, so values ~4500 = 45.00 ft in tenths-of-inch encoding; in practice 28–46 ft per joint)",
+     "typical_range": "28 – 46 ft (DP); 28 – 32 ft (HWDP/DC)"
+    },
+    {
+     "name": "Joints per Stand (stand configuration)",
+     "unit": "count",
+     "typical_range": "2 or 3"
+    },
+    {
+     "name": "BHA Length (total)",
+     "unit": "ft",
+     "typical_range": "100 – 1000"
+    },
+    {
+     "name": "Depth-of-Knowledge Offset (DOK)",
+     "unit": "ft",
+     "typical_range": "-500 to 0 (correction factor, typically negative)"
+    },
+    {
+     "name": "Bit-to-MWD Sensor Distance",
+     "unit": "ft",
+     "typical_range": "30 – 100"
+    },
+    {
+     "name": "Casing Shoe Depth (SHOE)",
+     "unit": "ft",
+     "typical_range": "1000 – 15000"
+    },
+    {
+     "name": "Total Pipe Already in Hole at Run Start",
+     "unit": "ft",
+     "typical_range": "0 – 15000"
+    },
+    {
+     "name": "Average Joint Length (DP AVG)",
+     "unit": "ft",
+     "typical_range": "28 – 46"
+    },
+    {
+     "name": "Average Stand Length (Stand AVG)",
+     "unit": "ft",
+     "typical_range": "84 – 100"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Stand Length (cumulative length of joints in current stand)",
+     "unit": "ft"
+    },
+    {
+     "name": "Cumulative Total Pipe In Hole",
+     "unit": "ft"
+    },
+    {
+     "name": "Pipe Plus BHA Depth (total string from surface)",
+     "unit": "ft"
+    },
+    {
+     "name": "Estimated Hole Depth (bit depth)",
+     "unit": "ft"
+    },
+    {
+     "name": "MWD Survey Depth (sensor depth)",
+     "unit": "ft"
+    },
+    {
+     "name": "Stand Number In / Stand Number Out",
+     "unit": "count"
+    },
+    {
+     "name": "Average Joint Length (running average)",
+     "unit": "ft"
+    },
+    {
+     "name": "Average Stand Length (running average)",
+     "unit": "ft"
+    }
+   ],
+   "formula_generic": "\n1. Stand Length: Sum the individual joint lengths for each stand group (2 or 3 joints per stand). Cumulative stand length resets at the start of each BHA run sheet.\n\n2. Cumulative Total Pipe In Hole:\n   Total_Pipe_n = Total_Pipe_(n-1) + Joint_Length_n\n   (First row: Total_Pipe_1 = Pipe_Already_In_Hole + Joint_Length_1)\n\n3. Pipe and BHA Depth:\n   Pipe_and_BHA_n = Total_Pipe_n + BHA_Length\n\n4. Estimated Hole Depth (bit depth):\n   Hole_Depth_n = (Pipe_and_BHA_n + DOK) / 100\n   (DOK is a signed depth-of-knowledge correction; the division by 100 reflects the raw length encoding in hundredths of a foot)\n\n5. MWD Survey Depth (sensor depth):\n   Survey_Depth_n = Hole_Depth_n - Bit_to_Sensor_Distance / 100\n\n6. Joint Number (stand-based address):\n   If rig is on stand S and sub-joint position D, Joint_Number = (S × joints_per_stand) + D\n\n7. Average Joint Length:\n   DP_AVG = Total_Pipe_n / n  (running mean of all joint lengths in the run)\n\n8. Average Stand Length:\n   Stand_AVG = DP_AVG × joints_per_stand\n",
+   "value": "Eliminates manual depth-tracking errors at the rig floor during tripping operations; provides a continuous, formula-driven record of bit depth and MWD sensor depth for each joint added, enabling accurate directional survey correlation and stand-by-stand depth management across multiple pipe types and BHA runs.",
+   "context": "Used by directional drillers and MWD supervisors during run-in-hole (RIH) operations; one sheet per BHA run per pipe type; designed to extend by copy-paste as additional joints are tripped in, with a stand-count-down column tracking remaining pipe on the pipe rack.",
+   "intent": "Replace a manual or ad-hoc tally sheet with a registry-driven compute panel that auto-increments joint and stand numbers, accumulates running totals, and computes bit/sensor depth in real time as each joint length is entered, with configurable joints-per-stand and BHA parameters per run."
+  },
+  {
+   "module": "Dogleg Decomposition — Build and Turn Rate Prediction from Toolface",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Given a planned dogleg severity and toolface orientation, predict the resulting build rate (inclination change per unit depth) and turn/walk rate (azimuth change per unit depth) over a measured-depth interval. Used during directional planning and real-time trajectory control to anticipate how a given tool-face setting will split the total curvature between the vertical and horizontal planes.",
+   "inputs": [
+    {
+     "name": "Dogleg Severity (Total)",
+     "unit": "deg/100 ft",
+     "typical_range": "1 – 10 deg/100 ft"
+    },
+    {
+     "name": "Toolface Angle",
+     "unit": "deg",
+     "typical_range": "0 – 360 deg (0 = pure build, 90 = pure right turn)"
+    },
+    {
+     "name": "Measured Depth — Upper Station",
+     "unit": "ft",
+     "typical_range": "0 – 30000 ft"
+    },
+    {
+     "name": "Measured Depth — Lower Station",
+     "unit": "ft",
+     "typical_range": "0 – 30000 ft"
+    },
+    {
+     "name": "Inclination — Upper Station",
+     "unit": "deg",
+     "typical_range": "0 – 90 deg"
+    },
+    {
+     "name": "Inclination — Lower Station",
+     "unit": "deg",
+     "typical_range": "0 – 90 deg"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Build Rate",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Turn (Walk) Rate",
+     "unit": "deg/100 ft"
+    }
+   ],
+   "formula_generic": "delta_MD = MD_lower - MD_upper\nDL_interval = DLS_total * (delta_MD / 100)\nBuild_Rate (deg/100 ft) = DLS_total * cos(TF_rad)\nTurn_Rate  (deg/100 ft) = DLS_total * sin(TF_rad)\n\nwhere TF_rad = toolface angle converted to radians.\nThe inclination values at the two stations serve as context / sanity-check inputs (verify that I2 - I1 is consistent with the predicted build over delta_MD).",
+   "value": "Converts a single planned dogleg + toolface number into separate build and turn components, enabling quick trajectory-steering decisions without a full minimum-curvature survey run.",
+   "context": "Core directional-drilling planning aid; applies whenever a motor or RSS tool-face is being optimized to meet a wellbore target.",
+   "intent": "Allow the directional driller or engineer to answer: \"If I hold this toolface, how fast will I build angle versus walk azimuth?\" — bridging planned dogleg severity to per-plane rates."
+  },
+  {
+   "module": "Projection to Bit — Survey Extrapolation and Target Azimuth Window",
+   "domain": "directional_survey",
+   "build_priority": "high",
+   "confidence": "medium",
+   "purpose": "Given the last recorded survey station and the current bit position (measured depth, inclination, azimuth), extrapolate the wellbore geometry forward to the bit and compute the azimuth corrections required to reach the center, left boundary, and right boundary of a directional target window. Used by directional drillers to assess steering decisions in real time between survey stations.",
+   "inputs": [
+    {
+     "name": "Measured Depth at Last Survey",
+     "unit": "ft (or m)",
+     "typical_range": "0 – 30000 ft"
+    },
+    {
+     "name": "Inclination at Last Survey",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Azimuth at Last Survey",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Measured Depth at Bit",
+     "unit": "ft (or m)",
+     "typical_range": "0 – 30000 ft"
+    },
+    {
+     "name": "Inclination at Bit",
+     "unit": "deg",
+     "typical_range": "0 – 90"
+    },
+    {
+     "name": "Azimuth at Bit",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Target Center Azimuth",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Target Left Boundary Azimuth",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    },
+    {
+     "name": "Target Right Boundary Azimuth",
+     "unit": "deg",
+     "typical_range": "0 – 360"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Projected Azimuth to Target Center",
+     "unit": "deg"
+    },
+    {
+     "name": "Projected Azimuth to Target Left Boundary",
+     "unit": "deg"
+    },
+    {
+     "name": "Projected Azimuth to Target Right Boundary",
+     "unit": "deg"
+    }
+   ],
+   "formula_generic": "1. Compute the course length from the last survey to the bit: dMD = MD_bit - MD_survey.\n\n2. Using minimum curvature, project the 3-D position at the bit from the last survey station:\n   - dogleg_angle = arccos(cos(inc2 - inc1) - sin(inc1)*sin(inc2)*(1 - cos(azi2 - azi1)))\n   - ratio factor RF = (2/dogleg_angle) * tan(dogleg_angle/2)  [RF = 1 when dogleg = 0]\n   - dNorth = (dMD/2) * (sin(inc1)*cos(azi1) + sin(inc2)*cos(azi2)) * RF\n   - dEast  = (dMD/2) * (sin(inc1)*sin(azi1) + sin(inc2)*sin(azi2)) * RF\n   - dTVD   = (dMD/2) * (cos(inc1) + cos(inc2)) * RF\n\n3. From the projected bit position in N/E/TVD space, compute the horizontal displacement vector to each target boundary (center, left, right).\n\n4. For each target point, the required azimuth = atan2(dEast_to_target, dNorth_to_target), converted to 0–360 deg convention.\n\n   The three output azimuths (center, left, right) represent the compass directions the bit must travel to intersect each edge of the target window, informing the driller on required toolface and steering corrections.",
+   "value": "Provides real-time steering guidance between survey stations, quantifying how far the current trajectory deviates from the target window and what azimuth correction is required.",
+   "context": "Directional drilling — used from spud to TD on deviated and horizontal wells; critical during landing, curve build, and lateral sections where target windows are tight.",
+   "intent": "Replace manual or spreadsheet-based projection calculations with a registry-driven panel that updates continuously as new survey and bit-depth data arrive, reducing driller cognitive load and steering error."
+  },
+  {
+   "module": "Mud Pump Output Calculator",
+   "domain": "hydraulics",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Compute the volumetric displacement per stroke of a mud pump (triplex or duplex) from liner geometry and mechanical efficiency, yielding flow volume per stroke in both gallons and barrels for use in surface flow-rate and hole-fill calculations.",
+   "inputs": [
+    {
+     "name": "Liner Bore Diameter",
+     "unit": "in",
+     "typical_range": "4.0 – 7.5"
+    },
+    {
+     "name": "Stroke Length",
+     "unit": "in",
+     "typical_range": "8 – 20"
+    },
+    {
+     "name": "Number of Cylinders",
+     "unit": "dimensionless (integer)",
+     "typical_range": "2 (duplex) or 3 (triplex)"
+    },
+    {
+     "name": "Pump Action",
+     "unit": "dimensionless (single or double acting)",
+     "typical_range": "single-acting (triplex) or double-acting (duplex)"
+    },
+    {
+     "name": "Rod Diameter (duplex only)",
+     "unit": "in",
+     "typical_range": "2.0 – 3.0"
+    },
+    {
+     "name": "Pump Volumetric Efficiency",
+     "unit": "%",
+     "typical_range": "85 – 98"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Pump Output",
+     "unit": "gal/stk"
+    },
+    {
+     "name": "Pump Output",
+     "unit": "bbl/stk"
+    }
+   ],
+   "formula_generic": "Triplex single-acting: Output (gal/stk) = 3 * (pi/4) * D^2 * L * Ev / 231\n\nDuplex double-acting: Output (gal/stk) = [2*(pi/4)*D^2*L - (pi/4)*d_rod^2*L] * Ev / 231\n\nwhere D = liner bore diameter (in), L = stroke length (in), d_rod = rod diameter (in), Ev = volumetric efficiency (decimal), 231 = in^3 per US gallon.\n\nUnit conversion: Output (bbl/stk) = Output (gal/stk) / 42",
+   "value": "Foundational hydraulics input — every flow-rate, ECD, and hole-fill calculation downstream depends on knowing accurate pump output per stroke.",
+   "context": "Entered once per pump at rig-up; values rarely change during a well unless liners are swapped. Supports both pump bays independently so total rig output = sum across active pumps.",
+   "intent": "Eliminate manual look-up from pump manufacturer charts; give the driller and engineer a live, auditable per-stroke volume that feeds SPM-to-flow-rate conversion."
+  },
+  {
+   "module": "Stuck Pipe Free Point Depth (Stretch Method)",
+   "domain": "well_control",
+   "build_priority": "medium",
+   "confidence": "high",
+   "purpose": "Estimates the depth at which a drill string is stuck (the free point) by measuring elastic axial stretch of the free portion of the string under a known overpull force, using Hooke's Law for steel tubing.",
+   "inputs": [
+    {
+     "name": "Pipe Outer Diameter (OD)",
+     "unit": "in",
+     "typical_range": "2.375 – 6.625"
+    },
+    {
+     "name": "Pipe Inner Diameter (ID)",
+     "unit": "in",
+     "typical_range": "1.815 – 5.965"
+    },
+    {
+     "name": "Overpull Force Above Normal String Weight",
+     "unit": "1000 lbf (kips)",
+     "typical_range": "15 – 50"
+    },
+    {
+     "name": "Measured Stretch",
+     "unit": "in",
+     "typical_range": "3.5 – 40"
+    },
+    {
+     "name": "Pipe Weight per Foot (nominal, for chart method)",
+     "unit": "lb/ft",
+     "typical_range": "4.85 – 25.2"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Estimated Free Pipe Length (Depth to Stuck Point)",
+     "unit": "ft"
+    },
+    {
+     "name": "Free Point Constant (per pipe size)",
+     "unit": "in / (1000 lbf · 1000 ft)"
+    },
+    {
+     "name": "Pipe Metal Cross-Sectional Area",
+     "unit": "sq in"
+    }
+   ],
+   "formula_generic": "1. Pipe metal cross-sectional area: A = π/4 × (OD² − ID²)\n\n2. Free Point Constant (FPC): FPC = E / (12 × 1000 × 1000) × A, where E = 30,000,000 psi (Young's modulus for steel). Simplified: FPC ≈ 735,294 × A  [units: in per 1000 lbf per 1000 ft]\n\n3. Free pipe length (analytical method): L_free (ft) = (Stretch_in × FPC) / Overpull_kips  — equivalently: L_free = (Stretch × A × E) / (Overpull_lbf × 12)\n\n4. Free pipe length (rule-of-thumb / chart method): L_free (ft) = (Stretch_in / 3.5) × 1000  — valid only when overpull matches the standardized chart pull for the pipe size in use",
+   "value": "Allows a driller or engineer to localize the stuck point without running a free-point indicator tool, enabling faster fishing or jar placement decisions.",
+   "context": "Standard well-control / fishing operation calculation; formulae are Hooke's Law applied to drill string steel, widely documented in drilling engineering references dating to the 1970s.",
+   "intent": "Port into a compute-panel module with dual input paths: (a) full analytical path with OD/ID/overpull/stretch, and (b) a lookup-table path using nominal pipe size and chart overpull with stretch-only input."
+  },
+  {
+   "module": "Bit Hydraulics Optimizer — TFA and Jet Nozzle Sizing",
+   "domain": "hydraulics",
+   "build_priority": "high",
+   "confidence": "high",
+   "purpose": "Sizes drill bit jet nozzles and audits the complete surface-to-bit pressure budget for a planned bit run, using pump test data from the previous run to predict jet pressure drop, impact force, annular velocity, jet velocity, jet hydraulic horsepower, and downhole motor performance at the selected circulation rate.",
+   "inputs": [
+    {
+     "name": "Design pump pressure",
+     "unit": "psi",
+     "typical_range": "2500–5000"
+    },
+    {
+     "name": "Mud weight",
+     "unit": "ppg",
+     "typical_range": "8.6–18"
+    },
+    {
+     "name": "Mud bypass fraction (motor bearings)",
+     "unit": "%",
+     "typical_range": "0–10"
+    },
+    {
+     "name": "Jet nozzle size (each, up to 7)",
+     "unit": "1/32 in",
+     "typical_range": "8–20"
+    },
+    {
+     "name": "PDC / diamond bit TFA (if applicable)",
+     "unit": "in²",
+     "typical_range": "0–1"
+    },
+    {
+     "name": "Previous-run pump pressure",
+     "unit": "psi",
+     "typical_range": "1000–5000"
+    },
+    {
+     "name": "Previous-run circulation rate",
+     "unit": "gpm",
+     "typical_range": "100–1200"
+    },
+    {
+     "name": "Previous-run tool pressure loss",
+     "unit": "psi",
+     "typical_range": "0–1500"
+    },
+    {
+     "name": "Previous-run downhole motor pressure drop",
+     "unit": "psi",
+     "typical_range": "0–800"
+    },
+    {
+     "name": "Friction equation exponent (M)",
+     "unit": "dimensionless",
+     "typical_range": "1.0–2.0"
+    },
+    {
+     "name": "Friction equation coefficient (j)",
+     "unit": "dimensionless",
+     "typical_range": "0.5–2.0"
+    },
+    {
+     "name": "Selected pump rate for next run",
+     "unit": "gpm",
+     "typical_range": "100–1200"
+    },
+    {
+     "name": "Selected jet sizes for next run (each)",
+     "unit": "1/32 in",
+     "typical_range": "8–20"
+    },
+    {
+     "name": "Hole size (bit diameter)",
+     "unit": "in",
+     "typical_range": "4.75–26"
+    },
+    {
+     "name": "BHA outer diameter",
+     "unit": "in",
+     "typical_range": "3–12"
+    },
+    {
+     "name": "Drill pipe outer diameter",
+     "unit": "in",
+     "typical_range": "3.5–6.625"
+    },
+    {
+     "name": "Downhole motor volumetric efficiency",
+     "unit": "%",
+     "typical_range": "50–95"
+    },
+    {
+     "name": "Downhole motor displacement",
+     "unit": "gal/rev",
+     "typical_range": "0.1–5"
+    },
+    {
+     "name": "Tool pressure loss at selected rate",
+     "unit": "psi",
+     "typical_range": "0–1500"
+    },
+    {
+     "name": "Motor pressure drop at selected rate",
+     "unit": "psi",
+     "typical_range": "0–800"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Total Flow Area (TFA) of selected jets",
+     "unit": "in²"
+    },
+    {
+     "name": "Effective TFA used in formulas (jets + PDC)",
+     "unit": "in²"
+    },
+    {
+     "name": "Optimum jet pressure drop (max impact force criterion)",
+     "unit": "psi"
+    },
+    {
+     "name": "Optimum circulation rate",
+     "unit": "gpm"
+    },
+    {
+     "name": "Optimum system pressure loss",
+     "unit": "psi"
+    },
+    {
+     "name": "Actual jet pressure drop at selected rate",
+     "unit": "psi"
+    },
+    {
+     "name": "Expected pump pressure on next bit run",
+     "unit": "psi"
+    },
+    {
+     "name": "Annular velocity around drill pipe",
+     "unit": "ft/min"
+    },
+    {
+     "name": "Annular velocity around BHA",
+     "unit": "ft/min"
+    },
+    {
+     "name": "Bit impact force",
+     "unit": "lbf"
+    },
+    {
+     "name": "Impact force per unit hole area",
+     "unit": "lbf/in²"
+    },
+    {
+     "name": "Jet hydraulic horsepower",
+     "unit": "hp"
+    },
+    {
+     "name": "Jet HHP per unit hole area",
+     "unit": "hp/in²"
+    },
+    {
+     "name": "Jet velocity",
+     "unit": "ft/s"
+    },
+    {
+     "name": "Downhole motor RPM",
+     "unit": "rpm"
+    },
+    {
+     "name": "Downhole motor horsepower consumption",
+     "unit": "hp"
+    },
+    {
+     "name": "Downhole motor torque",
+     "unit": "lbf·ft"
+    }
+   ],
+   "formula_generic": "\n1. Nozzle TFA (in²): TFA = Σ [ π/4 × (d_n / 32)² ] for each nozzle of diameter d_n (in 1/32-inch units).\n2. Jet pressure drop (psi): ΔP_jet = ρ_mud × Q² / (12031 × Cd² × TFA²), where ρ_mud is in ppg, Q in gpm, Cd ≈ 0.95.\n3. Impact force (lbf): IF = 0.01823 × Cd × TFA × √(ρ_mud × ΔP_jet).\n4. Jet velocity (ft/s): V_jet = Q / (3.117 × TFA).\n5. Jet HHP (hp): HHP_jet = ΔP_jet × Q / 1714.\n6. Annular velocity (ft/min): AV = Q / [2.448 × (D_h² − D_p²)], where D_h and D_p are hole and pipe OD in inches.\n7. System pressure balance: P_pump = ΔP_jet + ΔP_friction + ΔP_tool + ΔP_motor.\n8. Friction scaling from pump test: ΔP_friction_new = ΔP_friction_test × (Q_new / Q_test)^M, using fitted exponent M.\n9. Optimum ΔP_jet for maximum impact force: ΔP_jet_opt = (2/3) × P_pump_design (parasitic losses minimized criterion).\n10. Motor RPM: N = Q_motor × Ev / Disp, where Q_motor = Q × (1 − bypass/100), Ev = volumetric efficiency, Disp = displacement in gal/rev.\n11. Motor HP: HP_motor = ΔP_motor × Q_motor / 1714.\n12. Motor torque (lbf·ft): T = (HP_motor × 5252) / N.\n",
+   "value": "Prevents both under-powered (low ROP) and over-pressured (pump damage, washout) bit runs by optimizing the nozzle configuration before the bit hits bottom.",
+   "context": "Standard pre-bit-run deliverable in a drilling engineering workflow; pairs with the motor specification sheet and the drill string pressure-loss model.",
+   "intent": "Enable the driller or drilling engineer to select jet nozzle sizes that maximize impact force or HHP within the pump pressure budget, and to verify motor and annular velocity constraints simultaneously."
+  },
+  {
+   "module": "Azimuthal Turn Rate Calculator",
+   "domain": "directional_survey",
+   "build_priority": "medium",
+   "confidence": "high",
+   "purpose": "Computes the azimuthal turn rate (degrees per 100 ft of drilled footage) achievable for a given dogleg severity, and the footage required to execute a specified azimuth change. Used during directional well planning and real-time steering to convert a target azimuth change into a required build/turn footage at a known DLS.",
+   "inputs": [
+    {
+     "name": "Dogleg Severity (DLS)",
+     "unit": "deg/100 ft",
+     "typical_range": "1 – 10 deg/100 ft"
+    },
+    {
+     "name": "Required Azimuth Change",
+     "unit": "degrees",
+     "typical_range": "1 – 180 deg"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Turn Rate per 100 ft",
+     "unit": "deg/100 ft"
+    },
+    {
+     "name": "Footage Required to Execute Turn",
+     "unit": "ft"
+    }
+   ],
+   "formula_generic": "Turn Rate (deg/100 ft) = DLS (deg/100 ft) [this equals the available turn rate when the BHA is fully oriented azimuthally]. Footage Required (ft) = (Azimuth Change (deg) / DLS (deg/100 ft)) × 100. Equivalently, using the lookup convention in the source: a DLS-specific divisor constant K = 60 × DLS is divided by the desired azimuth change to yield deg/100 ft of turn: Turn Rate = K / Azimuth Change, where K = 60 × DLS. All forms are algebraically equivalent under the standard minimum-curvature small-angle approximation.",
+   "value": "Translates a rig-measurable DLS into a concrete footage budget for any required azimuth correction, enabling steering decisions without iterative hand calculations.",
+   "context": "Standard directional drilling planning tool; applicable to any rotary-steerable or mud-motor BHA where DLS is known or contractually specified.",
+   "intent": "Reduce driller/directional hand cognitive load when planning azimuth corrections; supports go/no-go decisions on whether a current BHA can hit target in remaining footage."
+  },
+  {
+   "module": "Time-Depth Drill Schedule (ROP Lookup Table)",
+   "domain": "directional_survey",
+   "build_priority": "medium",
+   "confidence": "high",
+   "purpose": "Pre-computed lookup table that maps elapsed clock time to cumulative drilled depth for a set of fixed penetration rates (1, 2, and 4 ft/hr). Allows field personnel to verify real-time depth progress against a target rate of penetration without manual arithmetic — critical for slow-drilling operations such as cement drilling, formation integrity tests, or controlled-weight-on-bit intervals.",
+   "inputs": [
+    {
+     "name": "Rate of Penetration (ROP)",
+     "unit": "ft/hr",
+     "typical_range": "1–4 ft/hr (slow-drilling regime)"
+    },
+    {
+     "name": "Elapsed Drilling Time",
+     "unit": "min",
+     "typical_range": "0–60 min per foot increment"
+    },
+    {
+     "name": "Depth Increment Interval (tick resolution)",
+     "unit": "min",
+     "typical_range": "3–6 min depending on ROP"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Cumulative Depth Drilled",
+     "unit": "ft"
+    },
+    {
+     "name": "Fractional Depth at Sub-Interval Tick",
+     "unit": "ft (decimal)"
+    }
+   ],
+   "formula_generic": "Depth_drilled (ft) = ROP (ft/hr) × [Elapsed_time (min) / 60]\\n\\nAt each clock tick interval (Δt minutes): Depth_increment = ROP × (Δt / 60)\\nCumulative depth at any tick = ROP × (total elapsed minutes / 60)\\n\\nThe schedule pre-computes this at fixed ROPs (1, 2, 4 ft/hr) with tick resolution = 60 / (ROP × 10) minutes, producing one row per tenth-of-a-foot within each whole-foot band, and a summary row at each whole-foot milestone.",
+   "value": "Eliminates real-time arithmetic for drillers monitoring progress against a controlled penetration rate; prevents over- or under-drilling controlled intervals.",
+   "context": "Used during slow/controlled drilling phases (cement drilling, FIT/LOT, shoe-track drill-out) where ROP discipline is safety-critical and a clock-to-depth card is kept at the driller's console.",
+   "intent": "Digitize the paper drill-schedule card into a registry-driven panel: user selects a target ROP, enters start time or elapsed time, and the panel returns expected current depth and deviation from actual depth — replacing a printed lookup table with a live pacing indicator."
+  },
+  {
+   "module": "Whipstock DLS Expectancy Calculator",
+   "domain": "directional_survey",
+   "build_priority": "medium",
+   "confidence": "high",
+   "purpose": "Estimate the dogleg severity (DLS) generated by a whipstock deflection tool based on its geometry, enabling drilling engineers to predict the resulting wellbore curvature before setting the tool and milling the casing exit window.",
+   "inputs": [
+    {
+     "name": "Whipstock OD",
+     "unit": "in",
+     "typical_range": "4.25 – 11.5"
+    },
+    {
+     "name": "Face Length",
+     "unit": "ft",
+     "typical_range": "12.1 – 24.2"
+    },
+    {
+     "name": "Face Angle",
+     "unit": "deg",
+     "typical_range": "1.5 – 2.23"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "Dogleg Severity (DLS)",
+     "unit": "deg/100 ft"
+    }
+   ],
+   "formula_generic": "DLS (deg/100 ft) = (Face Angle [deg] / Face Length [ft]) × 100. The whipstock OD serves as a lookup/filter key to retrieve the geometry pair (Face Length, Face Angle) for the selected tool size; once the geometry is known, the DLS follows from the linear ramp relationship above.",
+   "value": "Eliminates manual interpolation of whipstock reference tables; gives engineers an instant DLS expectancy to compare against wellbore design targets before committing to a sidetrack operation.",
+   "context": "Used during sidetrack planning when a whipstock is selected to exit an existing wellbore through a milled casing window; output feeds directly into directional well-plan dogleg constraints and BHA selection.",
+   "intent": "Translate vendor whipstock tool geometry into a planning-grade DLS value, bridging the gap between tool catalog data and directional-drilling design software."
+  }
+ ]
+}
