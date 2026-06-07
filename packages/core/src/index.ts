@@ -1,5 +1,6 @@
 export * from './enums';
 export * from './types';
+export * from './views';
 export * from './transitions';
 export * from './templates';
 export * from './validation';

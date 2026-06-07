@@ -1,5 +1,6 @@
 import type { JobStatus } from './enums';
-import type { Job, JobTemplate, JobWithRelations, TemplateFieldDef, TemplateStageDef, Well } from './types';
+import type { Asset, Job, JobTemplate, JobWithRelations, TemplateFieldDef, TemplateStageDef, Well } from './types';
+import type { AssetTreeNode, WellDetail } from './views';
 
 export interface TemplateBundle {
   template: JobTemplate;
@@ -22,6 +23,9 @@ export interface CreateJobFromTemplateInput {
 export interface Repository {
   listWells(orgId: string): Promise<Well[]>;
   getWell(id: string): Promise<Well | null>;
+  listAssets(orgId: string): Promise<Asset[]>;
+  getAssetTree(orgId: string): Promise<AssetTreeNode[]>;
+  getWellDetail(wellId: string): Promise<WellDetail | null>;
   listTemplates(orgId: string): Promise<JobTemplate[]>;
   getTemplate(id: string): Promise<TemplateBundle | null>;
   listJobs(orgId: string): Promise<Job[]>;

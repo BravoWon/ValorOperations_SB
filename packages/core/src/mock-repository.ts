@@ -7,7 +7,8 @@ import type {
   Repository,
   TemplateBundle,
 } from './repository';
-import type { Job, JobStatusHistory, JobWithRelations, Stage, Well, JobTemplate } from './types';
+import type { Asset, Job, JobStatusHistory, JobWithRelations, Stage, Well, JobTemplate } from './types';
+import type { AssetTreeNode, WellDetail } from './views';
 
 export class MockRepository implements Repository {
   private data: SeedData;
@@ -36,6 +37,41 @@ export class MockRepository implements Repository {
 
   async getWell(id: string): Promise<Well | null> {
     return this.data.wells.find((w) => w.id === id) ?? null;
+  }
+
+  async listAssets(orgId: string): Promise<Asset[]> {
+    return this.data.assets.filter((a) => a.orgId === orgId);
+  }
+
+  async getAssetTree(orgId: string): Promise<AssetTreeNode[]> {
+    return this.data.assets
+      .filter((a) => a.orgId === orgId)
+      .map((asset) => ({
+        asset,
+        pads: this.data.pads
+          .filter((p) => p.assetId === asset.id)
+          .map((pad) => ({
+            pad,
+            wells: this.data.wells.filter((w) => w.padId === pad.id),
+          })),
+      }));
+  }
+
+  async getWellDetail(wellId: string): Promise<WellDetail | null> {
+    const well = this.data.wells.find((w) => w.id === wellId);
+    if (!well) return null;
+    const wellbores = this.data.wellbores
+      .filter((wb) => wb.wellId === wellId)
+      .map((wb) => ({
+        ...wb,
+        formations: this.data.formations
+          .filter((f) => f.wellboreId === wb.id)
+          .sort((a, b) => a.sortOrder - b.sortOrder),
+        casingStrings: this.data.casingStrings
+          .filter((c) => c.wellboreId === wb.id)
+          .sort((a, b) => a.sortOrder - b.sortOrder),
+      }));
+    return { well, wellbores };
   }
 
   async listTemplates(orgId: string): Promise<JobTemplate[]> {
