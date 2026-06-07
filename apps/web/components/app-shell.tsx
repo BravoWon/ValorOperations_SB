@@ -77,7 +77,9 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
         </div>
       </aside>
 
-      <main className="flex-1 px-8 py-8">{children}</main>
+      <main className="flex-1 px-6 py-8 md:px-8 lg:px-10">
+        <div className="page-container">{children}</div>
+      </main>
     </div>
   );
 }
