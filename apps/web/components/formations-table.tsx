@@ -1,10 +1,10 @@
 import type { Formation } from '@valor/core';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EmptyState } from '@/components/ui/states';
 
 export function FormationsTable({ formations }: { formations: Formation[] }) {
-  if (formations.length === 0)
-    return <p className="text-sm text-muted-foreground/70">No formations recorded.</p>;
+  if (formations.length === 0) return <EmptyState title="No formations recorded" compact />;
   return (
     <Table>
       <TableHeader>
@@ -19,8 +19,12 @@ export function FormationsTable({ formations }: { formations: Formation[] }) {
         {formations.map((f) => (
           <TableRow key={f.id} className={f.targetZone ? 'bg-gold/[0.04]' : undefined}>
             <TableCell className="font-display font-medium text-cream">{f.name}</TableCell>
-            <TableCell className="data text-right text-foreground/85">{f.topMdFt ?? '—'}</TableCell>
-            <TableCell className="data text-right text-foreground/85">{f.bottomMdFt ?? '—'}</TableCell>
+            <TableCell className="data text-right text-foreground/85">
+              {f.topMdFt ?? <span className="text-muted-foreground/40">—</span>}
+            </TableCell>
+            <TableCell className="data text-right text-foreground/85">
+              {f.bottomMdFt ?? <span className="text-muted-foreground/40">—</span>}
+            </TableCell>
             <TableCell className="text-right">
               {f.targetZone ? (
                 <Badge>Target</Badge>

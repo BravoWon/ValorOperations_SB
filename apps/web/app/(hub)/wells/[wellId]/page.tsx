@@ -6,6 +6,7 @@ import { WellHeader } from '@/components/well-header';
 import { FormationsTable } from '@/components/formations-table';
 import { CasingTable } from '@/components/casing-table';
 import { Separator } from '@/components/ui/separator';
+import { EmptyState } from '@/components/ui/states';
 
 export default async function WellPage({ params }: { params: Promise<{ wellId: string }> }) {
   const { wellId } = await params;
@@ -13,7 +14,7 @@ export default async function WellPage({ params }: { params: Promise<{ wellId: s
   if (!detail) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="stagger space-y-6">
       <nav className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
         <Link href="/assets" className="transition-colors hover:text-gold-light">
           Assets
@@ -25,7 +26,11 @@ export default async function WellPage({ params }: { params: Promise<{ wellId: s
       <WellHeader well={detail.well} />
 
       {detail.wellbores.length === 0 && (
-        <p className="text-sm text-muted-foreground/70">No wellbores recorded for this well yet.</p>
+        <EmptyState
+          icon={<GitBranch className="h-6 w-6" strokeWidth={1.5} />}
+          title="No wellbores recorded"
+          description="Wellbore designs, formations, and casing programs will appear here once logged."
+        />
       )}
 
       {detail.wellbores.map((wb) => (

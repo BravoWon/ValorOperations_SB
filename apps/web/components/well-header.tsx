@@ -7,7 +7,9 @@ function Field({ label, value }: { label: string; value?: string | number }) {
       <div className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-gold/60">
         {label}
       </div>
-      <div className="data mt-1 text-sm text-cream">{value ?? '—'}</div>
+      <div className="data mt-1 text-sm text-cream">
+        {value ?? <span className="text-muted-foreground/40">—</span>}
+      </div>
     </div>
   );
 }

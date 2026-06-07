@@ -21,15 +21,14 @@ export function KpiStrip({ jobs }: { jobs: Job[] }) {
   ];
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {cards.map((c, i) => {
+    <div className="stagger mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {cards.map((c) => {
         const tone = TONE[c.tone];
         const Icon = c.icon;
         return (
           <div
             key={c.label}
-            className="glass animate-fade-up relative overflow-hidden rounded-lg p-5"
-            style={{ animationDelay: `${i * 70}ms` }}
+            className="glass lift relative overflow-hidden rounded-lg p-5"
           >
             <div
               className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${tone.glow} to-transparent blur-2xl`}

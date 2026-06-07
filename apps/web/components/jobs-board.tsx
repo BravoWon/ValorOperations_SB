@@ -1,4 +1,5 @@
 import type { Job, JobStatus } from '@valor/core';
+import { EmptyState } from '@/components/ui/states';
 
 // Board shows the in-flight lifecycle columns. `suspended`/`closed` jobs are counted in
 // the KPI strip but not given a column here; revisit column set when those states see real use.
@@ -11,14 +12,13 @@ const COLUMNS: { status: JobStatus; title: string; dot: string; accent: string }
 
 export function JobsBoard({ jobs }: { jobs: Job[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {COLUMNS.map((col, ci) => {
+    <div className="stagger grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {COLUMNS.map((col) => {
         const colJobs = jobs.filter((j) => j.status === col.status);
         return (
           <div
             key={col.status}
-            className="animate-fade-up flex flex-col rounded-lg border border-white/[0.06] bg-white/[0.015] p-3"
-            style={{ animationDelay: `${ci * 60}ms` }}
+            className="flex flex-col rounded-lg border border-white/[0.06] bg-white/[0.015] p-3"
           >
             <div className="mb-3 flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
@@ -35,7 +35,7 @@ export function JobsBoard({ jobs }: { jobs: Job[] }) {
               {colJobs.map((j) => (
                 <div
                   key={j.id}
-                  className="glass group relative overflow-hidden rounded-md p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-gold/30"
+                  className="glass lift group relative overflow-hidden rounded-md p-3.5"
                 >
                   <span
                     className={`absolute left-0 top-0 h-full w-[2px] ${col.dot} opacity-60 transition-opacity group-hover:opacity-100`}
@@ -51,11 +51,7 @@ export function JobsBoard({ jobs }: { jobs: Job[] }) {
                   </div>
                 </div>
               ))}
-              {colJobs.length === 0 && (
-                <div className="rounded-md border border-dashed border-white/[0.07] px-3 py-6 text-center font-mono text-[0.6875rem] uppercase tracking-wider text-muted-foreground/40">
-                  None
-                </div>
-              )}
+              {colJobs.length === 0 && <EmptyState title="None" compact />}
             </div>
           </div>
         );
