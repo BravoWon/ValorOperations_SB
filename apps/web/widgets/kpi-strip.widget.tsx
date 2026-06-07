@@ -1,5 +1,4 @@
 'use client';
-import { Gauge } from 'lucide-react';
 import { registerWidget } from '@/lib/widgets/registry';
 import { KpiStrip } from '@/components/kpi-strip';
 import { useRepoData } from '@/lib/use-repo-data';
