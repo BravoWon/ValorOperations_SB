@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# next.js / build output
+.next/
+out/
+dist/
+build/
+
+# env / secrets
+.env
+.env*.local
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+
+# brainstorm session state + mockups (transient)
+.superpowers/
+
+# machine-specific skill symlinks (recreated via `npx skills`)
+.claude/skills/
+
+# logs / OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
