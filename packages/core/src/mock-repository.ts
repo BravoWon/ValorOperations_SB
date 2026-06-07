@@ -9,7 +9,7 @@ import type {
 } from './repository';
 import type { Asset, Job, JobStatusHistory, JobWithRelations, Stage, Well, JobTemplate } from './types';
 import type { AssetTreeNode, WellDetail } from './views';
-import { createDefaultDashboard, type DashboardLayout } from './widgets/types';
+import { createDefaultDashboard, isValidDashboardLayout, type DashboardLayout } from './widgets/types';
 
 export class MockRepository implements Repository {
   private data: SeedData;
@@ -194,8 +194,8 @@ export class MockRepository implements Repository {
       const raw = store.getItem(this.dashboardKey(ownerId));
       if (raw) {
         try {
-          const parsed = JSON.parse(raw) as DashboardLayout;
-          if (parsed && typeof parsed === 'object' && Array.isArray(parsed.widgets)) {
+          const parsed: unknown = JSON.parse(raw);
+          if (isValidDashboardLayout(parsed)) {
             return parsed;
           }
         } catch {

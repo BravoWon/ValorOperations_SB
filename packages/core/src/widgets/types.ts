@@ -22,6 +22,20 @@ export interface DashboardLayout {
   widgets: WidgetInstance[];
 }
 
+export function isValidDashboardLayout(value: unknown): value is DashboardLayout {
+  if (!value || typeof value !== 'object') return false;
+  const d = value as Record<string, unknown>;
+  if (typeof d.ownerId !== 'string' || typeof d.id !== 'string' || !Array.isArray(d.widgets)) return false;
+  return (d.widgets as unknown[]).every((w) => {
+    if (!w || typeof w !== 'object') return false;
+    const i = w as Record<string, unknown>;
+    if (typeof i.instanceId !== 'string' || typeof i.widgetId !== 'string') return false;
+    const l = i.layout as Record<string, unknown> | null | undefined;
+    return !!l && typeof l === 'object'
+      && (['x', 'y', 'w', 'h'] as const).every((k) => Number.isFinite((l as Record<string, unknown>)[k]));
+  });
+}
+
 /** Deterministic first-run layout (12-col grid). instanceIds are fixed for the defaults. */
 export function createDefaultDashboard(ownerId: string): DashboardLayout {
   return {

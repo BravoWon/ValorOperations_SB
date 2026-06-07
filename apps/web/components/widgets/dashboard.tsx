@@ -51,10 +51,11 @@ export function Dashboard() {
   const addWidget = (widgetId: string) => {
     const def = getWidget(widgetId)?.def;
     if (!def) return;
+    const bottomY = dash.widgets.reduce((m, w) => Math.max(m, w.layout.y + w.layout.h), 0);
     const inst: WidgetInstance = {
       instanceId: newInstanceId(),
       widgetId,
-      layout: { x: 0, y: Infinity, w: def.defaultSize.w, h: def.defaultSize.h },
+      layout: { x: 0, y: bottomY, w: def.defaultSize.w, h: def.defaultSize.h },
     };
     persist({ ...dash, widgets: [...dash.widgets, inst] });
     setCatalogOpen(false);

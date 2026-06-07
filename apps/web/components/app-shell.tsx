@@ -21,7 +21,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
     <div className="flex min-h-screen">
       <aside className="glass-strong sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto border-y-0 border-l-0 border-r border-r-[rgba(201,168,76,0.18)] px-4 py-6">
         {/* Brand mark */}
-        <Link href="/jobs" className="group mb-8 flex items-center gap-3 px-2">
+        <Link href="/dashboard" className="group mb-8 flex items-center gap-3 px-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-md border border-gold/40 bg-gold/10 font-display text-lg text-gold-light shadow-[0_0_18px_-6px_rgba(201,168,76,0.6)]">
             V
           </span>
