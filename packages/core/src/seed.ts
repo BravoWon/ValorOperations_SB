@@ -49,6 +49,12 @@ export function createSeed(): SeedData {
       surfaceLat: 39.3664747, surfaceLong: -83.2625135,
       groundElevFt: 906, kbHeightFt: 8, status: 'permitted',
     },
+    {
+      id: 'well-lf2', orgId: org, padId: 'pad-1', name: 'Lease Free #2',
+      apiNumber: '34-141-2-0061-00-00', permitNumber: 'PR2026032400123',
+      state: 'Ohio', county: 'Ross', township: 'Buckskin', section: 'VMS 2309',
+      surfaceLat: 39.3668, surfaceLong: -83.2629, status: 'permitted',
+    },
   ];
 
   const wellbores: Wellbore[] = [
