@@ -33,10 +33,19 @@ earlier one is green.
 Gates 1–4 are the `superpowers:subagent-driven-development` loop. Gates 5–8 happen at phase
 completion on the PR.
 
-## CodeRabbit configuration (this repo)
+## AI PR review — CodeRabbit + Copilot (this repo)
 
-- **Integration:** CodeRabbit GitHub App, installed org-wide; reviews automatically on PR open and
-  on each push.
+- **Two bots review every PR:** the **CodeRabbit** GitHub App and **GitHub Copilot** code review —
+  both automatic on PR open + each push. Triage findings from both with the checklist below.
+- **Credit fallback:** CodeRabbit is on the Free plan (limited credits/quota). **If CodeRabbit credits
+  run out, GitHub Copilot becomes the primary PR-review bot** (it has produced useful findings on
+  prior PRs), and the in-session comprehensive review (gate 5) holds the review depth regardless of
+  either bot's availability.
+- **Best model fit per task:** in-session work selects the least-powerful-sufficient model — a fast
+  model for mechanical implementer tasks, the most-capable model for the gate-5 comprehensive review
+  and any architecture/design work. Switch models per tasking as needed.
+- **CodeRabbit integration:** GitHub App, installed org-wide; reviews automatically on PR open and
+  on each push. (Bot login is `coderabbitai[bot]` when fetching comments via the API.)
 - **Dimensioned by `.coderabbit.yaml`** (repo root): `profile: assertive`, plus tone + path
   instructions that steer the review onto **value / context / intent alignment**
   (expected-vs-delivered), with a hard **IP guardrail** (no brand/product/personnel/client/well/
