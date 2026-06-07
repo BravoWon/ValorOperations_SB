@@ -1,6 +1,7 @@
 import type { JobStatus } from './enums';
 import type { Asset, Job, JobTemplate, JobWithRelations, TemplateFieldDef, TemplateStageDef, Well } from './types';
 import type { AssetTreeNode, WellDetail } from './views';
+import type { DashboardLayout } from './widgets/types';
 
 export interface TemplateBundle {
   template: JobTemplate;
@@ -32,4 +33,6 @@ export interface Repository {
   getJob(id: string): Promise<JobWithRelations | null>;
   createJobFromTemplate(input: CreateJobFromTemplateInput): Promise<Job>;
   advanceJobStatus(jobId: string, to: JobStatus, userId: string, note?: string): Promise<Job>;
+  getDashboard(ownerId: string): Promise<DashboardLayout>;
+  saveDashboard(layout: DashboardLayout): Promise<void>;
 }

@@ -9,12 +9,14 @@ import type {
 } from './repository';
 import type { Asset, Job, JobStatusHistory, JobWithRelations, Stage, Well, JobTemplate } from './types';
 import type { AssetTreeNode, WellDetail } from './views';
+import { createDefaultDashboard, isValidDashboardLayout, type DashboardLayout } from './widgets/types';
 
 export class MockRepository implements Repository {
   private data: SeedData;
   private history: JobStatusHistory[] = [];
   private counter = 0;
   private tickMs = 0;
+  private dashboards = new Map<string, DashboardLayout>();
 
   constructor() {
     this.data = createSeed();
@@ -175,5 +177,43 @@ export class MockRepository implements Repository {
     });
 
     return job;
+  }
+
+  private dashboardKey(ownerId: string): string {
+    return `valor:dashboard:${ownerId}`;
+  }
+
+  private get browserStorage(): Storage | null {
+    const g = globalThis as unknown as { localStorage?: Storage };
+    return g.localStorage ?? null;
+  }
+
+  async getDashboard(ownerId: string): Promise<DashboardLayout> {
+    const store = this.browserStorage;
+    if (store) {
+      const raw = store.getItem(this.dashboardKey(ownerId));
+      if (raw) {
+        try {
+          const parsed: unknown = JSON.parse(raw);
+          if (isValidDashboardLayout(parsed) && parsed.ownerId === ownerId) {
+            return parsed;
+          }
+        } catch {
+          /* fall through to default */
+        }
+      }
+    } else if (this.dashboards.has(ownerId)) {
+      return structuredClone(this.dashboards.get(ownerId)!);
+    }
+    return createDefaultDashboard(ownerId);
+  }
+
+  async saveDashboard(layout: DashboardLayout): Promise<void> {
+    const store = this.browserStorage;
+    if (store) {
+      store.setItem(this.dashboardKey(layout.ownerId), JSON.stringify(layout));
+    } else {
+      this.dashboards.set(layout.ownerId, structuredClone(layout));
+    }
   }
 }

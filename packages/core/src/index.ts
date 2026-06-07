@@ -9,3 +9,4 @@ export * from './repository';
 export * from './seed';
 export * from './mock-repository';
 export * from './compute/hydraulics';
+export * from './widgets/types';
