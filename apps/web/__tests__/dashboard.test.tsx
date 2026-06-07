@@ -36,7 +36,7 @@ describe('Dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: /add widget/i }));
     fireEvent.click(screen.getByRole('button', { name: /add extra/i }));
     await waitFor(() => expect(screen.getAllByText('box-card').length).toBe(5));
-    fireEvent.click(screen.getAllByLabelText(/remove hydraulics/i)[0]!);
+    fireEvent.click(screen.getByLabelText(/remove hydraulics/i));
     await waitFor(() => expect(screen.getAllByText('box-card').length).toBe(4));
   });
 

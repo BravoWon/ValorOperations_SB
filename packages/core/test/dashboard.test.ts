@@ -124,4 +124,17 @@ describe('isValidDashboardLayout + persistence hardening', () => {
       delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
     }
   });
+
+  it('getDashboard ignores a stored layout whose ownerId does not match', async () => {
+    (globalThis as unknown as { localStorage: Storage }).localStorage = fakeLocalStorage();
+    try {
+      globalThis.localStorage.setItem(
+        'valor:dashboard:u8',
+        JSON.stringify({ id: 'd', ownerId: 'someone-else', widgets: [] }),
+      );
+      expect((await new MockRepository().getDashboard('u8')).widgets).toHaveLength(4);
+    } finally {
+      delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    }
+  });
 });

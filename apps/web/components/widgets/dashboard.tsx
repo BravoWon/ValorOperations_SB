@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ResponsiveGridLayout, useContainerWidth, type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import { Plus } from 'lucide-react';
-import { DEMO_USER_ID, type DashboardLayout, type WidgetInstance } from '@valor/core';
+import { createDefaultDashboard, DEMO_USER_ID, type DashboardLayout, type WidgetInstance } from '@valor/core';
 import { getRepo } from '@/lib/repo';
 import { getWidget } from '@/lib/widgets/registry';
 import { WidgetCard } from '@/components/widgets/widget-card';
@@ -23,7 +23,10 @@ export function Dashboard() {
   const { containerRef, width, mounted } = useContainerWidth({ initialWidth: 1280 });
 
   useEffect(() => {
-    repo.getDashboard(DEMO_USER_ID).then(setDash);
+    repo
+      .getDashboard(DEMO_USER_ID)
+      .then(setDash)
+      .catch(() => setDash(createDefaultDashboard(DEMO_USER_ID)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,7 +109,7 @@ export function Dashboard() {
                   {entry ? (
                     <entry.Component config={w.config} surface="card" />
                   ) : (
-                    <div className="text-xs text-red-400">Unknown widget: {w.widgetId}</div>
+                    <div className="text-xs text-red">Unknown widget: {w.widgetId}</div>
                   )}
                 </WidgetCard>
               </div>

@@ -195,7 +195,7 @@ export class MockRepository implements Repository {
       if (raw) {
         try {
           const parsed: unknown = JSON.parse(raw);
-          if (isValidDashboardLayout(parsed)) {
+          if (isValidDashboardLayout(parsed) && parsed.ownerId === ownerId) {
             return parsed;
           }
         } catch {
