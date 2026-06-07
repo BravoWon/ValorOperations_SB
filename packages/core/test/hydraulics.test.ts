@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHydraulics, type HydraulicsInputs } from '../src/compute/hydraulics';
+import { computeHydraulics, type HydraulicsInputs, HYDRAULICS_OUTPUTS } from '../src/compute/hydraulics';
 
 const BASE: HydraulicsInputs = {
   holeDiameterIn: 9.875,
@@ -49,5 +49,44 @@ describe('computeHydraulics', () => {
     expect(r.flowRateGpm).toBe(0);
     expect(r.bottomsUpStrokes).toBe(0);
     expect(r.warnings.join(' ')).toMatch(/Pump output is zero/i);
+  });
+
+  // --- test-after-resolution: robustness suite ---
+
+  it('zeroes pipe capacity and warns on negative pipe ID', () => {
+    const r = computeHydraulics({ ...BASE, pipeIdIn: -4 });
+    expect(r.pipeCapacityBblPerFt).toBe(0);
+    expect(r.warnings.join(' ')).toMatch(/pipe id/i);
+  });
+
+  it('zeroes hydrostatic and warns on negative mud weight', () => {
+    const r = computeHydraulics({ ...BASE, mudWeightPpg: -5 });
+    expect(r.hydrostaticPressurePsi).toBe(0);
+    expect(r.warnings.join(' ')).toMatch(/mud weight/i);
+  });
+
+  it('produces only finite outputs and warns on non-finite input', () => {
+    const r = computeHydraulics({ ...BASE, holeDiameterIn: NaN });
+    const numericKeys = HYDRAULICS_OUTPUTS.map((s) => s.key);
+    for (const key of numericKeys) {
+      expect(Number.isFinite(r[key])).toBe(true);
+    }
+    expect(r.warnings.join(' ')).toMatch(/valid number/i);
+  });
+
+  it('adds a soft warning for out-of-range input but still computes', () => {
+    const r = computeHydraulics({ ...BASE, spm: 500 });
+    expect(r.warnings.join(' ')).toMatch(/above the expected maximum/i);
+    expect(r.flowRateGpm).toBeGreaterThan(0);
+  });
+
+  it('is deterministic', () => {
+    expect(computeHydraulics(BASE)).toEqual(computeHydraulics(BASE));
+  });
+
+  it('zero MD yields zero annular volume but positive capacity', () => {
+    const r = computeHydraulics({ ...BASE, measuredDepthFt: 0 });
+    expect(r.annularVolumeBbl).toBe(0);
+    expect(r.annularCapacityBblPerFt).toBeGreaterThan(0);
   });
 });
