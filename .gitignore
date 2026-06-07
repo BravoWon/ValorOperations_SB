@@ -24,6 +24,10 @@ supabase/.temp/
 # machine-specific skill symlinks (recreated via `npx skills`)
 .claude/skills/
 
+# knowledge-mining: source-specific target manifests + raw dumps (brand-bearing, never commit)
+*.local.txt
+tools/knowledge-mining/.raw/
+
 # logs / OS
 *.log
 npm-debug.log*
