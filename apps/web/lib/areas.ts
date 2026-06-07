@@ -65,10 +65,11 @@ export const AREAS: AreaDef[] = [
     href: '/data-manager',
     icon: Database,
     description:
-      'Ingest & manage field data — EDR/WITS/LAS channels, documents, and the channel registry.',
+      'Ingest & manage field data — EDR/WITS/LAS channels, documents, and an editable channel registry.',
     capabilities: [
       'EDR/WITS/LAS ingestion',
-      'Channel registry & units',
+      'Editable mnemonic & channel assignment',
+      'Units, precision & calibration',
       'Document & file management',
       'Data quality & provenance',
     ],
