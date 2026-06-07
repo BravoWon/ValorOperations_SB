@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ChevronRight, GitBranch, Layers, Ruler } from 'lucide-react';
 import { getRepo } from '@/lib/repo';
 import { WellHeader } from '@/components/well-header';
 import { FormationsTable } from '@/components/formations-table';
@@ -13,35 +14,50 @@ export default async function WellPage({ params }: { params: Promise<{ wellId: s
 
   return (
     <div className="space-y-6">
-      <nav className="text-sm text-muted-foreground">
-        <Link href="/assets" className="hover:underline">Assets</Link> / {detail.well.name}
+      <nav className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <Link href="/assets" className="transition-colors hover:text-gold-light">
+          Assets
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+        <span className="text-cream">{detail.well.name}</span>
       </nav>
 
       <WellHeader well={detail.well} />
 
       {detail.wellbores.length === 0 && (
-        <p className="text-sm text-muted-foreground">No wellbores recorded for this well yet.</p>
+        <p className="text-sm text-muted-foreground/70">No wellbores recorded for this well yet.</p>
       )}
 
       {detail.wellbores.map((wb) => (
-        <section key={wb.id} className="space-y-4 rounded-xl border bg-card p-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">{wb.designation}</h2>
-            <span className="text-sm text-muted-foreground capitalize">{wb.type}</span>
+        <section key={wb.id} className="glass space-y-5 rounded-lg p-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <GitBranch className="h-5 w-5 text-gold" strokeWidth={1.75} />
+            <h2 className="font-display text-xl font-medium text-cream">{wb.designation}</h2>
+            <span className="rounded-sm border border-white/10 bg-white/[0.05] px-2 py-0.5 font-mono text-[0.6875rem] uppercase tracking-wider text-muted-foreground">
+              {wb.type}
+            </span>
             {wb.totalMdFt != null && (
-              <span className="text-sm text-muted-foreground">· TD {wb.totalMdFt} ft MD</span>
+              <span className="data ml-auto text-sm text-gold-light/90">
+                TD {wb.totalMdFt} ft MD
+              </span>
             )}
           </div>
 
           <div>
-            <h3 className="mb-2 text-sm font-medium">Formations</h3>
+            <h3 className="mb-2.5 flex items-center gap-2 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-gold/80">
+              <Layers className="h-3.5 w-3.5" strokeWidth={2} />
+              Formations
+            </h3>
             <FormationsTable formations={wb.formations} />
           </div>
 
           <Separator />
 
           <div>
-            <h3 className="mb-2 text-sm font-medium">Casing program</h3>
+            <h3 className="mb-2.5 flex items-center gap-2 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-gold/80">
+              <Ruler className="h-3.5 w-3.5" strokeWidth={2} />
+              Casing Program
+            </h3>
             <CasingTable casing={wb.casingStrings} />
           </div>
         </section>

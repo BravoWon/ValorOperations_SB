@@ -8,7 +8,15 @@ export default async function JobsPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold">Active Jobs</h1>
+      <header className="mb-8">
+        <div className="eyebrow mb-2">Field Operations</div>
+        <h1 className="font-display text-3xl font-medium tracking-tight text-cream">
+          Active Jobs
+        </h1>
+        <p className="mt-1.5 max-w-prose text-sm text-muted-foreground">
+          Live lifecycle status across every rig and workover in the Valor portfolio.
+        </p>
+      </header>
       <KpiStrip jobs={jobs} />
       <JobsBoard jobs={jobs} />
     </div>
