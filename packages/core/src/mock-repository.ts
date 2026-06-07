@@ -17,6 +17,7 @@ export class MockRepository implements Repository {
   private counter = 0;
   private tickMs = 0;
   private dashboards = new Map<string, DashboardLayout>();
+  private wellSetups = new Map<string, import('./well-setup/types').WellSetup>();
 
   constructor() {
     this.data = createSeed();
@@ -215,5 +216,23 @@ export class MockRepository implements Repository {
     } else {
       this.dashboards.set(layout.ownerId, structuredClone(layout));
     }
+  }
+
+  private wellSetupKey(id: string) { return `valor:wellsetup:${id}`; }
+
+  async saveWellSetup(wellId: string, setup: import('./well-setup/types').WellSetup): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem(this.wellSetupKey(wellId), JSON.stringify(setup));
+    else this.wellSetups.set(wellId, structuredClone(setup));
+  }
+
+  async loadWellSetup(wellId: string): Promise<import('./well-setup/types').WellSetup | null> {
+    const store = this.browserStorage;
+    if (store) {
+      const raw = store.getItem(this.wellSetupKey(wellId));
+      if (raw) { try { return JSON.parse(raw) as import('./well-setup/types').WellSetup; } catch { return null; } }
+      return null;
+    }
+    return this.wellSetups.has(wellId) ? structuredClone(this.wellSetups.get(wellId)!) : null;
   }
 }
