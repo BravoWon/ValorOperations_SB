@@ -5,8 +5,9 @@ and org/asset consolidation. See `docs/superpowers/specs/` for the design and
 `docs/superpowers/plans/` for implementation plans.
 
 ## Monorepo
-- `packages/core` — domain types, Zod schemas, transition/validation logic, repository
-  interface, and the in-memory mock adapter (frontend-first; Supabase adapter lands in Plan 4).
+- `packages/core` — domain types, transition/field-validation logic, the repository
+  interface, and the in-memory mock adapter (frontend-first; the Supabase adapter lands in
+  Plan 4). Zod schemas for the forms/server-action layer arrive with Plan 3.
 - `apps/web` — Next.js 15 web app (the operations hub UI).
 
 ## Develop
