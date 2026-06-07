@@ -35,6 +35,14 @@ completion on the PR.
 
 ## AI PR review — CodeRabbit + Copilot (this repo)
 
+- **Maximum adherence (b.jones directive): treat every bot assessment as a structured _return_ we
+  action by default.** Each CodeRabbit / Copilot finding is a **leveling element** that brings
+  **semantic coherence between the request (intent) and the artifact (code)** across both **surface**
+  (UX / appearance) and **structure** (architecture). The default action on a finding is **fix**; skip
+  only with an explicit one-line justification posted on the thread (YAGNI / out-of-scope-this-slice /
+  false-positive). Run **both** bots on every PR, **re-request review after each push**
+  (`@coderabbitai review`), and **never merge with un-actioned findings**. The correction loop *is* the
+  alignment mechanism: request → assessment → action → re-verify → coherent artifact.
 - **Two bots review every PR:** the **CodeRabbit** GitHub App and **GitHub Copilot** code review —
   both automatic on PR open + each push. Triage findings from both with the checklist below.
 - **Credit fallback:** CodeRabbit is on the Free plan (limited credits/quota). **If CodeRabbit credits
