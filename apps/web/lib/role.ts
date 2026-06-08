@@ -1,0 +1,35 @@
+// apps/web/lib/role.ts
+import type { Role } from '@valor/core';
+
+export type { Role };
+
+/** Privilege order, highest first. */
+export const ALL_ROLES: Role[] = ['owner', 'admin', 'ops', 'field', 'vendor', 'viewer'];
+
+/** Higher rank = more access. */
+export const ROLE_RANK: Record<Role, number> = {
+  owner: 5,
+  admin: 4,
+  ops: 3,
+  field: 2,
+  vendor: 1,
+  viewer: 0,
+};
+
+export const DEFAULT_ROLE: Role = 'owner';
+export const ROLE_COOKIE = 'valor_demo_role';
+
+/** True when `current` is at least as privileged as `min`. */
+export function roleSatisfies(current: Role, min: Role): boolean {
+  return ROLE_RANK[current] >= ROLE_RANK[min];
+}
+
+/** Read the demo role from a `document.cookie`-style string; default owner. */
+export function parseRoleCookie(cookieString: string): Role {
+  const hit = cookieString
+    .split(';')
+    .map((c) => c.trim())
+    .find((c) => c.startsWith(`${ROLE_COOKIE}=`));
+  const value = hit ? hit.slice(ROLE_COOKIE.length + 1) : '';
+  return (ALL_ROLES as string[]).includes(value) ? (value as Role) : DEFAULT_ROLE;
+}
