@@ -20,6 +20,8 @@ export class MockRepository implements Repository {
   private wellSetups = new Map<string, import('./well-setup/types').WellSetup>();
   private rigDays = new Map<string, import('./rig-day/types').RigDay>();
   private channels: import('./data-manager/types').ChannelDef[] | null = null;
+  private vendors: import('./office-ops/types').Vendor[] | null = null;
+  private afe: import('./office-ops/types').AfeLine[] | null = null;
 
   constructor() {
     this.data = createSeed();
@@ -262,5 +264,29 @@ export class MockRepository implements Repository {
     const store = this.browserStorage;
     if (store) { const raw = store.getItem('valor:channels'); if (raw) { try { return JSON.parse(raw) as import('./data-manager/types').ChannelDef[]; } catch { return null; } } return null; }
     return this.channels ? structuredClone(this.channels) : null;
+  }
+
+  async saveVendors(vendors: import('./office-ops/types').Vendor[]): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:vendors', JSON.stringify(vendors));
+    else this.vendors = structuredClone(vendors);
+  }
+
+  async loadVendors(): Promise<import('./office-ops/types').Vendor[] | null> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:vendors'); if (raw) { try { return JSON.parse(raw) as import('./office-ops/types').Vendor[]; } catch { return null; } } return null; }
+    return this.vendors ? structuredClone(this.vendors) : null;
+  }
+
+  async saveAfe(lines: import('./office-ops/types').AfeLine[]): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:afe', JSON.stringify(lines));
+    else this.afe = structuredClone(lines);
+  }
+
+  async loadAfe(): Promise<import('./office-ops/types').AfeLine[] | null> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:afe'); if (raw) { try { return JSON.parse(raw) as import('./office-ops/types').AfeLine[]; } catch { return null; } } return null; }
+    return this.afe ? structuredClone(this.afe) : null;
   }
 }
