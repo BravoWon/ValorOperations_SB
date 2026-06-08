@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DEFAULT_SURVEY } from '@valor/core';
 import { DirectionalPanel } from '@/components/directional-panel';
 
@@ -7,8 +7,10 @@ describe('DirectionalPanel', () => {
   it('renders one computed-trajectory row per station + the TD summary', () => {
     render(<DirectionalPanel />);
     expect(screen.getAllByTestId('traj-row')).toHaveLength(DEFAULT_SURVEY.length);
-    // Summary TD (MD) reflects the deepest station.
-    expect(screen.getByText('5000')).toBeInTheDocument();
+    // Scope to the TD (MD) summary card so the assertion can't be satisfied by a
+    // trajectory-table MD cell that happens to contain 5000.
+    const tdCard = screen.getByText('TD (MD)').parentElement!;
+    expect(within(tdCard).getByText('5000')).toBeInTheDocument();
   });
 
   it('adds and removes survey stations', () => {
