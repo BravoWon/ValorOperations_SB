@@ -97,6 +97,15 @@ describe('computeSurvey — minimum curvature', () => {
     expect(warnings.some((w) => /dogleg/i.test(w))).toBe(true);
   });
 
+  it('rejects a non-finite course length (falls back to 100)', () => {
+    const { stations } = computeSurvey(
+      [{ md: 0, inc: 0, azi: 0 }, { md: 100, inc: 30, azi: 0 }],
+      { courseLength: Infinity },
+    );
+    expect(Number.isFinite(stations[1]!.dls)).toBe(true);
+    expect(stations[1]!.dls).toBeCloseTo(30, 1); // 30°/100, not Infinity
+  });
+
   it('the demo survey lands near-horizontal with eastward closure', () => {
     const { summary } = computeSurvey(DEFAULT_SURVEY);
     expect(summary.totalMd).toBe(5000);
@@ -126,6 +135,22 @@ describe('interpolateAtMd', () => {
 
   it('returns null beyond the surveyed range', () => {
     expect(interpolateAtMd(DEFAULT_SURVEY, 99999)).toBeNull();
+  });
+
+  it('uses the same VS azimuth as computeSurvey (final closure) for interpolated points', () => {
+    // Builds north, then turns east → the early-section local closure azimuth
+    // differs from the final closure azimuth. The interpolated point's vs must
+    // be on computeSurvey's resolved (final) reference, not its own azimuth.
+    const stations = [
+      { md: 0, inc: 0, azi: 0 },
+      { md: 100, inc: 0, azi: 0 },
+      { md: 200, inc: 30, azi: 0 }, // building north
+      { md: 300, inc: 45, azi: 90 }, // turning east
+    ];
+    const comp = computeSurvey(stations);
+    const at = interpolateAtMd(stations, 150)!;
+    const expected = at.closure * Math.cos(((at.closureAzimuth - comp.summary.vsAzimuth) * Math.PI) / 180);
+    expect(at.vs).toBeCloseTo(expected, 4);
   });
 });
 

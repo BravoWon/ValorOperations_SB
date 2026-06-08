@@ -69,6 +69,13 @@ const angleDelta = (a: number, b: number): number => {
   return d;
 };
 
+/** Resolve the rate-normalization course length, rejecting non-finite/≤0 (→ 100). */
+function resolveCourseLength(courseLength?: number): number {
+  return courseLength !== undefined && Number.isFinite(courseLength) && courseLength > 0
+    ? courseLength
+    : 100;
+}
+
 /** Minimum-curvature ratio factor for a dogleg of `beta` radians. */
 function ratioFactor(beta: number): number {
   if (beta < 1e-9) return 1; // straight segment → limit of (2/β)tan(β/2) is 1
@@ -105,11 +112,13 @@ function step(a: SurveyStation, b: SurveyStation): Step {
 /**
  * Propagate a station list through the minimum-curvature method. Stations are
  * sorted by MD (a warning is emitted if reordering was needed). Returns a result
- * per input station plus a trajectory summary.
+ * per VALID station plus a trajectory summary — rows with non-finite values or a
+ * negative MD are dropped (each drop is reported in `warnings`), so the result
+ * length may be less than the input length.
  */
 export function computeSurvey(input: SurveyStation[], opts: SurveyOptions = {}): SurveyComputation {
   const warnings: string[] = [];
-  const courseLength = opts.courseLength && opts.courseLength > 0 ? opts.courseLength : 100;
+  const courseLength = resolveCourseLength(opts.courseLength);
 
   // Normalize: drop non-finite rows, normalize azimuth, sort by MD.
   const cleaned = input
@@ -209,6 +218,12 @@ export function interpolateAtMd(
   const stations = computed.stations;
   if (stations.length === 0) return null;
 
+  // Pin the VS azimuth to the value computeSurvey resolved (the final closure
+  // azimuth when omitted) so an interpolated point's `vs` is on the same
+  // reference as the surrounding stations — not the interpolated point's own
+  // closure azimuth.
+  const segOpts: SurveyOptions = { courseLength: opts.courseLength, vsAzimuth: computed.summary.vsAzimuth };
+
   // Exact hit.
   const exact = stations.find((s) => s.md === md);
   if (exact) return exact;
@@ -216,14 +231,14 @@ export function interpolateAtMd(
   if (md < (stations[0]?.md ?? 0)) {
     // Between the implicit surface tie-in (MD 0) and the first station.
     if (md < 0) return null;
-    return interpolateSegment({ md: 0, inc: 0, azi: 0 }, stations[0]!, md, opts, 0, 0, 0);
+    return interpolateSegment({ md: 0, inc: 0, azi: 0 }, stations[0]!, md, segOpts, 0, 0, 0);
   }
 
   for (let i = 0; i < stations.length - 1; i++) {
     const lo = stations[i]!;
     const hi = stations[i + 1]!;
     if (md > lo.md && md < hi.md) {
-      return interpolateSegment(lo, hi, md, opts, lo.tvd, lo.north, lo.east);
+      return interpolateSegment(lo, hi, md, segOpts, lo.tvd, lo.north, lo.east);
     }
   }
   return null; // beyond the deepest station
@@ -238,7 +253,7 @@ function interpolateSegment(
   baseNorth: number,
   baseEast: number,
 ): StationResult {
-  const courseLength = opts.courseLength && opts.courseLength > 0 ? opts.courseLength : 100;
+  const courseLength = resolveCourseLength(opts.courseLength);
   const t = (md - lo.md) / (hi.md - lo.md);
   const inc = lo.inc + (hi.inc - lo.inc) * t;
   const azi = norm360(lo.azi + angleDelta(lo.azi, hi.azi) * t);
