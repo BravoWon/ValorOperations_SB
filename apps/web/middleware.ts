@@ -23,6 +23,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip /login, Next internals/static, and any path with a file extension.
-  matcher: ['/((?!login|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+  // Skip /api (route handlers carry their own auth), /login, Next internals/
+  // static, and any path with a file extension.
+  matcher: ['/((?!api|login|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

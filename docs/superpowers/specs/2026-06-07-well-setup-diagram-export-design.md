@@ -117,20 +117,23 @@ adapter + REST API implement later (push/publish = a later slice).
 
 ## 8. Units & flipping (imperial ⇄ metric, integrated)
 
-- **Canonical storage:** every numeric is stored **once in SI**; each `field_def` carries a
-  `unit_quantity` (length, pressure, weight-per-length, density, volume, temperature…).
+- **Canonical storage:** every numeric is stored **once in a fixed canonical unit per quantity** and
+  converted only for display. For **slice 1** the length canon is **imperial base** — inches for
+  diameters, feet for depths (`diameterIn`, `shoeMdFt`, …) — and the `units` module converts through SI
+  (meters) internally. Each `field_def` carries a `unit_quantity` (length, …), so moving the canon to
+  SI later is a localized change.
 - **Per-quantity unit menus:** length flips across **mm · cm · in · ft · yd · m**; each other quantity
   exposes its standard set. A global **Imperial ⇄ Metric** switch sets per-quantity defaults; any field
   can override locally (e.g. depths in ft while a bit diameter shows in mm).
 - **Live, lossless conversion:** flipping a unit re-renders the value **and** re-labels the diagram's
-  depth axis + annotations instantly, converting from canonical SI — no stored-data mutation, no
+  depth axis + annotations instantly, converting from the stored canonical unit — no stored-data mutation, no
   rounding drift (round only on display via the field's precision).
 - **Integrated calc:** `projectWellbore` and all compute run in canonical units, so capacities,
   geometry, and the schematic stay correct regardless of the displayed unit.
 - **Provenance on export:** the chosen display unit (+ conversion factor) travels with the data sheet,
   matching the future API's unit-negotiation contract.
 
-A small `@valor/core` `units` module (canonical SI + `convert(value, from, to)` + per-quantity unit
+A small `@valor/core` `units` module (`convertLength` through canonical meters + per-quantity unit
 sets) is the single source of truth, TDD-tested, shared by panels, diagram, and export.
 
 ## 9. Files

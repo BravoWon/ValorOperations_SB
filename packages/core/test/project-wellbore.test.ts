@@ -26,4 +26,13 @@ describe('projectWellbore', () => {
     bad.header.jobCode = 'ZZZ';
     expect(projectWellbore(bad).warnings.some((w) => /code/i.test(w))).toBe(true);
   });
+
+  it('drops fully-blank rows (an unfilled "Add" row)', () => {
+    const withBlank = structuredClone(DEFAULT_WELL_SETUP);
+    withBlank.casings.push({ role: '', odIn: 0, idIn: 0, weightPpf: 0, grade: '', connection: '', shoeMdFt: 0, shoeTvdFt: 0, tocFt: 0 });
+    withBlank.formations.push({ name: '', topFt: 0, bottomFt: 0 });
+    const m = projectWellbore(withBlank);
+    expect(m.casings).toHaveLength(DEFAULT_WELL_SETUP.casings.length);
+    expect(m.formations).toHaveLength(DEFAULT_WELL_SETUP.formations.length);
+  });
 });

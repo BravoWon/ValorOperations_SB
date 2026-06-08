@@ -73,8 +73,10 @@ export const WellboreSchematic = forwardRef<SVGSVGElement, WellboreSchematicProp
 
     const depthLabel = (ft: number) =>
       `${fmt(convertLength(ft, 'ft', depthUnit), depthUnit === 'ft' || depthUnit === 'yd' ? 0 : 1)}`;
+    // in/cm → 2 decimals, mm → 1 (so 8.5 in reads 215.9 mm, not 216).
+    const diaDecimals = diaUnit === 'mm' ? 1 : 2;
     const diaLabel = (inches: number) =>
-      `${fmt(convertLength(inches, 'in', diaUnit), diaUnit === 'in' ? 2 : 0)} ${diaUnit}`;
+      `${fmt(convertLength(inches, 'in', diaUnit), diaDecimals)} ${diaUnit}`;
 
     return (
       <svg

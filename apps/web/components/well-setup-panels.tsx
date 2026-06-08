@@ -64,7 +64,6 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
 
   const renderHeaderField = (f: HeaderFieldSpec) => {
     const value = setup.header[f.key];
-    const unitSuffix = f.unitQuantity === 'length' ? diaUnit : undefined;
 
     if (f.kind === 'code') {
       return (
