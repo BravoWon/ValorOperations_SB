@@ -25,3 +25,4 @@ export * from './data-manager/channels';
 export * from './office-ops/types';
 export * from './office-ops/vendors';
 export * from './office-ops/afe';
+export * from './notifications/notifications';
