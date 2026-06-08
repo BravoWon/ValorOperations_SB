@@ -3,7 +3,7 @@
 **Status:** draft for b.jones review · **Date:** 2026-06-08 · **Branch:** `feat/notifications`
 
 **Goal:** Turn the data the console already holds into **actionable exceptions** — a pure
-`deriveNotifications(rigDay)` that flags NPT over threshold, unaccounted 5-min gaps, and QC-flagged
+`deriveNotifications(rigDay)` that flags NPT over threshold, unaccounted gaps beyond a configurable threshold (default 30 min), and QC-flagged
 blocks, surfaced as a **Notifications panel** on the Rig Day console with a severity-coded list + count
 badge. Derived, not hand-built — the calculation made first-class.
 

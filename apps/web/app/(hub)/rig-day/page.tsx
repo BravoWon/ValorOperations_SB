@@ -74,7 +74,8 @@ export default function RigDayPage() {
 
   const accounting = useMemo(() => deriveTimeAccounting(day.blocks), [day.blocks]);
   const progress = useMemo(() => deriveProgress(day.blocks), [day.blocks]);
-  const notifications = useMemo(() => deriveNotifications(day), [day]);
+  // Notifications derive only from blocks (incl. QC) — key the memo on blocks, not the whole day.
+  const notifications = useMemo(() => deriveNotifications(day), [day.blocks]);
 
   const nowMin = day.blocks.length
     ? Math.max(...day.blocks.map((b) => b.endMin))
