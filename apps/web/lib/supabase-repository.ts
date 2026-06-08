@@ -4,9 +4,12 @@ import {
   createDefaultDashboard,
   instantiateStages,
   isValidDashboardLayout,
+  summarizeSnapshot,
   type Asset,
   type AssetTreeNode,
   type CasingString,
+  type CollectionInfo,
+  type LocalDbSnapshot,
   type CreateJobFromTemplateInput,
   type DashboardLayout,
   type Formation,
@@ -431,6 +434,77 @@ export class SupabaseRepository implements Repository {
     if (error) this.fail(error, 'loadAfe');
     if (!data || data.length === 0) return null;
     return data.map((r) => r.payload as AfeLine);
+  }
+
+  // --- local-db / snapshot (aggregate over the JSONB module tables) ----------
+  //
+  // The "local DB" workbench treats the org's module tables (the JSONB payload
+  // stores above — dashboards, well_setups, rig_days, channels, vendors,
+  // afe_lines) as one portable bundle. Export gathers them, import restores them
+  // through the same save* methods (so validation/upsert rules stay in one
+  // place), and reset deletes this org's module rows. Condition- and
+  // activity-state tables (wells, jobs, stages, …) are NOT part of the snapshot —
+  // they are authored through dedicated flows, not bulk import/reset.
+
+  async exportSnapshot(): Promise<LocalDbSnapshot> {
+    const [dashRes, wsRes, rdRes] = await Promise.all([
+      this.client.from('dashboards').select('payload').eq('org_id', this.orgId),
+      this.client.from('well_setups').select('well_id, payload').eq('org_id', this.orgId),
+      this.client.from('rig_days').select('payload').eq('org_id', this.orgId),
+    ]);
+    if (dashRes.error) this.fail(dashRes.error, 'exportSnapshot(dashboards)');
+    if (wsRes.error) this.fail(wsRes.error, 'exportSnapshot(well_setups)');
+    if (rdRes.error) this.fail(rdRes.error, 'exportSnapshot(rig_days)');
+
+    const collections: LocalDbSnapshot['collections'] = {
+      dashboards: (dashRes.data ?? []).map((r) => r.payload as DashboardLayout),
+      wellSetups: (wsRes.data ?? []).map((r) => ({
+        wellId: r.well_id as string,
+        setup: r.payload as WellSetup,
+      })),
+      rigDays: (rdRes.data ?? []).map((r) => r.payload as RigDay),
+      channels: (await this.loadChannels()) ?? [],
+      vendors: (await this.loadVendors()) ?? [],
+      afe: (await this.loadAfe()) ?? [],
+    };
+    return { version: 1 as const, collections };
+  }
+
+  async importSnapshot(snapshot: LocalDbSnapshot): Promise<void> {
+    // Defensive: user-provided JSON. Validate each entry's shape and skip bad
+    // ones so a malformed snapshot can't crash the import (spec: never throws).
+    // Restores go through the same save* methods MockRepository uses.
+    const c = (snapshot && typeof snapshot === 'object' ? snapshot.collections : null) ?? {};
+    const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+    const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
+
+    for (const d of arr<DashboardLayout>(c.dashboards)) {
+      if (obj(d) && typeof d.ownerId === 'string') { try { await this.saveDashboard(d); } catch { /* skip */ } }
+    }
+    for (const w of arr<{ wellId: string; setup: WellSetup }>(c.wellSetups)) {
+      if (obj(w) && typeof w.wellId === 'string' && obj(w.setup)) { try { await this.saveWellSetup(w.wellId, w.setup); } catch { /* skip */ } }
+    }
+    for (const r of arr<RigDay>(c.rigDays)) {
+      if (obj(r) && typeof r.id === 'string') { try { await this.saveRigDay(r.id, r); } catch { /* skip */ } }
+    }
+    if (Array.isArray(c.channels)) { try { await this.saveChannels(c.channels); } catch { /* skip */ } }
+    if (Array.isArray(c.vendors)) { try { await this.saveVendors(c.vendors); } catch { /* skip */ } }
+    if (Array.isArray(c.afe)) { try { await this.saveAfe(c.afe); } catch { /* skip */ } }
+  }
+
+  async listCollections(): Promise<CollectionInfo[]> {
+    return summarizeSnapshot(await this.exportSnapshot());
+  }
+
+  async resetLocalDb(): Promise<void> {
+    // Delete this org's module rows. RLS already constrains to the org; the
+    // explicit .eq('org_id') is defence in depth and keeps the delete a no-op
+    // against an empty table rather than an unfiltered wipe.
+    const tables = ['dashboards', 'well_setups', 'rig_days', 'channels', 'vendors', 'afe_lines'] as const;
+    for (const table of tables) {
+      const { error } = await this.client.from(table).delete().eq('org_id', this.orgId);
+      if (error) this.fail(error, `resetLocalDb(${table})`);
+    }
   }
 }
 

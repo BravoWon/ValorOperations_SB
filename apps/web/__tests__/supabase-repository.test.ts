@@ -136,4 +136,62 @@ describe('SupabaseRepository (mocked client)', () => {
     const repo = new SupabaseRepository(client, ORG);
     await expect(repo.listWells(ORG)).rejects.toThrow(/boom/);
   });
+
+  const MODULE_TABLES = ['dashboards', 'well_setups', 'rig_days', 'channels', 'vendors', 'afe_lines'] as const;
+
+  it('exportSnapshot() queries every org module table; listCollections() summarizes counts', async () => {
+    const { client, calls } = makeClient({ data: [], error: null });
+    const repo = new SupabaseRepository(client, ORG);
+
+    const snap = await repo.exportSnapshot();
+    expect(snap.version).toBe(1);
+    for (const table of MODULE_TABLES) {
+      const call = lastCall(calls, table);
+      expect(call).toBeDefined();
+      expect(call!.ops.some((o) => o.op === 'select')).toBe(true);
+      expect(opArgs(call, 'eq')).toEqual(['org_id', ORG]);
+    }
+
+    // Empty store → every collection summarizes to count 0.
+    const info = await repo.listCollections();
+    expect(info.length).toBe(MODULE_TABLES.length);
+    expect(info.every((c) => c.count === 0)).toBe(true);
+  });
+
+  it('resetLocalDb() deletes this org\'s rows from every module table', async () => {
+    const { client, calls } = makeClient({ data: null, error: null });
+    const repo = new SupabaseRepository(client, ORG);
+
+    await repo.resetLocalDb();
+
+    for (const table of MODULE_TABLES) {
+      const call = lastCall(calls, table);
+      expect(call).toBeDefined();
+      expect(call!.ops.some((o) => o.op === 'delete')).toBe(true);
+      expect(opArgs(call, 'eq')).toEqual(['org_id', ORG]);
+    }
+  });
+
+  it('importSnapshot() restores valid entries via save* and skips malformed ones', async () => {
+    const ch: ChannelDef = {
+      id: 'c1', channelId: 'WITS-1', mnemonic: 'ROP', label: 'Rate of Penetration',
+      unit: 'ft/hr', dataType: 'number', dp: 1, source: 'WITS', min: 0, max: 300, enabled: true,
+    };
+    const { client, calls } = makeClient({ data: null, error: null });
+    const repo = new SupabaseRepository(client, ORG);
+
+    await repo.importSnapshot({
+      version: 1,
+      collections: {
+        dashboards: [null, { noOwnerId: true }] as never, // malformed → skipped
+        channels: [ch],                                    // valid → upserted
+      },
+    });
+
+    const chCall = lastCall(calls, 'channels');
+    expect(chCall).toBeDefined();
+    expect(chCall!.ops.some((o) => o.op === 'upsert')).toBe(true);
+    // Both dashboard entries were malformed → saveDashboard never ran, so the table is never touched.
+    expect(calls.some((c) => c.table === 'dashboards')).toBe(false);
+  });
 });
