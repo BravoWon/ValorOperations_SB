@@ -143,19 +143,32 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
     const id = `${idPrefix}-${col.key}`;
     const cell = (row as Record<string, unknown>)[col.key];
     if (col.kind === 'number') {
-      const unit = rowUnitFor(col.key, depthUnit, diaUnit);
+      // Only length-quantity columns flip with the unit selectors. Plain numbers
+      // (e.g. weight in lb/ft) are unit-invariant and must NOT be converted.
+      const isLength = col.unitQuantity === 'length';
+      const unit = isLength ? rowUnitFor(col.key, depthUnit, diaUnit) : undefined;
+      const display = isLength
+        ? toDisplay(cell as number, unit!)
+        : Number.isFinite(cell as number)
+          ? String(cell)
+          : '';
       return (
         <input
           id={id}
           aria-label={col.label}
           type="number"
           step="any"
-          value={toDisplay(cell as number, unit)}
+          value={display}
           onChange={(e) => {
             const n = Number(e.target.value);
-            const canonicalUnit: LengthUnit = DIAMETER_KEYS.has(col.key) ? 'in' : 'ft';
-            const canonical =
-              e.target.value === '' || Number.isNaN(n) ? 0 : convertLength(n, unit, canonicalUnit);
+            const empty = e.target.value === '' || Number.isNaN(n);
+            let canonical: number;
+            if (isLength) {
+              const canonicalUnit: LengthUnit = DIAMETER_KEYS.has(col.key) ? 'in' : 'ft';
+              canonical = empty ? 0 : convertLength(n, unit!, canonicalUnit);
+            } else {
+              canonical = empty ? 0 : n;
+            }
             onRowChange({ ...row, [col.key]: canonical });
           }}
           className={CELL_INPUT_CLASS}

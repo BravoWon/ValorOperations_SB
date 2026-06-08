@@ -32,4 +32,28 @@ describe('WellSetupPanels', () => {
     const next = onChange.mock.calls.at(-1)?.[0];
     expect(next.header.diameterIn).toBeCloseTo(10, 5);
   });
+
+  it('does NOT unit-convert non-length numbers (weight) when the depth unit changes', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="m" diaUnit="mm" />,
+    );
+    // Conductor weight is 54 lb/ft — must display as 54 regardless of depth/dia unit.
+    const weight = getAllByLabelText(/Weight/i)[0] as HTMLInputElement;
+    expect(weight.value).toBe('54');
+    // Editing stores the raw value, no conversion.
+    fireEvent.change(weight, { target: { value: '60' } });
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next.casings[0].weightPpf).toBe(60);
+  });
+
+  it('still converts length columns (OD) with the diameter unit', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="ft" diaUnit="mm" />,
+    );
+    // Conductor OD 13.375 in → 339.725 mm.
+    const od = getAllByLabelText(/^OD$/i)[0] as HTMLInputElement;
+    expect(Number(od.value)).toBeCloseTo(339.725, 1);
+  });
 });
