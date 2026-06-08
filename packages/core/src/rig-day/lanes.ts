@@ -40,13 +40,17 @@ export function deriveProgress(blocks: TimeBlock[]): ProgressPoint[] {
   const withDepth = blocks
     .filter((b) => Number.isFinite(b.depthStartFt) && Number.isFinite(b.depthEndFt))
     .sort((a, b) => a.startMin - b.startMin);
-  const pts: ProgressPoint[] = [];
+  const raw: ProgressPoint[] = [];
   for (const b of withDepth) {
-    const a = { atMin: b.startMin, depthFt: b.depthStartFt as number };
-    const c = { atMin: b.endMin, depthFt: b.depthEndFt as number };
+    raw.push({ atMin: b.startMin, depthFt: b.depthStartFt as number });
+    raw.push({ atMin: b.endMin, depthFt: b.depthEndFt as number });
+  }
+  // Global time sort so overlapping blocks can't yield a decreasing curve.
+  raw.sort((p, q) => p.atMin - q.atMin);
+  const pts: ProgressPoint[] = [];
+  for (const p of raw) {
     const last = pts[pts.length - 1];
-    if (!last || last.atMin !== a.atMin || last.depthFt !== a.depthFt) pts.push(a);
-    pts.push(c);
+    if (!last || last.atMin !== p.atMin || last.depthFt !== p.depthFt) pts.push(p);
   }
   return pts;
 }

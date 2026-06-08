@@ -49,10 +49,9 @@ it('default rig day has blocks incl. an NPT one', () => {
   expect(a.nptMin).toBeGreaterThan(0);
 });
 
-import { DEFAULT_RIG_DAY as DEFAULT_RIG_DAY2 } from '../src/rig-day/seed';
 it('seed includes people and equipment lanes', () => {
-  expect((DEFAULT_RIG_DAY2.people ?? []).length).toBeGreaterThanOrEqual(2);
-  expect((DEFAULT_RIG_DAY2.equipment ?? []).length).toBeGreaterThanOrEqual(2);
+  expect((DEFAULT_RIG_DAY.people ?? []).length).toBeGreaterThanOrEqual(2);
+  expect((DEFAULT_RIG_DAY.equipment ?? []).length).toBeGreaterThanOrEqual(2);
 });
 
 import { PARTY_ROLES, EQUIPMENT_CATEGORIES, findPartyRole, deriveProgress } from '../src/rig-day/lanes';
@@ -76,5 +75,12 @@ describe('rig-day lanes', () => {
   });
   it('ignores blocks without depths', () => {
     expect(deriveProgress([{ id: 'x', code: 'CIRC', startMin: 0, endMin: 30 }])).toEqual([]);
+  });
+  it('returns points sorted by time even when blocks overlap', () => {
+    const pts = deriveProgress([
+      { id: 'a', code: 'DRL', startMin: 0, endMin: 90, depthStartFt: 100, depthEndFt: 300 },
+      { id: 'b', code: 'DRL', startMin: 60, endMin: 120, depthStartFt: 250, depthEndFt: 400 },
+    ]);
+    expect(pts.every((p, i) => i === 0 || p.atMin >= pts[i - 1]!.atMin)).toBe(true);
   });
 });

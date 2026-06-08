@@ -85,8 +85,14 @@ export function LaneEditors({ title, items, catalog, onChange, idPrefix }: LaneE
     const lastEnd = items.length ? Math.max(...items.map((it) => it.endMin)) : 0;
     const startMin = Math.min(DAY_MINUTES, snapTo5(lastEnd));
     const endMin = Math.min(DAY_MINUTES, snapTo5(startMin + DEFAULT_SPAN));
+    // Derive the next suffix from existing ids so deletions can't cause a collision.
+    const nextNum =
+      items.reduce((mx, it) => {
+        const m = /-(\d+)$/.exec(it.id);
+        return m ? Math.max(mx, Number(m[1])) : mx;
+      }, 0) + 1;
     const item: LaneItem = {
-      id: `${idPrefix}-${items.length + 1}`,
+      id: `${idPrefix}-${nextNum}`,
       code: first.code,
       label: first.label,
       startMin,
