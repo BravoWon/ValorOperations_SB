@@ -30,6 +30,13 @@ export function WellSetupClient({ wellId }: { wellId: string }) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const svgRef = useRef<SVGSVGElement>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear any pending "saved → idle" timer on unmount so it can't setState after
+  // the component is gone (avoids the React state-update-after-unmount warning).
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, []);
 
   // Load persisted setup on mount (fall back to the default seed).
   useEffect(() => {
@@ -56,7 +63,8 @@ export function WellSetupClient({ wellId }: { wellId: string }) {
     try {
       await getRepo().saveWellSetup(wellId, setup);
       setSaveState('saved');
-      setTimeout(() => setSaveState('idle'), 1800);
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => setSaveState('idle'), 1800);
     } catch {
       // e.g. localStorage quota/security error — don't trap the button on 'saving'.
       setSaveState('idle');

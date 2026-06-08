@@ -8,11 +8,11 @@ import { CasingTable } from '@/components/casing-table';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/states';
 
-// Pre-render a page per seeded well. For the static export these become the
-// emitted pages; on normal dev/Vercel builds dynamicParams stays at its default
-// (true), so a future Supabase backend can still resolve wells that weren't
-// known at build time (they render on demand).
+// Pre-render a page per seeded well — but ONLY for the GitHub Pages static
+// export. On normal dev/Vercel builds this returns [] (no build-time repo query,
+// so no coupling to a future Supabase backend) and the route renders on demand.
 export async function generateStaticParams() {
+  if (process.env.STATIC_EXPORT !== 'true') return [];
   const wells = await getRepo().listWells(DEMO_ORG_ID);
   return wells.map((w) => ({ wellId: w.id }));
 }
