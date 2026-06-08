@@ -94,3 +94,12 @@ export interface AnalyticsInput {
   assetTree?: AssetTreeNode[];
   jobs?: Job[];
 }
+
+/** Everything the Data Studio workspace renders, computed in a single pass. */
+export interface StudioAnalytics {
+  kpis: OperationsKpis;
+  npt: NptBreakdown;
+  cost: CostVariance;
+  roll: AssetRollup;
+  trend: ProductivityTrend;
+}

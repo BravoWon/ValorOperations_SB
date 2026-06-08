@@ -5,6 +5,7 @@ import {
   deriveAssetRollup,
   deriveProductivityTrend,
   deriveOperationsKpis,
+  deriveStudioAnalytics,
 } from '../src/analytics/analytics';
 import { DEFAULT_RIG_DAY } from '../src/rig-day/seed';
 import type { AfeLine } from '../src/office-ops/types';
@@ -156,5 +157,22 @@ describe('deriveOperationsKpis', () => {
       jobs: [job('jx', 'ghost', 'executing')], // well not in the tree → orphan
     });
     expect(warnings.some((w) => /not in the asset tree/.test(w))).toBe(true);
+  });
+
+  it('does not claim "no data" when only jobs are provided', () => {
+    const { warnings } = deriveOperationsKpis({ jobs: [job('j1', 'w1', 'executing')] });
+    expect(warnings.some((w) => /No data available/.test(w))).toBe(false);
+  });
+});
+
+describe('deriveStudioAnalytics', () => {
+  it('computes every view in one pass, consistent with the individual derivations', () => {
+    const input = { rigDays: [DEFAULT_RIG_DAY], afe, assetTree, jobs: [job('j1', 'w1', 'executing')] };
+    const s = deriveStudioAnalytics(input);
+    expect(s.kpis.kpis.find((k) => k.key === 'nptPct')!.value).toBe(10.2);
+    expect(s.npt).toEqual(deriveNptBreakdown(input.rigDays));
+    expect(s.cost).toEqual(deriveCostVariance(input.afe));
+    expect(s.roll).toEqual(deriveAssetRollup(input.assetTree, input.jobs));
+    expect(s.trend).toEqual(deriveProductivityTrend(input.rigDays));
   });
 });

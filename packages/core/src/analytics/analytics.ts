@@ -15,6 +15,7 @@ import type {
   NptSlice,
   OperationsKpis,
   ProductivityTrend,
+  StudioAnalytics,
   TrendPoint,
 } from './types';
 
@@ -164,18 +165,19 @@ export function deriveProductivityTrend(rigDays: RigDay[]): ProductivityTrend {
   return { points, warnings };
 }
 
-/** Headline KPI cards composed from the per-domain derivations above. */
-export function deriveOperationsKpis(input: AnalyticsInput): OperationsKpis {
-  const rigDays = input.rigDays ?? [];
-  const afe = input.afe ?? [];
-  const assetTree = input.assetTree ?? [];
-  const jobs = input.jobs ?? [];
-
-  const npt = deriveNptBreakdown(rigDays);
-  const cost = deriveCostVariance(afe);
-  const roll = deriveAssetRollup(assetTree, jobs);
+/**
+ * Compose headline KPIs from already-computed sub-derivations. Kept private so
+ * both deriveOperationsKpis and deriveStudioAnalytics share one source of truth
+ * and the sub-derivations run only once per call site (no double work).
+ */
+function buildKpis(
+  npt: NptBreakdown,
+  cost: CostVariance,
+  roll: AssetRollup,
+  rigDayCount: number,
+  allEmpty: boolean,
+): OperationsKpis {
   const productiveMin = npt.totalLoggedMin - npt.totalNptMin;
-
   const kpis: Kpi[] = [
     { key: 'productiveHrs', label: 'Productive time', value: toHr(productiveMin), unit: 'hr', tone: 'good' },
     { key: 'nptHrs', label: 'NPT', value: toHr(npt.totalNptMin), unit: 'hr', tone: npt.totalNptMin > 0 ? 'warn' : 'neutral' },
@@ -187,7 +189,7 @@ export function deriveOperationsKpis(input: AnalyticsInput): OperationsKpis {
       tone: npt.nptPct >= 15 ? 'bad' : npt.nptPct > 0 ? 'warn' : 'neutral',
       hint: 'of logged time',
     },
-    { key: 'rigDays', label: 'Rig days logged', value: rigDays.length, unit: 'count', tone: 'neutral' },
+    { key: 'rigDays', label: 'Rig days logged', value: rigDayCount, unit: 'count', tone: 'neutral' },
     { key: 'afeBudget', label: 'AFE budget', value: cost.totalBudget, unit: '$', tone: 'neutral' },
     {
       key: 'afeActual',
@@ -202,11 +204,46 @@ export function deriveOperationsKpis(input: AnalyticsInput): OperationsKpis {
   ];
 
   // Surface the sub-derivations' warnings (e.g. orphan active jobs, empty
-  // collections) rather than dropping them — OperationsKpis.warnings exists so
-  // callers see these conditions. Deduped to avoid repeating the same note.
+  // collections) rather than dropping them — deduped to avoid repeats.
   const warnings = [...new Set([...npt.warnings, ...cost.warnings, ...roll.warnings])];
-  if (rigDays.length === 0 && afe.length === 0 && assetTree.length === 0) {
-    warnings.push('No data available to summarize.');
-  }
+  if (allEmpty) warnings.push('No data available to summarize.');
   return { kpis, warnings };
+}
+
+/** Headline KPI cards composed from the per-domain derivations above. */
+export function deriveOperationsKpis(input: AnalyticsInput): OperationsKpis {
+  const rigDays = input.rigDays ?? [];
+  const afe = input.afe ?? [];
+  const assetTree = input.assetTree ?? [];
+  const jobs = input.jobs ?? [];
+  const allEmpty = rigDays.length === 0 && afe.length === 0 && assetTree.length === 0 && jobs.length === 0;
+  return buildKpis(
+    deriveNptBreakdown(rigDays),
+    deriveCostVariance(afe),
+    deriveAssetRollup(assetTree, jobs),
+    rigDays.length,
+    allEmpty,
+  );
+}
+
+/**
+ * One-pass composite for the Data Studio workspace: runs each sub-derivation
+ * exactly once and composes the KPIs from those same results. Call sites that
+ * need both the KPIs and the per-domain views should use this instead of calling
+ * deriveOperationsKpis + the sub-derivations separately (which doubles the work,
+ * notably deriveTimeAccounting over every rig day).
+ */
+export function deriveStudioAnalytics(input: AnalyticsInput): StudioAnalytics {
+  const rigDays = input.rigDays ?? [];
+  const afe = input.afe ?? [];
+  const assetTree = input.assetTree ?? [];
+  const jobs = input.jobs ?? [];
+
+  const npt = deriveNptBreakdown(rigDays);
+  const cost = deriveCostVariance(afe);
+  const roll = deriveAssetRollup(assetTree, jobs);
+  const trend = deriveProductivityTrend(rigDays);
+  const allEmpty = rigDays.length === 0 && afe.length === 0 && assetTree.length === 0 && jobs.length === 0;
+
+  return { kpis: buildKpis(npt, cost, roll, rigDays.length, allEmpty), npt, cost, roll, trend };
 }

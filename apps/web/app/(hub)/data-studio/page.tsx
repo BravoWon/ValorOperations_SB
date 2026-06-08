@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   DEFAULT_AFE,
   DEFAULT_RIG_DAY,
-  deriveAssetRollup,
-  deriveCostVariance,
-  deriveNptBreakdown,
-  deriveOperationsKpis,
-  deriveProductivityTrend,
+  deriveStudioAnalytics,
   type AfeLine,
   type AssetTreeNode,
   type Job,
@@ -58,13 +54,9 @@ export default function DataStudioPage() {
 
   const analytics = useMemo(() => {
     if (!data) return null;
-    return {
-      kpis: deriveOperationsKpis(data),
-      npt: deriveNptBreakdown(data.rigDays),
-      cost: deriveCostVariance(data.afe),
-      roll: deriveAssetRollup(data.assetTree, data.jobs),
-      trend: deriveProductivityTrend(data.rigDays),
-    };
+    // Single pass — runs each sub-derivation once and composes the KPIs from
+    // them (no double work vs. calling deriveOperationsKpis + the views separately).
+    return deriveStudioAnalytics(data);
   }, [data]);
 
   return (
