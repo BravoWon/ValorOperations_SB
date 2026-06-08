@@ -18,6 +18,7 @@ import { RigDayTimeline } from '@/components/rig-day-timeline';
 import { BankPalette } from '@/components/bank-palette';
 import { RigDayEditors } from '@/components/rig-day-editors';
 import { TimeAccountingRail } from '@/components/time-accounting-rail';
+import { LoadingState } from '@/components/ui/states';
 
 const RIG_DAY_ID = 'demo';
 const BLOCK_MINUTES = 30;
@@ -74,6 +75,7 @@ export default function RigDayPage() {
         ? Math.max(...prev.blocks.map((b) => b.endMin))
         : 0;
       const startMin = snapTo5(lastEnd);
+      if (startMin >= DAY_MINUTES) return prev; // day already full — don't append a zero-width block
       const endMin = Math.min(DAY_MINUTES, snapTo5(startMin + BLOCK_MINUTES));
       addCounter.current += 1;
       const block: TimeBlock = {
@@ -211,7 +213,9 @@ export default function RigDayPage() {
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <LoadingState />
+      )}
     </div>
   );
 }
