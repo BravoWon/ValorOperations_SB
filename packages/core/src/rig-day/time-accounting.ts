@@ -2,7 +2,8 @@ import { DAY_MINUTES } from './types';
 import type { TimeBlock, TimeAccounting, CodeTally } from './types';
 import { findBankCode } from '../well-setup/bank';
 
-export { DAY_MINUTES };
+// DAY_MINUTES is owned by ./types and re-exported once via index.ts — do not
+// re-export it here (avoids an ambiguous duplicate `export *` name).
 
 export function snapTo5(min: number): number {
   if (!Number.isFinite(min)) return 0;
@@ -34,9 +35,10 @@ export function deriveTimeAccounting(blocks: TimeBlock[], nowMin?: number): Time
   }
 
   const byCode = [...tallies.values()].sort((a, b) => b.minutes - a.minutes);
-  const now = Number.isFinite(nowMin as number)
+  const rawNow = Number.isFinite(nowMin as number)
     ? (nowMin as number)
     : sorted.length ? Math.max(...sorted.map((b) => b.endMin)) : 0;
+  const now = Math.max(0, Math.min(DAY_MINUTES, rawNow)); // clamp caller-supplied nowMin
 
   const merged: { s: number; e: number }[] = [];
   for (const b of sorted) {

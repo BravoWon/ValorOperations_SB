@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { snapTo5, DAY_MINUTES } from '../src/rig-day/time-accounting';
-import { deriveTimeAccounting } from '../src/rig-day/time-accounting';
-import type { TimeBlock } from '../src/rig-day/types';
+import { snapTo5, deriveTimeAccounting } from '../src/rig-day/time-accounting';
+import { DAY_MINUTES, type TimeBlock } from '../src/rig-day/types';
 import { DEFAULT_RIG_DAY } from '../src/rig-day/seed';
 
 describe('snapTo5', () => {
@@ -34,6 +33,13 @@ describe('deriveTimeAccounting', () => {
   it('warns on unknown code', () => {
     const a = deriveTimeAccounting([B('ZZZ', 0, 30)]);
     expect(a.warnings.some((w) => /bank/i.test(w))).toBe(true);
+  });
+  it('clamps an out-of-range nowMin to [0, DAY_MINUTES]', () => {
+    const blocks = [B('DRL', 0, 60)];
+    const hi = deriveTimeAccounting(blocks, 999999);
+    expect(hi.unaccountedGaps.every((g) => g.endMin <= DAY_MINUTES)).toBe(true);
+    const lo = deriveTimeAccounting(blocks, -100);
+    expect(lo.unaccountedGaps).toEqual([]);
   });
 });
 

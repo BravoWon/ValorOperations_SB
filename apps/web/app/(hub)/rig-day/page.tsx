@@ -48,6 +48,8 @@ export default function RigDayPage() {
       .then((stored) => {
         if (!active) return;
         if (stored) setDay(stored);
+        // Seed the id counter above existing blocks so reloaded ids can't collide.
+        addCounter.current = (stored ?? DEFAULT_RIG_DAY).blocks.length;
         setLoaded(true);
       })
       .catch(() => {

@@ -247,7 +247,7 @@ export class MockRepository implements Repository {
 
   async loadRigDay(id: string): Promise<import('./rig-day/types').RigDay | null> {
     const store = this.browserStorage;
-    if (store) { const raw = store.getItem(this.rigDayKey(id)); if (raw) { try { return JSON.parse(raw); } catch { return null; } } return null; }
+    if (store) { const raw = store.getItem(this.rigDayKey(id)); if (raw) { try { return JSON.parse(raw) as import('./rig-day/types').RigDay; } catch { return null; } } return null; }
     return this.rigDays.has(id) ? structuredClone(this.rigDays.get(id)!) : null;
   }
 }
