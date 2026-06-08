@@ -6,6 +6,10 @@ import {
   CASING_COLUMNS,
   HOLE_COLUMNS,
   FORMATION_COLUMNS,
+  TUBING_FIELDS,
+  COMPLETION_COLUMNS,
+  COMPLETION_TYPES,
+  WELLHEAD_FIELDS,
   BANK_SEED,
   convertLength,
   type WellSetup,
@@ -13,6 +17,10 @@ import {
   type CasingRow,
   type HoleRow,
   type FormationRow,
+  type TubingRow,
+  type CompletionRow,
+  type CompletionType,
+  type WellheadInfo,
   type ColumnSpec,
   type HeaderFieldSpec,
   type LengthUnit,
@@ -271,6 +279,40 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
   });
   const blankHole = (): HoleRow => ({ name: '', bitDiaIn: 0, topFt: 0, bottomFt: 0 });
   const blankFormation = (): FormationRow => ({ name: '', topFt: 0, bottomFt: 0 });
+  const blankTubing = (): TubingRow => ({
+    odIn: 0, idIn: 0, weightPpf: 0, grade: '', connection: '', hangerDepthFt: 0, shoeDepthFt: 0,
+  });
+
+  // ---- Tubing (single-row group) --------------------------------------
+  const tubing = setup.tubing ?? blankTubing();
+  const setTubing = (next: TubingRow) => onChange({ ...setup, tubing: next });
+
+  // ---- Completions (repeatable) ---------------------------------------
+  const completions = setup.completions ?? [];
+  const setCompletions = (next: CompletionRow[]) => onChange({ ...setup, completions: next });
+  // Deterministic next id: max existing comp-N + 1 (no Date.now()/Math.random()).
+  const nextCompletionId = (): string => {
+    const maxN = completions.reduce((m, c) => {
+      const match = /^comp-(\d+)$/.exec(c.id);
+      return match ? Math.max(m, Number(match[1])) : m;
+    }, 0);
+    return `comp-${maxN + 1}`;
+  };
+  const addCompletion = () =>
+    setCompletions([...completions, { id: nextCompletionId(), type: 'perforation', name: '', topFt: 0 }]);
+
+  // ---- Wellhead -------------------------------------------------------
+  const wellhead = setup.wellhead ?? {};
+  const setWellhead = (key: keyof WellheadInfo, raw: string, kind: 'number' | 'text') => {
+    let value: WellheadInfo[keyof WellheadInfo];
+    if (kind === 'number') {
+      const n = Number(raw);
+      value = raw === '' || Number.isNaN(n) ? undefined : n;
+    } else {
+      value = raw;
+    }
+    onChange({ ...setup, wellhead: { ...wellhead, [key]: value } });
+  };
 
   return (
     <div className="stagger space-y-6">
@@ -329,6 +371,144 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
             blankRow={blankFormation}
             idPrefix="formation"
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Completion</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* -------- Tubing (single string) -------- */}
+          <div>
+            <div className="eyebrow mb-2">Tubing String</div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              {TUBING_FIELDS.map((col) => {
+                const unit =
+                  col.unitQuantity === 'length' ? rowUnitFor(col.key, depthUnit, diaUnit) : undefined;
+                // Label text is a sibling (not a wrapping <label htmlFor>) so the
+                // input stays in the aria-label association group — keeps the
+                // casing inputs ahead of tubing in getAllByLabelText document order.
+                return (
+                  <div key={col.key} className="text-sm">
+                    <span className="block text-muted-foreground">
+                      {col.label}
+                      {unit ? (
+                        <span className="ml-1 font-mono text-xs text-muted-foreground/70">({unit})</span>
+                      ) : null}
+                    </span>
+                    <div className="mt-1">
+                      {renderCellInput(col, tubing, setTubing, 'tubing')}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* -------- Completions (perforations / packers / SSSV / …) -------- */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="eyebrow">Completions</div>
+              <button
+                type="button"
+                onClick={addCompletion}
+                className="flex items-center gap-1 rounded-md border border-gold/30 bg-gold/[0.06] px-2 py-1 font-mono text-[0.6875rem] uppercase tracking-wider text-gold-light transition-colors hover:bg-gold/[0.12]"
+              >
+                <Plus className="h-3 w-3" strokeWidth={2.5} />
+                Add completion
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="pb-1.5 pr-2 text-left font-mono text-[0.625rem] uppercase tracking-wider text-muted-foreground/70">
+                      Type
+                    </th>
+                    {COMPLETION_COLUMNS.map((col) => {
+                      const unit =
+                        col.unitQuantity === 'length' ? rowUnitFor(col.key, depthUnit, diaUnit) : undefined;
+                      return (
+                        <th
+                          key={col.key}
+                          className="pb-1.5 pr-2 text-left font-mono text-[0.625rem] uppercase tracking-wider text-muted-foreground/70"
+                        >
+                          {col.label}
+                          {unit ? <span className="ml-1 text-muted-foreground/40">({unit})</span> : null}
+                        </th>
+                      );
+                    })}
+                    <th className="w-8 pb-1.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {completions.map((row, i) => {
+                    const updateRow = (next: CompletionRow) => {
+                      const copy = [...completions];
+                      copy[i] = next;
+                      setCompletions(copy);
+                    };
+                    return (
+                      <tr key={row.id} className="border-t border-white/[0.05]">
+                        <td className="py-1 pr-2">
+                          <select
+                            id={`completion-${i}-type`}
+                            aria-label="Type"
+                            value={row.type}
+                            onChange={(e) => updateRow({ ...row, type: e.target.value as CompletionType })}
+                            className={CELL_INPUT_CLASS}
+                          >
+                            {COMPLETION_TYPES.map((t) => (
+                              <option key={t.value} value={t.value}>
+                                {t.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        {COMPLETION_COLUMNS.map((col) => (
+                          <td key={col.key} className="py-1 pr-2">
+                            {renderCellInput(col, row, updateRow, `completion-${i}`)}
+                          </td>
+                        ))}
+                        <td className="py-1">
+                          <button
+                            type="button"
+                            aria-label={`Remove completion row ${i + 1}`}
+                            onClick={() => setCompletions(completions.filter((_, j) => j !== i))}
+                            className="rounded-md border border-white/[0.08] p-1 text-muted-foreground/60 transition-colors hover:border-red/40 hover:text-red"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* -------- Wellhead / Tree -------- */}
+          <div>
+            <div className="eyebrow mb-2">Wellhead</div>
+            <div className="grid grid-cols-2 gap-3">
+              {WELLHEAD_FIELDS.map((f) => (
+                <label key={f.key} htmlFor={`wellhead-${f.key}`} className="text-sm">
+                  <span className="block text-muted-foreground">{f.label}</span>
+                  <input
+                    id={`wellhead-${f.key}`}
+                    aria-label={f.label}
+                    type={f.kind === 'number' ? 'number' : 'text'}
+                    step={f.kind === 'number' ? 'any' : undefined}
+                    value={String(wellhead[f.key] ?? '')}
+                    onChange={(e) => setWellhead(f.key, e.target.value, f.kind)}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
