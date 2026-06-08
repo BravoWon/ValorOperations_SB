@@ -10,4 +10,15 @@ export const DEFAULT_RIG_DAY: RigDay = {
     { id: 'b6', code: 'DRL',    startMin: 600,  endMin: 840,  depthStartFt: 7100, depthEndFt: 7480 },
     { id: 'b7', code: 'SVY',    startMin: 840,  endMin: 885 },
   ],
+  people: [
+    { id: 'p1', code: 'DD', label: 'DD (days)', startMin: 0, endMin: 720 },
+    { id: 'p2', code: 'MWD', label: 'MWD (days)', startMin: 0, endMin: 720 },
+    { id: 'p3', code: 'MUD', label: 'Mud Engineer', startMin: 120, endMin: 885 },
+    { id: 'p4', code: 'INSP', label: 'BOP Inspector', startMin: 480, endMin: 600 },
+  ],
+  equipment: [
+    { id: 'e1', code: 'RIG', label: 'Rig', startMin: 0, endMin: 885 },
+    { id: 'e2', code: 'PUMPS', label: 'Triplex Pumps', startMin: 120, endMin: 840 },
+    { id: 'e3', code: 'WLUNIT', label: 'Wireline Unit', startMin: 840, endMin: 885 },
+  ],
 };

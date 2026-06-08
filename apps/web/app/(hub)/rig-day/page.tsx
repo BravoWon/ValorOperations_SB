@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Save } from 'lucide-react';
 import {
+  deriveProgress,
   deriveTimeAccounting,
   findBankCode,
   snapTo5,
   DEFAULT_RIG_DAY,
   DAY_MINUTES,
+  EQUIPMENT_CATEGORIES,
+  PARTY_ROLES,
+  type LaneItem,
   type RigDay,
   type TimeBlock,
 } from '@valor/core';
@@ -15,8 +19,10 @@ import { getRepo } from '@/lib/repo';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RigDayTimeline } from '@/components/rig-day-timeline';
+import { RigDayLanes } from '@/components/rig-day-lanes';
 import { BankPalette } from '@/components/bank-palette';
 import { RigDayEditors } from '@/components/rig-day-editors';
+import { LaneEditors } from '@/components/lane-editors';
 import { TimeAccountingRail } from '@/components/time-accounting-rail';
 import { LoadingState } from '@/components/ui/states';
 
@@ -61,6 +67,7 @@ export default function RigDayPage() {
   }, []);
 
   const accounting = useMemo(() => deriveTimeAccounting(day.blocks), [day.blocks]);
+  const progress = useMemo(() => deriveProgress(day.blocks), [day.blocks]);
 
   const nowMin = day.blocks.length
     ? Math.max(...day.blocks.map((b) => b.endMin))
@@ -162,6 +169,16 @@ export default function RigDayPage() {
             </CardContent>
           </Card>
 
+          {/* People · equipment · progress swimlanes — same 24h clock */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Swimlanes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RigDayLanes day={day} progress={progress} />
+            </CardContent>
+          </Card>
+
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
             {/* Left: editing surface */}
             <div className="min-w-0 space-y-6">
@@ -180,6 +197,28 @@ export default function RigDayPage() {
                 </CardHeader>
                 <CardContent>
                   <RigDayEditors day={day} onChange={setDay} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>People &amp; Equipment</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <LaneEditors
+                    title="People"
+                    items={day.people ?? []}
+                    catalog={PARTY_ROLES}
+                    onChange={(people: LaneItem[]) => setDay({ ...day, people })}
+                    idPrefix="p"
+                  />
+                  <LaneEditors
+                    title="Equipment"
+                    items={day.equipment ?? []}
+                    catalog={EQUIPMENT_CATEGORIES}
+                    onChange={(equipment: LaneItem[]) => setDay({ ...day, equipment })}
+                    idPrefix="e"
+                  />
                 </CardContent>
               </Card>
             </div>

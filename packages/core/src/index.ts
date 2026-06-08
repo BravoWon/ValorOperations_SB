@@ -18,3 +18,4 @@ export * from './well-setup/project-wellbore';
 export * from './rig-day/types';
 export * from './rig-day/time-accounting';
 export * from './rig-day/seed';
+export * from './rig-day/lanes';
