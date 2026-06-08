@@ -39,4 +39,6 @@ export interface Repository {
   loadWellSetup(wellId: string): Promise<import('./well-setup/types').WellSetup | null>;
   saveRigDay(id: string, day: import('./rig-day/types').RigDay): Promise<void>;
   loadRigDay(id: string): Promise<import('./rig-day/types').RigDay | null>;
+  saveChannels(channels: import('./data-manager/types').ChannelDef[]): Promise<void>;
+  loadChannels(): Promise<import('./data-manager/types').ChannelDef[] | null>;
 }
