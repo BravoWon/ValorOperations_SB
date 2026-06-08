@@ -58,4 +58,12 @@ describe('getRepo() factory gate', () => {
     const { supabaseConfigured } = await import('@/lib/repo');
     expect(supabaseConfigured()).toBe(true);
   });
+
+  it('gate stays closed when ORG_ID is set but not a valid UUID (fail-safe to mock)', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
+    process.env.NEXT_PUBLIC_SUPABASE_ORG_ID = 'org-valor'; // the mock seed id — not a UUID
+    const { supabaseConfigured } = await import('@/lib/repo');
+    expect(supabaseConfigured()).toBe(false);
+  });
 });

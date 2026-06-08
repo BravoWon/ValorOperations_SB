@@ -165,14 +165,25 @@ export class SupabaseRepository implements Repository {
       casingStrings = (csgRes.data ?? []).map(rowToCasingString);
     }
 
+    // Pre-group children by wellbore_id once (O(F + C)) so the per-wellbore build
+    // is linear, rather than the O(W×(F+C)) of re-scanning both arrays per wellbore.
+    const formationsByWb = new Map<string, Formation[]>();
+    for (const f of formations) {
+      const list = formationsByWb.get(f.wellboreId);
+      if (list) list.push(f);
+      else formationsByWb.set(f.wellboreId, [f]);
+    }
+    const casingByWb = new Map<string, CasingString[]>();
+    for (const c of casingStrings) {
+      const list = casingByWb.get(c.wellboreId);
+      if (list) list.push(c);
+      else casingByWb.set(c.wellboreId, [c]);
+    }
+
     const detail: WellboreDetail[] = wellbores.map((wb) => ({
       ...rowToWellbore(wb),
-      formations: formations
-        .filter((f) => f.wellboreId === wb.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-      casingStrings: casingStrings
-        .filter((c) => c.wellboreId === wb.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
+      formations: (formationsByWb.get(wb.id as string) ?? []).sort((a, b) => a.sortOrder - b.sortOrder),
+      casingStrings: (casingByWb.get(wb.id as string) ?? []).sort((a, b) => a.sortOrder - b.sortOrder),
     }));
 
     return { well, wellbores: detail };
@@ -283,7 +294,10 @@ export class SupabaseRepository implements Repository {
         sort_order: ns.sortOrder,
       }));
       const stageRes = await this.client.from('stages').insert(stageRows);
-      if (stageRes.error) this.fail(stageRes.error, 'createJobFromTemplate(stages)');
+      if (stageRes.error) {
+        await this.bestEffortDeleteJob(job.id);
+        this.fail(stageRes.error, 'createJobFromTemplate(stages)');
+      }
     }
 
     const histRes = await this.client.from('job_status_history').insert({
@@ -293,9 +307,28 @@ export class SupabaseRepository implements Repository {
       to_status: 'planned',
       changed_by: input.createdBy,
     });
-    if (histRes.error) this.fail(histRes.error, 'createJobFromTemplate(history)');
+    if (histRes.error) {
+      await this.bestEffortDeleteJob(job.id);
+      this.fail(histRes.error, 'createJobFromTemplate(history)');
+    }
 
     return job;
+  }
+
+  /**
+   * Best-effort cleanup when the multi-step job create partially fails. This is
+   * NOT a true transaction — if this delete itself fails the job row is stranded.
+   * The correct fix is a transactional Postgres function (RPC) that creates the
+   * job + stages + history atomically; that is deferred to the live-project step
+   * (needs the live DB to author/test — see supabase/README.md "Known limitations").
+   * Until then this avoids the common partial-create (job row, no stages/history).
+   */
+  private async bestEffortDeleteJob(jobId: string): Promise<void> {
+    try {
+      await this.client.from('jobs').delete().eq('org_id', this.orgId).eq('id', jobId);
+    } catch {
+      /* swallow — best-effort cleanup on an already-failing path */
+    }
   }
 
   async advanceJobStatus(jobId: string, to: JobStatus, userId: string, note?: string): Promise<Job> {

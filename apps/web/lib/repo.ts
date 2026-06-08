@@ -12,13 +12,20 @@ let instance: Repository | null = null;
 // 'org-valor') would make PostgREST's org_id filters error or match nothing.
 // Hence org id is part of the "configured" gate and has no fallback on the
 // Supabase path — the mock path keeps using DEMO_ORG_ID, where it is valid.
+// A non-UUID org id would break PostgREST's uuid `org_id` filters, so the gate
+// validates the format — a malformed ORG_ID fails the gate and the app stays on
+// the mock rather than silently engaging a broken Supabase path.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Exported for the factory-gate test. All three vars are required to engage
 // Supabase; ORG_ID specifically must be the org's UUID (no fallback).
 export function supabaseConfigured(): boolean {
+  const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID;
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-      process.env.NEXT_PUBLIC_SUPABASE_ORG_ID,
+      orgId &&
+      UUID_RE.test(orgId),
   );
 }
 

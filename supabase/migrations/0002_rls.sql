@@ -96,9 +96,11 @@ create policy "memberships_admin_delete" on public.memberships
 -- Tenant tables — uniform org-isolation policies.
 --
 -- For each table: enable RLS, a SELECT policy (org match) and an ALL policy
--- (org match in both USING and WITH CHECK). The ALL policy covers
--- insert/update/delete; the dedicated SELECT policy makes read intent explicit
--- and ensures UPDATE (which must SELECT the row first) always has a read path.
+-- (org match in both USING and WITH CHECK). In Postgres FOR ALL applies to every
+-- command INCLUDING select — the two policies are OR'd for reads, so the result
+-- is the same org predicate either way. The dedicated SELECT policy is kept
+-- explicit so read intent is clear and UPDATE (which must read the row first)
+-- always has an unambiguous read path.
 -- ============================================================================
 
 -- Condition-state

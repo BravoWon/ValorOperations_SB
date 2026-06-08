@@ -121,6 +121,11 @@ serves the app you still need to:
   from the request's cookies/headers (e.g. [`@supabase/ssr`](https://supabase.com/docs/guides/auth/server-side)),
   not a singleton. This is the main remaining build step and is intentionally out
   of scope for the scaffold (it needs the live project + auth UI to verify).
+- **Make multi-step writes atomic via RPC.** `createJobFromTemplate()` writes the
+  job, its stages, and a status-history row in separate statements. The adapter
+  does best-effort cleanup (deletes the job row) if a later step fails, but that
+  is not transactional — the correct fix is a Postgres function (`rpc`) that does
+  all three atomically. Deferred to the live-project step (needs the live DB).
 - **Run the migrations + pgTAP** against the live project (steps 3 & 5 above).
 
 ## Notes
