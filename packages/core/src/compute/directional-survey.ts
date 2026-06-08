@@ -117,11 +117,18 @@ export function computeSurvey(input: SurveyStation[], opts: SurveyOptions = {}):
     .map((s) => ({ md: s.md, inc: s.inc, azi: norm360(s.azi) }));
   if (cleaned.length !== input.length) warnings.push('Some survey rows were dropped (non-numeric values).');
 
-  const sorted = [...cleaned].sort((a, b) => a.md - b.md);
+  // Negative MD is below the surface tie-in (MD 0) and would produce negative
+  // segment lengths — drop those rows and warn (the UI also sets md min 0).
+  const nonNeg = cleaned.filter((s) => s.md >= 0);
+  if (nonNeg.length !== cleaned.length) {
+    warnings.push('Stations with negative measured depth were dropped.');
+  }
+
+  const sorted = [...nonNeg].sort((a, b) => a.md - b.md);
   if (sorted.some((s, i) => i > 0 && s.md === sorted[i - 1]!.md)) {
     warnings.push('Two stations share the same measured depth.');
   }
-  if (cleaned.some((s, i) => i > 0 && s.md < cleaned[i - 1]!.md)) {
+  if (nonNeg.some((s, i) => i > 0 && s.md < nonNeg[i - 1]!.md)) {
     warnings.push('Stations were reordered to increasing measured depth.');
   }
   if (sorted.some((s) => s.inc < 0 || s.inc > 180)) {
@@ -188,8 +195,9 @@ export function computeSurvey(input: SurveyStation[], opts: SurveyOptions = {}):
 /**
  * Position at an arbitrary measured depth. Inclination/azimuth are linearly
  * interpolated between the bracketing stations, then a minimum-curvature step is
- * taken from the lower station's computed position. Returns null if `md` is
- * outside the surveyed range or fewer than one station exists.
+ * taken from the lower station's computed position. `md` in [0, firstStationMd)
+ * is supported — it interpolates from the implicit surface tie-in (MD 0). Returns
+ * null if `md` is negative, beyond the deepest station, or no stations exist.
  */
 export function interpolateAtMd(
   input: SurveyStation[],
@@ -206,16 +214,16 @@ export function interpolateAtMd(
   if (exact) return exact;
 
   if (md < (stations[0]?.md ?? 0)) {
-    // Between the implicit surface tie-in and the first station.
+    // Between the implicit surface tie-in (MD 0) and the first station.
     if (md < 0) return null;
-    return interpolateSegment({ md: 0, inc: 0, azi: 0 }, stations[0]!, stations[0]!, md, opts, 0, 0, 0);
+    return interpolateSegment({ md: 0, inc: 0, azi: 0 }, stations[0]!, md, opts, 0, 0, 0);
   }
 
   for (let i = 0; i < stations.length - 1; i++) {
     const lo = stations[i]!;
     const hi = stations[i + 1]!;
     if (md > lo.md && md < hi.md) {
-      return interpolateSegment(lo, hi, lo, md, opts, lo.tvd, lo.north, lo.east);
+      return interpolateSegment(lo, hi, md, opts, lo.tvd, lo.north, lo.east);
     }
   }
   return null; // beyond the deepest station
@@ -224,7 +232,6 @@ export function interpolateAtMd(
 function interpolateSegment(
   lo: SurveyStation,
   hi: SurveyStation,
-  base: StationResult | SurveyStation,
   md: number,
   opts: SurveyOptions,
   baseTvd: number,
@@ -284,6 +291,8 @@ export interface SurveyOutputColumnSpec {
   label: string;
   unit: string;
   unitQuantity?: 'length';
+  /** Rate normalized per course length — the panel renders `°/<courseLength>`. */
+  perCourse?: boolean;
   decimals: number;
 }
 
@@ -294,7 +303,9 @@ export const SURVEY_OUTPUT_COLUMNS: SurveyOutputColumnSpec[] = [
   { key: 'vs', label: 'VS', unit: 'ft', unitQuantity: 'length', decimals: 1 },
   { key: 'closure', label: 'Closure', unit: 'ft', unitQuantity: 'length', decimals: 1 },
   { key: 'closureAzimuth', label: 'Closure azi', unit: '°', decimals: 1 },
-  { key: 'dls', label: 'DLS', unit: '°/100', decimals: 2 },
+  // unit/unitQuantity are the imperial defaults; the panel derives the live unit
+  // (length unit + `°/<courseLength>`) from the selected course length.
+  { key: 'dls', label: 'DLS', unit: '°/100', perCourse: true, decimals: 2 },
 ];
 
 /** A short demo survey (a vertical-then-build curve) for the panel seed. */

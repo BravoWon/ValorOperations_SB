@@ -79,6 +79,16 @@ describe('computeSurvey — minimum curvature', () => {
     expect(warnings.some((w) => /reordered/i.test(w))).toBe(true);
   });
 
+  it('drops negative-MD stations and warns', () => {
+    const { stations, warnings } = computeSurvey([
+      { md: -50, inc: 0, azi: 0 },
+      { md: 0, inc: 0, azi: 0 },
+      { md: 100, inc: 0, azi: 0 },
+    ]);
+    expect(stations.map((s) => s.md)).toEqual([0, 100]);
+    expect(warnings.some((w) => /negative measured depth/i.test(w))).toBe(true);
+  });
+
   it('warns on a high dogleg', () => {
     const { warnings } = computeSurvey([
       { md: 0, inc: 0, azi: 0 },

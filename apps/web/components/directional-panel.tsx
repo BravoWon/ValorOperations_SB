@@ -29,6 +29,14 @@ export function DirectionalPanel() {
     return computeSurvey(stations, { vsAzimuth, courseLength });
   }, [stations, vsAziRaw, courseLength]);
 
+  // The course length picks the unit system you work in (no conversion — survey
+  // depths are entered and reported in one system). Derive every displayed unit
+  // from it so labels never disagree with the data.
+  const lengthUnit = courseLength === 30 ? 'm' : 'ft';
+  const dlsUnit = `°/${courseLength}`;
+  const displayUnit = (col: { unit: string; unitQuantity?: 'length'; perCourse?: boolean }): string =>
+    col.unitQuantity === 'length' ? lengthUnit : col.perCourse ? dlsUnit : col.unit;
+
   const setCell = (i: number, key: keyof SurveyStation, raw: string) =>
     setStations((p) => p.map((s, idx) => (idx === i ? { ...s, [key]: num(raw) } : s)));
 
@@ -54,7 +62,7 @@ export function DirectionalPanel() {
                   <th className="eyebrow px-2 py-1.5 font-normal">#</th>
                   {SURVEY_INPUT_COLUMNS.map((c) => (
                     <th key={c.key} className="eyebrow px-2 py-1.5 font-normal">
-                      {c.label} <span className="text-muted-foreground/60">({c.unit})</span>
+                      {c.label} <span className="text-muted-foreground/60">({displayUnit(c)})</span>
                     </th>
                   ))}
                   <th className="px-2 py-1.5" />
@@ -136,12 +144,12 @@ export function DirectionalPanel() {
       {/* Summary strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: 'TD (MD)', value: result.summary.totalMd, unit: '', d: 0 },
-          { label: 'TVD', value: result.summary.totalTvd, unit: '', d: 1 },
-          { label: 'Closure', value: result.summary.closure, unit: '', d: 1 },
+          { label: 'TD (MD)', value: result.summary.totalMd, unit: lengthUnit, d: 0 },
+          { label: 'TVD', value: result.summary.totalTvd, unit: lengthUnit, d: 1 },
+          { label: 'Closure', value: result.summary.closure, unit: lengthUnit, d: 1 },
           { label: 'Closure azi', value: result.summary.closureAzimuth, unit: '°', d: 1 },
-          { label: 'VS', value: result.summary.vs, unit: '', d: 1 },
-          { label: 'Max DLS', value: result.summary.maxDls, unit: `°/${courseLength}`, d: 2 },
+          { label: 'VS', value: result.summary.vs, unit: lengthUnit, d: 1 },
+          { label: 'Max DLS', value: result.summary.maxDls, unit: dlsUnit, d: 2 },
         ].map((k) => (
           <div key={k.label} className="rounded-md border border-white/[0.06] bg-background/30 px-3 py-2.5">
             <div className="eyebrow mb-1 truncate">{k.label}</div>
@@ -167,7 +175,7 @@ export function DirectionalPanel() {
                   ))}
                   {SURVEY_OUTPUT_COLUMNS.map((c) => (
                     <th key={c.key} className="eyebrow px-2 py-1.5 font-normal">
-                      {c.label} <span className="text-muted-foreground/60">{c.unit}</span>
+                      {c.label} <span className="text-muted-foreground/60">{displayUnit(c)}</span>
                     </th>
                   ))}
                 </tr>
