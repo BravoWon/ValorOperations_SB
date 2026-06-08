@@ -21,7 +21,8 @@ export const DEFAULT_CHANNELS: ChannelDef[] = [
 ];
 
 export function blankChannel(seq: number): ChannelDef {
-  return { id: `ch-${seq}`, channelId: '', mnemonic: '', label: '', unit: '', dataType: 'number', dp: 2, source: 'WITS', min: 0, max: 0, enabled: true };
+  // Default to a valid range (min < max) so a freshly-added row isn't already a warning.
+  return { id: `ch-${seq}`, channelId: '', mnemonic: '', label: '', unit: '', dataType: 'number', dp: 2, source: 'WITS', min: 0, max: 100, enabled: true };
 }
 
 export function validateChannels(channels: ChannelDef[]): string[] {
@@ -29,8 +30,11 @@ export function validateChannels(channels: ChannelDef[]): string[] {
   const seenM = new Map<string, number>();
   const seenC = new Map<string, number>();
   for (const c of channels) {
-    if (c.mnemonic.trim()) seenM.set(c.mnemonic, (seenM.get(c.mnemonic) ?? 0) + 1);
-    if (c.channelId.trim()) seenC.set(c.channelId, (seenC.get(c.channelId) ?? 0) + 1);
+    // Key the dup maps by the TRIMMED value so "WOB" and "WOB " collide.
+    const m = c.mnemonic.trim();
+    const cid = c.channelId.trim();
+    if (m) seenM.set(m, (seenM.get(m) ?? 0) + 1);
+    if (cid) seenC.set(cid, (seenC.get(cid) ?? 0) + 1);
     if (Number.isFinite(c.min) && Number.isFinite(c.max) && c.min >= c.max) {
       warnings.push(`${c.mnemonic || c.id}: min (${c.min}) must be less than max (${c.max}).`);
     }

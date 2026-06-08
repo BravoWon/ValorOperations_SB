@@ -18,4 +18,25 @@ describe('channels', () => {
   it('blankChannel is deterministic by seq', () => {
     expect(blankChannel(3).id).toBe(blankChannel(3).id);
   });
+  it('validate flags duplicate channel assignment', () => {
+    const dup = [
+      { ...blankChannel(1), mnemonic: 'A', channelId: '0108' },
+      { ...blankChannel(2), mnemonic: 'B', channelId: '0108' },
+    ];
+    expect(validateChannels(dup).some((w) => /channel assignment/i.test(w))).toBe(true);
+  });
+  it('treats trimmed values as duplicates', () => {
+    const dup = [
+      { ...blankChannel(1), mnemonic: 'WOB', channelId: '1' },
+      { ...blankChannel(2), mnemonic: 'WOB ', channelId: '2' },
+    ];
+    expect(validateChannels(dup).some((w) => /mnemonic/i.test(w))).toBe(true);
+  });
+  it('flags invalid decimal places', () => {
+    const bad = [{ ...blankChannel(1), mnemonic: 'A', channelId: '1', dp: -1 }];
+    expect(validateChannels(bad).some((w) => /decimal/i.test(w))).toBe(true);
+  });
+  it('a freshly-added blank channel produces no warnings', () => {
+    expect(validateChannels([blankChannel(1)])).toEqual([]);
+  });
 });
