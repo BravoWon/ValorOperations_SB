@@ -134,13 +134,14 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
   };
 
   // ---- Repeatable tables ----------------------------------------------
-  function renderCellInput<T extends Record<string, unknown>>(
+  function renderCellInput<T extends object>(
     col: ColumnSpec,
     row: T,
     onRowChange: (next: T) => void,
     idPrefix: string,
   ) {
     const id = `${idPrefix}-${col.key}`;
+    const cell = (row as Record<string, unknown>)[col.key];
     if (col.kind === 'number') {
       const unit = rowUnitFor(col.key, depthUnit, diaUnit);
       return (
@@ -149,7 +150,7 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
           aria-label={col.label}
           type="number"
           step="any"
-          value={toDisplay(row[col.key] as number, unit)}
+          value={toDisplay(cell as number, unit)}
           onChange={(e) => {
             const n = Number(e.target.value);
             const canonicalUnit: LengthUnit = DIAMETER_KEYS.has(col.key) ? 'in' : 'ft';
@@ -166,14 +167,14 @@ export function WellSetupPanels({ setup, onChange, depthUnit, diaUnit }: WellSet
         id={id}
         aria-label={col.label}
         type="text"
-        value={String(row[col.key] ?? '')}
+        value={String(cell ?? '')}
         onChange={(e) => onRowChange({ ...row, [col.key]: e.target.value })}
         className={CELL_INPUT_CLASS}
       />
     );
   }
 
-  function RepeatableTable<T extends Record<string, unknown>>({
+  function RepeatableTable<T extends object>({
     title,
     columns,
     rows,

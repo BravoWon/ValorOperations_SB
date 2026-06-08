@@ -67,7 +67,8 @@ export const WellboreSchematic = forwardRef<SVGSVGElement, WellboreSchematicProp
       const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
       const niceStep = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= rawStep) ?? 10 * mag;
       for (let d = 0; d <= totalDepthFt + 1e-6; d += niceStep) ticks.push(d);
-      if (ticks[ticks.length - 1] < totalDepthFt) ticks.push(totalDepthFt);
+      const last = ticks[ticks.length - 1];
+      if (last === undefined || last < totalDepthFt) ticks.push(totalDepthFt);
     }
 
     const depthLabel = (ft: number) =>
