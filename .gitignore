@@ -33,3 +33,6 @@ tools/knowledge-mining/.raw/
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# Brand/personnel-bearing reference PDFs dropped in docs/ — mine abstractly, never commit (IP guardrail)
+docs/*.pdf

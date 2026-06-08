@@ -20,3 +20,5 @@ export * from './rig-day/time-accounting';
 export * from './rig-day/seed';
 export * from './rig-day/lanes';
 export * from './rig-day/recall';
+export * from './data-manager/types';
+export * from './data-manager/channels';

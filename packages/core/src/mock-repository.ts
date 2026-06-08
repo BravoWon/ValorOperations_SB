@@ -19,6 +19,7 @@ export class MockRepository implements Repository {
   private dashboards = new Map<string, DashboardLayout>();
   private wellSetups = new Map<string, import('./well-setup/types').WellSetup>();
   private rigDays = new Map<string, import('./rig-day/types').RigDay>();
+  private channels: import('./data-manager/types').ChannelDef[] | null = null;
 
   constructor() {
     this.data = createSeed();
@@ -249,5 +250,17 @@ export class MockRepository implements Repository {
     const store = this.browserStorage;
     if (store) { const raw = store.getItem(this.rigDayKey(id)); if (raw) { try { return JSON.parse(raw) as import('./rig-day/types').RigDay; } catch { return null; } } return null; }
     return this.rigDays.has(id) ? structuredClone(this.rigDays.get(id)!) : null;
+  }
+
+  async saveChannels(channels: import('./data-manager/types').ChannelDef[]): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:channels', JSON.stringify(channels));
+    else this.channels = structuredClone(channels);
+  }
+
+  async loadChannels(): Promise<import('./data-manager/types').ChannelDef[] | null> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:channels'); if (raw) { try { return JSON.parse(raw) as import('./data-manager/types').ChannelDef[]; } catch { return null; } } return null; }
+    return this.channels ? structuredClone(this.channels) : null;
   }
 }

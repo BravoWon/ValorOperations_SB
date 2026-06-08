@@ -61,7 +61,7 @@ export const AREAS: AreaDef[] = [
     id: 'data-manager',
     title: 'Data Manager',
     tagline: 'Field data pipeline',
-    status: 'soon',
+    status: 'active',
     href: '/data-manager',
     icon: Database,
     description:

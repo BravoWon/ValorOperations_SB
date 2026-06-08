@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { AssetTreeNode } from '@valor/core';
-import { Activity, Layers, Gauge, LayoutDashboard, Home, Clock } from 'lucide-react';
+import { Activity, Layers, Gauge, LayoutDashboard, Home, Clock, Database } from 'lucide-react';
 import { AssetTree } from '@/components/asset-tree';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ const NAV = [
   { href: '/rig-day', label: 'Rig Day', icon: Clock },
   { href: '/assets', label: 'Assets', icon: Layers },
   { href: '/tools/hydraulics', label: 'Hydraulics', icon: Gauge },
+  { href: '/data-manager', label: 'Data Manager', icon: Database },
 ];
 
 export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: React.ReactNode }) {
