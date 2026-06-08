@@ -26,6 +26,14 @@ function createRepo(): Repository {
   if (supabaseConfigured()) {
     // Lazy require so @supabase/supabase-js + the adapter are never pulled into
     // the default (mock) path — keeps the unconfigured app identical to before.
+    //
+    // This module only runs inside the Next.js bundle (the gate is on
+    // NEXT_PUBLIC_* vars), and Next's bundler transpiles this `require` of the
+    // ESM-only supabase-js — the production build resolves it cleanly. A
+    // top-level static import would defeat the bundle-splitting above (pulling
+    // supabase-js into every mock build); `await import()` would force getRepo()
+    // async and ripple through every caller for no benefit in the only
+    // (bundled) environment this runs in. Hence the deliberate lazy require.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js');
     // eslint-disable-next-line @typescript-eslint/no-var-requires

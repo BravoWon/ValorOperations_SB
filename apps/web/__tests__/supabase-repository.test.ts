@@ -137,6 +137,15 @@ describe('SupabaseRepository (mocked client)', () => {
     await expect(repo.listWells(ORG)).rejects.toThrow(/boom/);
   });
 
+  it('rejects a cross-org argument rather than reading another tenant', async () => {
+    const { client } = makeClient();
+    const repo = new SupabaseRepository(client, ORG);
+    // The instance is scoped to ORG; passing a different org id is a programming
+    // error and must throw instead of silently querying another tenant.
+    await expect(repo.listWells('org-other')).rejects.toThrow(/scoped to org/);
+    await expect(repo.listJobs('org-other')).rejects.toThrow(/scoped to org/);
+  });
+
   const MODULE_TABLES = ['dashboards', 'well_setups', 'rig_days', 'channels', 'vendors', 'afe_lines'] as const;
 
   it('exportSnapshot() queries every org module table; listCollections() summarizes counts', async () => {

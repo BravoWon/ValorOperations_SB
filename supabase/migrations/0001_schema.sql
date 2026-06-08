@@ -120,7 +120,8 @@ create table public.casing_strings (
   id            uuid primary key default gen_random_uuid(),
   org_id        uuid not null references public.orgs(id) on delete cascade,
   wellbore_id   uuid not null references public.wellbores(id) on delete cascade,
-  role          text,                 -- CasingStringType: conductor | surface | intermediate | production
+  role          text not null         -- CasingStringType (required in @valor/core)
+                  check (role in ('conductor', 'surface', 'intermediate', 'production')),
   hole_dia_in   double precision,
   od_in         double precision,
   id_in         double precision,
@@ -171,7 +172,8 @@ create table public.template_field_defs (
   id            uuid primary key default gen_random_uuid(),
   org_id        uuid not null references public.orgs(id) on delete cascade,
   template_id   uuid not null references public.job_templates(id) on delete cascade,
-  scope         text,                 -- FieldScope: job | stage
+  scope         text not null         -- FieldScope (required in @valor/core)
+                  check (scope in ('job', 'stage')),
   key           text not null,
   label         text not null,
   data_type     text not null,        -- FieldDataType: number | text | bool | date | enum

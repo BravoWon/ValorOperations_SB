@@ -40,6 +40,12 @@ as $$
   );
 $$;
 
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which would let
+-- the anon role call this SECURITY DEFINER helper over RPC. It is an internal RLS
+-- helper only — lock execution down to authenticated callers.
+revoke all on function public.is_org_admin(uuid) from public;
+grant execute on function public.is_org_admin(uuid) to authenticated;
+
 -- ============================================================================
 -- Tenancy tables — bespoke policies
 -- ============================================================================
@@ -69,12 +75,22 @@ create policy "memberships_self_select" on public.memberships
 -- access to that org's rows through every other tenant policy. Only an existing
 -- owner/admin of the SAME org may create/modify/remove its memberships.
 --
+-- Scoped to INSERT/UPDATE/DELETE specifically (not `for all`): a `for all` policy
+-- would ALSO grant admins SELECT on every membership row in their org, widening
+-- read access beyond the self-select policy above. Reads stay self-only.
+--
 -- Bootstrapping: the first owner of a brand-new org is seeded with the
 -- service-role key (which bypasses RLS) — see supabase/README.md.
-create policy "memberships_admin_write" on public.memberships
-  for all to authenticated
+create policy "memberships_admin_insert" on public.memberships
+  for insert to authenticated
+  with check ( public.is_org_admin(org_id) );
+create policy "memberships_admin_update" on public.memberships
+  for update to authenticated
   using ( public.is_org_admin(org_id) )
   with check ( public.is_org_admin(org_id) );
+create policy "memberships_admin_delete" on public.memberships
+  for delete to authenticated
+  using ( public.is_org_admin(org_id) );
 
 -- ============================================================================
 -- Tenant tables — uniform org-isolation policies.

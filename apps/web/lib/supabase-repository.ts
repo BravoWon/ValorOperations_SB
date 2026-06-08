@@ -61,10 +61,28 @@ export class SupabaseRepository implements Repository {
     throw new Error(`SupabaseRepository.${context} failed: ${message}`);
   }
 
+  /**
+   * Every query in this adapter is scoped to the single org the instance was
+   * constructed with (`this.orgId`). Some Repository methods still take an
+   * `orgId` argument; rather than trust it (which could read/write another
+   * tenant inconsistently with the methods that always use `this.orgId`), we
+   * assert it matches and then use `this.orgId`. A mismatch is a programming
+   * error, so it throws rather than silently crossing tenants.
+   */
+  private orgScope(orgId?: string): string {
+    if (orgId !== undefined && orgId !== this.orgId) {
+      throw new Error(
+        `SupabaseRepository is scoped to org "${this.orgId}" but received "${orgId}".`,
+      );
+    }
+    return this.orgId;
+  }
+
   // --- condition-state: read -------------------------------------------------
 
   async listWells(orgId: string): Promise<Well[]> {
-    const { data, error } = await this.client.from('wells').select('*').eq('org_id', orgId);
+    const org = this.orgScope(orgId);
+    const { data, error } = await this.client.from('wells').select('*').eq('org_id', org);
     if (error) this.fail(error, 'listWells');
     return (data ?? []).map(rowToWell);
   }
@@ -81,16 +99,18 @@ export class SupabaseRepository implements Repository {
   }
 
   async listAssets(orgId: string): Promise<Asset[]> {
-    const { data, error } = await this.client.from('assets').select('*').eq('org_id', orgId);
+    const org = this.orgScope(orgId);
+    const { data, error } = await this.client.from('assets').select('*').eq('org_id', org);
     if (error) this.fail(error, 'listAssets');
     return (data ?? []).map(rowToAsset);
   }
 
   async getAssetTree(orgId: string): Promise<AssetTreeNode[]> {
+    const org = this.orgScope(orgId);
     const [assetsRes, padsRes, wellsRes] = await Promise.all([
-      this.client.from('assets').select('*').eq('org_id', orgId),
-      this.client.from('pads').select('*').eq('org_id', orgId),
-      this.client.from('wells').select('*').eq('org_id', orgId),
+      this.client.from('assets').select('*').eq('org_id', org),
+      this.client.from('pads').select('*').eq('org_id', org),
+      this.client.from('wells').select('*').eq('org_id', org),
     ]);
     if (assetsRes.error) this.fail(assetsRes.error, 'getAssetTree(assets)');
     if (padsRes.error) this.fail(padsRes.error, 'getAssetTree(pads)');
@@ -164,7 +184,8 @@ export class SupabaseRepository implements Repository {
   }
 
   async listTemplates(orgId: string): Promise<JobTemplate[]> {
-    const { data, error } = await this.client.from('job_templates').select('*').eq('org_id', orgId);
+    const org = this.orgScope(orgId);
+    const { data, error } = await this.client.from('job_templates').select('*').eq('org_id', org);
     if (error) this.fail(error, 'listTemplates');
     return (data ?? []).map(rowToTemplate);
   }
@@ -194,7 +215,8 @@ export class SupabaseRepository implements Repository {
   }
 
   async listJobs(orgId: string): Promise<Job[]> {
-    const { data, error } = await this.client.from('jobs').select('*').eq('org_id', orgId);
+    const org = this.orgScope(orgId);
+    const { data, error } = await this.client.from('jobs').select('*').eq('org_id', org);
     if (error) this.fail(error, 'listJobs');
     return (data ?? []).map(rowToJob);
   }
@@ -233,11 +255,12 @@ export class SupabaseRepository implements Repository {
   // --- activity-state: mutations ---------------------------------------------
 
   async createJobFromTemplate(input: CreateJobFromTemplateInput): Promise<Job> {
+    const org = this.orgScope(input.orgId);
     const bundle = await this.getTemplate(input.templateId);
     if (!bundle) throw new Error(`Template not found: ${input.templateId}`);
 
     const jobInsert = {
-      org_id: input.orgId,
+      org_id: org,
       well_id: input.wellId,
       wellbore_id: input.wellboreId ?? null,
       template_id: input.templateId,
@@ -256,7 +279,7 @@ export class SupabaseRepository implements Repository {
     const newStages = instantiateStages(bundle.stageDefs);
     if (newStages.length > 0) {
       const stageRows = newStages.map((ns) => ({
-        org_id: input.orgId,
+        org_id: org,
         job_id: job.id,
         stage_no: ns.stageNo,
         name: ns.name,
@@ -269,7 +292,7 @@ export class SupabaseRepository implements Repository {
     }
 
     const histRes = await this.client.from('job_status_history').insert({
-      org_id: input.orgId,
+      org_id: org,
       job_id: job.id,
       from_status: null,
       to_status: 'planned',
