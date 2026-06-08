@@ -11,14 +11,14 @@ import { roleSatisfies } from '@/lib/role';
 export interface PlaneItem {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
   minRole: Role;
 }
 
 export interface Plane {
-  id: string;
+  id: 'operate' | 'visualize' | 'administer' | 'data';
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
   items: PlaneItem[];
 }
 

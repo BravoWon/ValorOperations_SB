@@ -3,7 +3,7 @@ import type { Role } from '@valor/core';
 
 export type { Role };
 
-/** Privilege order, highest first. */
+/** All roles (also the switcher display order); privilege comes from ROLE_RANK, not array index. */
 export const ALL_ROLES: Role[] = ['owner', 'admin', 'ops', 'field', 'vendor', 'viewer'];
 
 /** Higher rank = more access. */
