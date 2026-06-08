@@ -3,25 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { AssetTreeNode } from '@valor/core';
-import { Activity, Layers, Gauge, LayoutDashboard, Home, Clock, Database, Building2, HardDrive, BarChart3, Compass } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { AssetTree } from '@/components/asset-tree';
+import { RoleSwitcher } from '@/components/role-switcher';
+import { useRole } from '@/components/role-provider';
+import { planesForRole } from '@/lib/planes';
 import { cn } from '@/lib/utils';
-
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Active Jobs', icon: Activity },
-  { href: '/rig-day', label: 'Rig Day', icon: Clock },
-  { href: '/assets', label: 'Assets', icon: Layers },
-  { href: '/tools/hydraulics', label: 'Hydraulics', icon: Gauge },
-  { href: '/tools/directional', label: 'Directional', icon: Compass },
-  { href: '/data-manager', label: 'Data Manager', icon: Database },
-  { href: '/office-ops', label: 'Office Ops', icon: Building2 },
-  { href: '/data-studio', label: 'Data Studio', icon: BarChart3 },
-  { href: '/local-db', label: 'Local Database', icon: HardDrive },
-];
 
 export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: React.ReactNode }) {
   const pathname = usePathname();
+  const { role } = useRole();
+  const planes = planesForRole(role);
 
   return (
     <div className="flex min-h-screen">
@@ -38,7 +30,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
           <div className="mt-2 flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_8px_0_rgba(201,168,76,0.7)]" />
             <span className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-gold/80">
-              Field Operations
+              Operations Hub
             </span>
           </div>
         </div>
@@ -49,36 +41,47 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
             V
           </span>
           <span className="flex flex-col leading-none">
-            <span className="font-display text-base font-medium tracking-tight text-cream">
-              Valor
-            </span>
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-gold/70">
-              Operations
-            </span>
+            <span className="font-display text-base font-medium tracking-tight text-cream">Valor</span>
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-gold/70">Operations</span>
           </span>
         </Link>
 
-        <nav className="space-y-1">
-          {NAV.map((n) => {
-            const active = pathname === n.href || pathname.startsWith(n.href + '/');
-            const Icon = n.icon;
+        <RoleSwitcher />
+
+        <nav className="space-y-5">
+          {planes.map((plane) => {
+            const PlaneIcon = plane.icon;
             return (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={cn(
-                  'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                  active
-                    ? 'bg-gold/12 text-gold-light'
-                    : 'text-muted-foreground hover:bg-white/[0.04] hover:text-cream',
-                )}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-gold" />
-                )}
-                <Icon className={cn('h-4 w-4', active ? 'text-gold' : 'text-muted-foreground/70')} strokeWidth={1.75} />
-                <span className="font-medium">{n.label}</span>
-              </Link>
+              <div key={plane.id}>
+                <div className="eyebrow mb-2 flex items-center gap-1.5 px-2">
+                  <PlaneIcon className="h-3 w-3 text-gold/70" aria-hidden="true" />
+                  {plane.label}
+                </div>
+                <div className="space-y-1">
+                  {plane.items.map((item) => {
+                    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                          active
+                            ? 'bg-gold/12 text-gold-light'
+                            : 'text-muted-foreground hover:bg-white/[0.04] hover:text-cream',
+                        )}
+                      >
+                        {active && (
+                          <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-gold" />
+                        )}
+                        <Icon className={cn('h-4 w-4', active ? 'text-gold' : 'text-muted-foreground/70')} strokeWidth={1.75} aria-hidden="true" />
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </nav>
