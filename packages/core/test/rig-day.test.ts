@@ -48,3 +48,27 @@ it('default rig day has blocks incl. an NPT one', () => {
   const a = deriveTimeAccounting(DEFAULT_RIG_DAY.blocks);
   expect(a.nptMin).toBeGreaterThan(0);
 });
+
+import { PARTY_ROLES, EQUIPMENT_CATEGORIES, findPartyRole, deriveProgress } from '../src/rig-day/lanes';
+
+describe('rig-day lanes', () => {
+  it('catalogs have unique codes', () => {
+    for (const cat of [PARTY_ROLES, EQUIPMENT_CATEGORIES]) {
+      const codes = cat.map((c) => c.code);
+      expect(new Set(codes).size).toBe(codes.length);
+    }
+  });
+  it('finds a party role', () => { expect(findPartyRole(PARTY_ROLES[0]!.code)?.label).toBeTruthy(); });
+  it('derives a time-ordered depth curve from block depths', () => {
+    const pts = deriveProgress([
+      { id: 'a', code: 'DRL', startMin: 0, endMin: 60, depthStartFt: 100, depthEndFt: 200 },
+      { id: 'b', code: 'DRL', startMin: 60, endMin: 120, depthStartFt: 200, depthEndFt: 350 },
+    ]);
+    expect(pts[0]).toEqual({ atMin: 0, depthFt: 100 });
+    expect(pts[pts.length - 1]).toEqual({ atMin: 120, depthFt: 350 });
+    expect(pts.every((p, i) => i === 0 || p.atMin >= pts[i - 1]!.atMin)).toBe(true);
+  });
+  it('ignores blocks without depths', () => {
+    expect(deriveProgress([{ id: 'x', code: 'CIRC', startMin: 0, endMin: 30 }])).toEqual([]);
+  });
+});
