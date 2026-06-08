@@ -1,12 +1,21 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, GitBranch, Layers, Ruler, PencilRuler } from 'lucide-react';
-import { getRepo } from '@/lib/repo';
+import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
 import { WellHeader } from '@/components/well-header';
 import { FormationsTable } from '@/components/formations-table';
 import { CasingTable } from '@/components/casing-table';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/states';
+
+// Pre-render a page per seeded well — but ONLY for the GitHub Pages static
+// export. On normal dev/Vercel builds this returns [] (no build-time repo query,
+// so no coupling to a future Supabase backend) and the route renders on demand.
+export async function generateStaticParams() {
+  if (process.env.STATIC_EXPORT !== 'true') return [];
+  const wells = await getRepo().listWells(DEMO_ORG_ID);
+  return wells.map((w) => ({ wellId: w.id }));
+}
 
 export default async function WellPage({ params }: { params: Promise<{ wellId: string }> }) {
   const { wellId } = await params;

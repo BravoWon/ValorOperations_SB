@@ -22,9 +22,12 @@ export default function LoginPage() {
     e.preventDefault();
     if (password === DEMO_PASSWORD) {
       // Set the (non-signed, demo-only) gate cookie, then do a FULL navigation
-      // so the middleware sees the cookie on the next request.
+      // so the middleware sees the cookie on the next request. Prefix the base
+      // path so this also lands correctly under a GitHub Pages project subpath
+      // (empty on dev / Vercel, so behaviour there is unchanged).
       document.cookie = 'valor_demo_auth=1; path=/; max-age=86400; samesite=lax';
-      window.location.assign('/');
+      const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      window.location.assign(`${base}/`);
     } else {
       setError(true);
     }

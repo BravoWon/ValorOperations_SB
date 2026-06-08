@@ -1,0 +1,57 @@
+name: Deploy to GitHub Pages
+
+# Builds the web app as a static export and publishes it to GitHub Pages.
+# The app runs entirely client-side on the mock (localStorage) repository, so a
+# static export is a faithful demo. STATIC_EXPORT flips next.config into
+# `output: 'export'`; PAGES_BASE_PATH is the project-site subpath (the repo name).
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/web/**'
+      - 'packages/core/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Build static export
+        run: corepack pnpm --filter @valor/web build
+        env:
+          STATIC_EXPORT: 'true'
+          # Project-site subpath = the repo name (portable across forks/renames).
+          # Clear this for a user/org site or a custom domain.
+          PAGES_BASE_PATH: ${{ github.event.repository.name }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
