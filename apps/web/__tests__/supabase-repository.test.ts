@@ -46,6 +46,8 @@ function makeClient(result: { data: unknown; error: unknown } = { data: [], erro
       update: record('update'),
       delete: record('delete'),
       eq: record('eq'),
+      in: record('in'),
+      not: record('not'),
       order: record('order'),
       // Promise-like: awaiting the builder resolves to the configured result.
       then: (resolve: (v: unknown) => unknown) => resolve(nextResult),
@@ -62,6 +64,12 @@ function makeClient(result: { data: unknown; error: unknown } = { data: [], erro
 
 const lastCall = (calls: RecordedCall[], table: string) =>
   [...calls].reverse().find((c) => c.table === table);
+
+// Most recent call against `table` that recorded op `op` — save methods now make
+// two calls per table (upsert + a cleanup delete), so "last call" alone is
+// ambiguous; this finds the one carrying the op under test.
+const lastCallWithOp = (calls: RecordedCall[], table: string, op: string) =>
+  [...calls].reverse().find((c) => c.table === table && c.ops.some((o) => o.op === op));
 
 const opArgs = (call: RecordedCall | undefined, op: string) =>
   call?.ops.find((o) => o.op === op)?.args;
@@ -99,13 +107,16 @@ describe('SupabaseRepository (mocked client)', () => {
     const repo = new SupabaseRepository(client, ORG);
     await repo.saveChannels([ch]);
 
-    const call = lastCall(calls, 'channels');
+    const call = lastCallWithOp(calls, 'channels', 'upsert');
     expect(call).toBeDefined();
     const args = opArgs(call, 'upsert');
     expect(args).toBeDefined();
     const rows = args![0] as Array<Record<string, unknown>>;
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ org_id: ORG, channel_key: 'c1', payload: ch });
+    // The save also reconciles: a cleanup delete scoped to the org removes
+    // rows for keys no longer present.
+    expect(lastCallWithOp(calls, 'channels', 'delete')).toBeDefined();
   });
 
   it('listWells(org) selects wells filtered by org_id and maps rows to Well[]', async () => {
@@ -199,9 +210,7 @@ describe('SupabaseRepository (mocked client)', () => {
       },
     });
 
-    const chCall = lastCall(calls, 'channels');
-    expect(chCall).toBeDefined();
-    expect(chCall!.ops.some((o) => o.op === 'upsert')).toBe(true);
+    expect(lastCallWithOp(calls, 'channels', 'upsert')).toBeDefined();
     // Both dashboard entries were malformed → saveDashboard never ran, so the table is never touched.
     expect(calls.some((c) => c.table === 'dashboards')).toBe(false);
   });

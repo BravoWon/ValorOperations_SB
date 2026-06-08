@@ -27,6 +27,7 @@ RLS (proven later via pgTAP), a `SupabaseRepository`, and an env-gated factory.
   - Every table: `id uuid pk default gen_random_uuid()`, `org_id uuid not null references orgs`,
     `created_at timestamptz default now()`, sensible FKs + indexes (esp. `org_id`).
 - `supabase/migrations/0002_rls.sql` — **enable RLS on every table** + a uniform tenant-isolation policy:
+
   ```sql
   alter table public.<t> enable row level security;
   create policy "<t>_tenant" on public.<t> using (
@@ -35,6 +36,7 @@ RLS (proven later via pgTAP), a `SupabaseRepository`, and an env-gated factory.
     org_id in (select org_id from public.memberships where user_id = auth.uid())
   );
   ```
+
 - `supabase/tests/rls.test.sql` — **pgTAP** proving tenant isolation: seed two orgs + two users; assert a
   user in org A sees only org A rows on a representative table (e.g. `wells`), and **cannot** insert into
   org B. (Run later with `supabase test db` once the project exists.)
@@ -51,15 +53,19 @@ RLS (proven later via pgTAP), a `SupabaseRepository`, and an env-gated factory.
   `resetLocalDb`) upsert/select the module tables (JSONB payloads) scoped by `org_id`. **Typechecks**
   against the full interface.
 - `apps/web/lib/repo.ts` (factory) — **env-gated**: if `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  are set, return a `SupabaseRepository`; **otherwise the `MockRepository` (default, unchanged)**. So the
-  running app is identical until creds are provided.
-- `apps/web/.env.example` — documents `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (real
-  `.env*` already gitignored). `@supabase/supabase-js` added to `apps/web` deps.
+  + `NEXT_PUBLIC_SUPABASE_ORG_ID` (validated as a UUID) are all set, return a `SupabaseRepository`;
+  **otherwise the `MockRepository` (default, unchanged)**. So the running app is identical until creds are
+  provided. (As shipped — the original draft gated on URL + anon only; the org UUID was added so a non-UUID
+  value can't engage a broken Supabase path.)
+- `apps/web/.env.example` — documents `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` /
+  `NEXT_PUBLIC_SUPABASE_ORG_ID` (real `.env*` already gitignored). `@supabase/supabase-js` added to
+  `apps/web` deps.
 
 ## 3. Files
 
-- `supabase/migrations/0001_schema.sql`, `0002_rls.sql`, `supabase/tests/rls.test.sql`, `supabase/README.md`,
-  `supabase/config.toml` (minimal, if the skill recommends).
+- `supabase/migrations/0001_schema.sql`, `0002_rls.sql`, `supabase/tests/rls.test.sql`, `supabase/README.md`.
+  (As shipped: `config.toml` is intentionally **omitted** — `supabase init` generates it per the local CLI
+  version; committing one here would conflict. See `supabase/README.md`.)
 - `apps/web/lib/supabase-repository.ts`, modified `apps/web/lib/repo.ts`, `apps/web/.env.example`,
   `apps/web/package.json` (+`@supabase/supabase-js`).
 - Tests: `apps/web/__tests__/supabase-repository.test.ts` — a **mocked `createClient`** verifying

@@ -68,8 +68,8 @@ create policy "<t>_tenant_write" on public.<t> for all using (
 
 **Files:** Modify `apps/web/lib/repo.ts`; create `apps/web/.env.example`, `supabase/README.md`
 
-- [ ] `repo.ts` (factory): if `process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY` → construct a `SupabaseRepository` (createClient + a resolved orgId — for the demo, a configured default org); **else** the existing `MockRepository` (unchanged default). Keep `getRepo()` a memoized singleton as today.
-- [ ] `apps/web/.env.example` — `NEXT_PUBLIC_SUPABASE_URL=`, `NEXT_PUBLIC_SUPABASE_ANON_KEY=` with comments.
+- [ ] `repo.ts` (factory): if `NEXT_PUBLIC_SUPABASE_URL && NEXT_PUBLIC_SUPABASE_ANON_KEY && NEXT_PUBLIC_SUPABASE_ORG_ID` (the org id validated as a UUID) → construct a `SupabaseRepository` (createClient + that org UUID); **else** the existing `MockRepository` (unchanged default). Keep `getRepo()` a memoized singleton as today. (As shipped: the org UUID is part of the gate — added so a non-UUID can't engage a broken Supabase path; no `DEMO_ORG_ID` fallback on the Supabase path.)
+- [ ] `apps/web/.env.example` — `NEXT_PUBLIC_SUPABASE_URL=`, `NEXT_PUBLIC_SUPABASE_ANON_KEY=`, `NEXT_PUBLIC_SUPABASE_ORG_ID=` with comments.
 - [ ] `supabase/README.md` — the one-time human steps: create project · `supabase link` · `supabase db push` · seed an org + membership for the demo user · `supabase test db` (prove RLS) · set `apps/web/.env.local` · the app auto-switches to Supabase. Note the mock stays default until then.
 - [ ] **Step:** `corepack pnpm --filter @valor/web build` compiles (mock path, no env) + `typecheck` 0. **Commit** `feat(web): env-gated repo factory (Supabase when configured, mock default) + setup README`.
 
@@ -79,6 +79,7 @@ create policy "<t>_tenant_write" on public.<t> for all using (
 - [ ] Push `feat/supabase-scaffold`; open PR (base `master`) **clearly labeled scaffold — migrations not run, RLS pgTAP deferred to the live-project step**; action bots per max-adherence; merge on clean review.
 
 ## Self-Review
+
 - **Spec coverage:** schema (§1 ✓ T1), RLS (§1 ✓ T2), pgTAP (§1 ✓ T3), adapter+mock tests (§2 ✓ T4), factory+env+README (§2 ✓ T5), scaffold DoD (§4 ✓ T6).
 - **Safety:** mock stays default (factory env-gated); no real creds committed; SQL/pgTAP run later with creds — clearly labeled.
 - **No placeholders:** SQL patterns + adapter mapping + test approach are concrete; the schema column lists are specified.

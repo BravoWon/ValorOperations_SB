@@ -121,11 +121,19 @@ serves the app you still need to:
   from the request's cookies/headers (e.g. [`@supabase/ssr`](https://supabase.com/docs/guides/auth/server-side)),
   not a singleton. This is the main remaining build step and is intentionally out
   of scope for the scaffold (it needs the live project + auth UI to verify).
-- **Make multi-step writes atomic via RPC.** `createJobFromTemplate()` writes the
-  job, its stages, and a status-history row in separate statements. The adapter
-  does best-effort cleanup (deletes the job row) if a later step fails, but that
-  is not transactional — the correct fix is a Postgres function (`rpc`) that does
-  all three atomically. Deferred to the live-project step (needs the live DB).
+- **Make multi-step writes atomic via RPC.** `createJobFromTemplate()` (job +
+  stages + status-history) and `advanceJobStatus()` (status update + history) each
+  write in separate statements. The adapter does best-effort compensation (delete
+  the job / revert the status) if a later step fails, but that is not
+  transactional — the correct fix is a Postgres function (`rpc`) that does each
+  set atomically. Deferred to the live-project step (needs the live DB).
+- **Harden FKs to composite `(org_id, id)` for cross-tenant integrity.** Child
+  tables reference only the parent's `id` (e.g. `pads.asset_id → assets(id)`), so
+  a row *could* point at a parent in another org if its UUID were known. RLS still
+  prevents reading across tenants (so this is an integrity, not a disclosure,
+  gap), but the belt-and-suspenders fix is a `unique (org_id, id)` on parents +
+  composite `(org_id, parent_id)` FKs. Deferred — it touches every table and is
+  best applied with the live project.
 - **Run the migrations + pgTAP** against the live project (steps 3 & 5 above).
 
 ## Notes

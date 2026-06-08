@@ -73,6 +73,22 @@ export class SupabaseRepository implements Repository {
     return this.orgId;
   }
 
+  /**
+   * Reconcile a per-row module table to exactly `keys`: callers save the whole
+   * collection, so after upserting the current set we delete this org's rows
+   * whose key is not in it — otherwise items the caller removed would be orphaned
+   * (an upsert never deletes). An empty `keys` clears the org's rows for that
+   * table (the caller emptied the collection).
+   */
+  private async deleteOrgRowsNotIn(table: string, keyCol: string, keys: string[]): Promise<void> {
+    let query = this.client.from(table).delete().eq('org_id', this.orgId);
+    if (keys.length > 0) {
+      query = query.not(keyCol, 'in', `(${keys.join(',')})`);
+    }
+    const { error } = await query;
+    if (error) this.fail(error, `${table}(cleanup)`);
+  }
+
   // --- condition-state: read -------------------------------------------------
 
   async listWells(orgId: string): Promise<Well[]> {
@@ -362,7 +378,21 @@ export class SupabaseRepository implements Repository {
       changed_by: userId,
       note: note ?? null,
     });
-    if (histRes.error) this.fail(histRes.error, 'advanceJobStatus(history)');
+    if (histRes.error) {
+      // Best-effort revert so the status change and its audit trail don't diverge
+      // (the status was already written). NOT transactional — the proper fix is an
+      // atomic RPC; deferred to the live step (see supabase/README.md).
+      try {
+        await this.client
+          .from('jobs')
+          .update({ status: from })
+          .eq('org_id', this.orgId)
+          .eq('id', jobId);
+      } catch {
+        /* swallow — best-effort revert on an already-failing path */
+      }
+      this.fail(histRes.error, 'advanceJobStatus(history)');
+    }
 
     return rowToJob(updRes.data);
   }
@@ -444,10 +474,13 @@ export class SupabaseRepository implements Repository {
 
   async saveChannels(channels: ChannelDef[]): Promise<void> {
     const rows = channels.map((ch) => ({ org_id: this.orgId, channel_key: ch.id, payload: ch }));
-    const { error } = await this.client
-      .from('channels')
-      .upsert(rows, { onConflict: 'org_id,channel_key' });
-    if (error) this.fail(error, 'saveChannels');
+    if (rows.length > 0) {
+      const { error } = await this.client
+        .from('channels')
+        .upsert(rows, { onConflict: 'org_id,channel_key' });
+      if (error) this.fail(error, 'saveChannels');
+    }
+    await this.deleteOrgRowsNotIn('channels', 'channel_key', channels.map((ch) => ch.id));
   }
 
   async loadChannels(): Promise<ChannelDef[] | null> {
@@ -464,10 +497,13 @@ export class SupabaseRepository implements Repository {
 
   async saveVendors(vendors: Vendor[]): Promise<void> {
     const rows = vendors.map((v) => ({ org_id: this.orgId, vendor_key: v.id, payload: v }));
-    const { error } = await this.client
-      .from('vendors')
-      .upsert(rows, { onConflict: 'org_id,vendor_key' });
-    if (error) this.fail(error, 'saveVendors');
+    if (rows.length > 0) {
+      const { error } = await this.client
+        .from('vendors')
+        .upsert(rows, { onConflict: 'org_id,vendor_key' });
+      if (error) this.fail(error, 'saveVendors');
+    }
+    await this.deleteOrgRowsNotIn('vendors', 'vendor_key', vendors.map((v) => v.id));
   }
 
   async loadVendors(): Promise<Vendor[] | null> {
@@ -484,10 +520,13 @@ export class SupabaseRepository implements Repository {
 
   async saveAfe(lines: AfeLine[]): Promise<void> {
     const rows = lines.map((l) => ({ org_id: this.orgId, afe_key: l.id, payload: l }));
-    const { error } = await this.client
-      .from('afe_lines')
-      .upsert(rows, { onConflict: 'org_id,afe_key' });
-    if (error) this.fail(error, 'saveAfe');
+    if (rows.length > 0) {
+      const { error } = await this.client
+        .from('afe_lines')
+        .upsert(rows, { onConflict: 'org_id,afe_key' });
+      if (error) this.fail(error, 'saveAfe');
+    }
+    await this.deleteOrgRowsNotIn('afe_lines', 'afe_key', lines.map((l) => l.id));
   }
 
   async loadAfe(): Promise<AfeLine[] | null> {

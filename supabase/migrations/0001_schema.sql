@@ -206,7 +206,7 @@ create table public.jobs (
   actual_end        timestamptz,
   rig_id            text,
   primary_vendor_id text,             -- soft ref to a vendor_key (vendors is a JSONB module table keyed by text) — no FK
-  created_by        uuid,             -- soft ref to auth.users — no FK so seed/demo data is portable
+  created_by        uuid not null,    -- soft ref to auth.users — no FK so seed/demo data is portable; required in @valor/core Job.createdBy
   created_at        timestamptz not null default now()
 );
 create index jobs_org_id_idx on public.jobs (org_id);
@@ -240,7 +240,7 @@ create table public.job_status_history (
   job_id      uuid not null references public.jobs(id) on delete cascade,
   from_status text,
   to_status   text not null,
-  changed_by  uuid,                   -- soft ref to auth.users
+  changed_by  uuid not null,          -- soft ref to auth.users; required in @valor/core JobStatusHistory.changedBy
   changed_at  timestamptz not null default now(),
   note        text,
   created_at  timestamptz not null default now()
