@@ -35,4 +35,6 @@ export interface Repository {
   advanceJobStatus(jobId: string, to: JobStatus, userId: string, note?: string): Promise<Job>;
   getDashboard(ownerId: string): Promise<DashboardLayout>;
   saveDashboard(layout: DashboardLayout): Promise<void>;
+  saveWellSetup(wellId: string, setup: import('./well-setup/types').WellSetup): Promise<void>;
+  loadWellSetup(wellId: string): Promise<import('./well-setup/types').WellSetup | null>;
 }

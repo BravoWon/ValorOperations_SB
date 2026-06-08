@@ -35,6 +35,14 @@ completion on the PR.
 
 ## AI PR review — CodeRabbit + Copilot (this repo)
 
+- **Maximum adherence (b.jones directive): treat every bot assessment as a structured _return_ we
+  action by default.** Each CodeRabbit / Copilot finding is a **leveling element** that brings
+  **semantic coherence between the request (intent) and the artifact (code)** across both **surface**
+  (UX / appearance) and **structure** (architecture). The default action on a finding is **fix**; skip
+  only with an explicit one-line justification posted on the thread (YAGNI / out-of-scope-this-slice /
+  false-positive). Run **both** bots on every PR, **re-request review after each push**
+  (`@coderabbitai review`), and **never merge with un-actioned findings**. The correction loop *is* the
+  alignment mechanism: request → assessment → action → re-verify → coherent artifact.
 - **Two bots review every PR:** the **CodeRabbit** GitHub App and **GitHub Copilot** code review —
   both automatic on PR open + each push. Triage findings from both with the checklist below.
 - **Credit fallback:** CodeRabbit is on the Free plan (limited credits/quota). **If CodeRabbit credits
@@ -56,6 +64,10 @@ completion on the PR.
   WSL/Mac if desired.
 - **Ignored paths:** `pnpm-lock.yaml` (lockfile noise).
 - **Re-trigger manually** on a PR: `@coderabbitai review` (incremental) or `@coderabbitai full review`.
+- **`/code-review ultra` (ultrareview) — known tooling limitations + our mitigations** (external L1 audit, verified against the installed plugin 2026-06-07): the `code-review` plugin discovers its target via `gh pr list` (can mis-target or skip when several PRs are open) and posts **top-level** comments via `gh pr comment` (not line-anchored; no "Resolve conversation"). These are plugin-internal and not ours to patch durably — but we mitigate:
+  1. **Always invoke ultrareview with an explicit PR number** — `/code-review ultra <PR#>` — never the no-arg auto-detect form, to avoid target drift.
+  2. Triage its output by fetching **both** `gh api repos/$REPO/pulls/$PR/comments` **and** `gh pr view $PR --json comments` (the snippet below) — top-level comments live in the latter.
+  3. When **we** dispatch review/implementer subagents, **always pass the absolute repo path / CWD** in the prompt (the plugin's subagents drop CWD inside worktrees; ours don't — keep it that way).
 
 ### Fetching CodeRabbit findings for triage (no browser)
 

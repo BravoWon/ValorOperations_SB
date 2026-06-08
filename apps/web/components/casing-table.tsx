@@ -1,9 +1,11 @@
 import type { CasingString } from '@valor/core';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EmptyState } from '@/components/ui/states';
+
+const dash = <span className="text-muted-foreground/40">—</span>;
 
 export function CasingTable({ casing }: { casing: CasingString[] }) {
-  if (casing.length === 0)
-    return <p className="text-sm text-muted-foreground/70">No casing program recorded.</p>;
+  if (casing.length === 0) return <EmptyState title="No casing program recorded" compact />;
   return (
     <Table>
       <TableHeader>
@@ -23,12 +25,12 @@ export function CasingTable({ casing }: { casing: CasingString[] }) {
             <TableCell className="font-display font-medium capitalize text-cream">
               {c.stringType}
             </TableCell>
-            <TableCell className="data text-right text-foreground/85">{c.holeDiaIn ?? '—'}</TableCell>
-            <TableCell className="data text-right text-foreground/85">{c.setMdFt ?? '—'}</TableCell>
-            <TableCell className="data text-right text-foreground/85">{c.csgOdIn ?? '—'}</TableCell>
-            <TableCell className="data text-right text-foreground/85">{c.weightPpf ?? '—'}</TableCell>
-            <TableCell className="data text-gold-light/90">{c.grade ?? '—'}</TableCell>
-            <TableCell className="data text-right text-foreground/85">{c.cementSacks ?? '—'}</TableCell>
+            <TableCell className="data text-right text-foreground/85">{c.holeDiaIn ?? dash}</TableCell>
+            <TableCell className="data text-right text-foreground/85">{c.setMdFt ?? dash}</TableCell>
+            <TableCell className="data text-right text-foreground/85">{c.csgOdIn ?? dash}</TableCell>
+            <TableCell className="data text-right text-foreground/85">{c.weightPpf ?? dash}</TableCell>
+            <TableCell className="data text-gold-light/90">{c.grade ?? dash}</TableCell>
+            <TableCell className="data text-right text-foreground/85">{c.cementSacks ?? dash}</TableCell>
           </TableRow>
         ))}
       </TableBody>

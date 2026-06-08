@@ -42,10 +42,10 @@ export function createDefaultDashboard(ownerId: string): DashboardLayout {
     id: 'default',
     ownerId,
     widgets: [
-      { instanceId: 'w-kpi', widgetId: 'kpi-strip', layout: { x: 0, y: 0, w: 12, h: 2 } },
-      { instanceId: 'w-jobs', widgetId: 'active-jobs', layout: { x: 0, y: 2, w: 8, h: 8 } },
-      { instanceId: 'w-asset', widgetId: 'asset-tree', layout: { x: 8, y: 2, w: 4, h: 8 } },
-      { instanceId: 'w-hydraulics', widgetId: 'hydraulics', layout: { x: 0, y: 10, w: 8, h: 12 } },
+      { instanceId: 'w-kpi', widgetId: 'kpi-strip', layout: { x: 0, y: 0, w: 12, h: 5 } },
+      { instanceId: 'w-jobs', widgetId: 'active-jobs', layout: { x: 0, y: 5, w: 8, h: 8 } },
+      { instanceId: 'w-asset', widgetId: 'asset-tree', layout: { x: 8, y: 5, w: 4, h: 8 } },
+      { instanceId: 'w-hydraulics', widgetId: 'hydraulics', layout: { x: 0, y: 13, w: 8, h: 12 } },
     ],
   };
 }

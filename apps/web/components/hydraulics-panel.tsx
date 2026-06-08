@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import {
   computeHydraulics,
   HYDRAULICS_FIELDS,
@@ -26,7 +27,7 @@ export function HydraulicsPanel() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="stagger grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle>Inputs</CardTitle>
@@ -49,7 +50,7 @@ export function HydraulicsPanel() {
                       max={f.max}
                       step="any"
                       onChange={(e) => setField(f.key, e.target.value)}
-                      className="mt-1 w-full rounded-md border border-border bg-background/40 px-2 py-1 font-mono text-sm text-cream outline-none focus:border-gold/50"
+                      className="mt-1 w-full rounded-md border border-white/[0.08] bg-background/40 px-2.5 py-1.5 font-mono text-sm text-cream outline-none transition-colors focus:border-gold/50 focus:bg-background/60"
                     />
                   </label>
                 ))}
@@ -64,25 +65,42 @@ export function HydraulicsPanel() {
           <CardTitle>Results</CardTitle>
         </CardHeader>
         <CardContent>
-          <dl className="space-y-2">
+          <dl className="space-y-0">
             {HYDRAULICS_OUTPUTS.map((o) => (
-              <div key={o.key} className="flex items-baseline justify-between border-b border-border/40 pb-1.5">
+              <div
+                key={o.key}
+                className="flex items-baseline justify-between border-b border-white/[0.05] py-2 transition-colors last:border-0 hover:bg-gold/[0.03]"
+              >
                 <dt className="text-sm text-muted-foreground">{o.label}</dt>
-                <dd className="font-mono text-sm">
-                  <span className="text-gold">{Number.isFinite(result[o.key]) ? result[o.key].toFixed(o.decimals) : '—'}</span>{' '}
+                <dd className="data text-sm tabular-nums">
+                  <span className="text-gold-light">
+                    {Number.isFinite(result[o.key]) ? (
+                      result[o.key].toFixed(o.decimals)
+                    ) : (
+                      <span className="text-muted-foreground/40">—</span>
+                    )}
+                  </span>{' '}
                   <span className="text-xs text-muted-foreground/70">{o.unit}</span>
                 </dd>
               </div>
             ))}
           </dl>
           {result.warnings.length > 0 && (
-            <ul className="mt-4 space-y-1 text-xs text-red-400">
+            <ul className="mt-4 space-y-1.5">
               {result.warnings.map((w) => (
-                <li key={w}>⚠ {w}</li>
+                <li
+                  key={w}
+                  className="flex items-start gap-2 rounded-md border border-red/20 bg-red/[0.06] px-3 py-2 text-xs text-red"
+                >
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  <span>{w}</span>
+                </li>
               ))}
             </ul>
           )}
-          <p className="mt-4 text-xs text-muted-foreground/60">Pump model: triplex, single-acting.</p>
+          <p className="mt-4 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-muted-foreground/50">
+            Pump model: triplex, single-acting.
+          </p>
         </CardContent>
       </Card>
     </div>
