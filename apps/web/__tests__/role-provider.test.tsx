@@ -29,4 +29,10 @@ describe('RoleProvider', () => {
     await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('field'));
     expect(document.cookie).toContain('valor_demo_role=field');
   });
+
+  it('reads an existing cookie on mount (role persists across reloads)', async () => {
+    document.cookie = 'valor_demo_role=field; path=/';
+    render(<RoleProvider><Probe /></RoleProvider>);
+    await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('field'));
+  });
 });

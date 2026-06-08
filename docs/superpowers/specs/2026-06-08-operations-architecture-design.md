@@ -15,7 +15,7 @@ Established interactively (visual brainstorming, 2026-06-08):
 
 ## The cohesive framework ("one model")
 
-```
+```text
 ROLE-AWARE SINGLE SURFACE  (one hub; role reveals/prioritizes planes & actions)
                  ┌───────────────────────────────────────────┐
                  │   ◆ THE CODED SECTION / "TICKET"           │
@@ -91,7 +91,7 @@ Same pipeline: spec → plan → subagent build (TDD) → dual-bot review (CodeR
 
 **Scope (in):**
 - A **plane registry** (`apps/web/lib/planes.ts`): the four planes (Operate · Visualize · Administer · Data), each with id, label, icon, and the existing routes that belong to it, plus the minimum role that may see each route.
-- **Sidebar reorganized by plane** (`app-shell.tsx`): nav grouped under the four plane headings instead of a flat list; the current routes slot in (Operate: dashboard·jobs·rig-day·assets·well; Visualize: data-studio·hydraulics·directional; Administer: data-manager·office-ops; Data: local-db). Active-state + branding unchanged.
+- **Sidebar reorganized by plane** (`app-shell.tsx`): nav grouped under the four plane headings instead of a flat list; the current routes slot in (Operate: dashboard·jobs·rig-day·assets; Visualize: data-studio·hydraulics·directional; Administer: data-manager·office-ops; Data: local-db). The dynamic `/wells/[id]` detail/setup pages are reached via the asset tree, not the plane nav, so they're not plane items (and default to `viewer` in `minRoleForPath`). Active-state + branding unchanged.
 - A **role context** (`apps/web/lib/role.ts` + a small client provider): resolves the current demo role from a dedicated `valor_demo_role` cookie (defaulting to `owner`), exposed via a hook. A separate cookie — rather than overloading `valor_demo_auth` — keeps the existing AuthGate untouched. No real auth change — demo-only, mirrors the existing placeholder gate.
 - **Role-gating** in the sidebar: routes whose minimum role exceeds the current role are hidden; a route visited directly above the role shows a branded "not available for your role" state (client-side, consistent with the static-export AuthGate pattern).
 - A **role switcher** in the shell (demo affordance) so the surface's role-adaptation is demonstrable on the live/static site.

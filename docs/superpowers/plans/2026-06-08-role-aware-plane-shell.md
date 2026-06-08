@@ -24,7 +24,7 @@
 - **Modify `apps/web/app/(hub)/layout.tsx`** — wrap with `RoleProvider` + `RoleGate` (preserve the static-export `AuthGate`).
 - **Tests:** `apps/web/__tests__/role.test.ts`, `planes.test.ts`, `role-provider.test.tsx`, `app-shell.test.tsx`, `role-gate.test.tsx`.
 
-Commands (run from repo root `C:\Users\Deving-1\Desktop\dev\ValorOperations_SB`):
+Commands (run from the repo root):
 - One test file: `corepack pnpm --filter @valor/web test -- <name>`
 - Full web tests: `corepack pnpm --filter @valor/web test`
 - Typecheck: `corepack pnpm --filter @valor/web typecheck`

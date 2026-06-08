@@ -1,3 +1,5 @@
+'use client';
+
 // apps/web/components/role-blocked.tsx
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
