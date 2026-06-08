@@ -45,4 +45,8 @@ export interface Repository {
   loadVendors(): Promise<import('./office-ops/types').Vendor[] | null>;
   saveAfe(lines: import('./office-ops/types').AfeLine[]): Promise<void>;
   loadAfe(): Promise<import('./office-ops/types').AfeLine[] | null>;
+  exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot>;
+  importSnapshot(snapshot: import('./local-db/types').LocalDbSnapshot): Promise<void>;
+  listCollections(): Promise<import('./local-db/types').CollectionInfo[]>;
+  resetLocalDb(): Promise<void>;
 }

@@ -1,4 +1,5 @@
 import type { JobStatus } from './enums';
+import { summarizeSnapshot } from './local-db/types';
 import { instantiateStages } from './templates';
 import { assertJobStatusTransition } from './transitions';
 import { createSeed, type SeedData } from './seed';
@@ -288,5 +289,60 @@ export class MockRepository implements Repository {
     const store = this.browserStorage;
     if (store) { const raw = store.getItem('valor:afe'); if (raw) { try { return JSON.parse(raw) as import('./office-ops/types').AfeLine[]; } catch { return null; } } return null; }
     return this.afe ? structuredClone(this.afe) : null;
+  }
+
+  async exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot> {
+    const store = this.browserStorage;
+    const collections: import('./local-db/types').LocalDbSnapshot['collections'] = {
+      dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [],
+    };
+    if (store) {
+      for (let i = 0; i < store.length; i++) {
+        const k = store.key(i); if (!k || !k.startsWith('valor:')) continue;
+        const raw = store.getItem(k); if (!raw) continue;
+        try {
+          if (k.startsWith('valor:dashboard:')) collections.dashboards!.push(JSON.parse(raw));
+          else if (k.startsWith('valor:wellsetup:')) collections.wellSetups!.push({ wellId: k.slice('valor:wellsetup:'.length), setup: JSON.parse(raw) });
+          else if (k.startsWith('valor:rigday:')) collections.rigDays!.push(JSON.parse(raw));
+          else if (k === 'valor:channels') collections.channels = JSON.parse(raw);
+          else if (k === 'valor:vendors') collections.vendors = JSON.parse(raw);
+          else if (k === 'valor:afe') collections.afe = JSON.parse(raw);
+        } catch { /* skip malformed */ }
+      }
+    } else {
+      collections.dashboards = [...this.dashboards.values()].map((d) => structuredClone(d));
+      collections.wellSetups = [...this.wellSetups.entries()].map(([wellId, setup]) => ({ wellId, setup: structuredClone(setup) }));
+      collections.rigDays = [...this.rigDays.values()].map((d) => structuredClone(d));
+      collections.channels = this.channels ? structuredClone(this.channels) : [];
+      collections.vendors = this.vendors ? structuredClone(this.vendors) : [];
+      collections.afe = this.afe ? structuredClone(this.afe) : [];
+    }
+    return { version: 1 as const, collections };
+  }
+
+  async importSnapshot(snapshot: import('./local-db/types').LocalDbSnapshot): Promise<void> {
+    const c = snapshot?.collections ?? {};
+    for (const d of c.dashboards ?? []) await this.saveDashboard(d);
+    for (const w of c.wellSetups ?? []) await this.saveWellSetup(w.wellId, w.setup);
+    for (const r of c.rigDays ?? []) await this.saveRigDay(r.id, r);
+    if (c.channels) await this.saveChannels(c.channels);
+    if (c.vendors) await this.saveVendors(c.vendors);
+    if (c.afe) await this.saveAfe(c.afe);
+  }
+
+  async listCollections(): Promise<import('./local-db/types').CollectionInfo[]> {
+    return summarizeSnapshot(await this.exportSnapshot());
+  }
+
+  async resetLocalDb(): Promise<void> {
+    const store = this.browserStorage;
+    if (store) {
+      const keys: string[] = [];
+      for (let i = 0; i < store.length; i++) { const k = store.key(i); if (k && k.startsWith('valor:')) keys.push(k); }
+      keys.forEach((k) => store.removeItem(k));
+    } else {
+      this.dashboards.clear(); this.wellSetups.clear(); this.rigDays.clear();
+      this.channels = null; this.vendors = null; this.afe = null;
+    }
   }
 }
