@@ -44,7 +44,7 @@ export const AREAS: AreaDef[] = [
     id: 'office-ops',
     title: 'Office Ops',
     tagline: 'Back-office consolidation',
-    status: 'soon',
+    status: 'active',
     href: '/office-ops',
     icon: Building2,
     description:

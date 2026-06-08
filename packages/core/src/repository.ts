@@ -41,4 +41,8 @@ export interface Repository {
   loadRigDay(id: string): Promise<import('./rig-day/types').RigDay | null>;
   saveChannels(channels: import('./data-manager/types').ChannelDef[]): Promise<void>;
   loadChannels(): Promise<import('./data-manager/types').ChannelDef[] | null>;
+  saveVendors(vendors: import('./office-ops/types').Vendor[]): Promise<void>;
+  loadVendors(): Promise<import('./office-ops/types').Vendor[] | null>;
+  saveAfe(lines: import('./office-ops/types').AfeLine[]): Promise<void>;
+  loadAfe(): Promise<import('./office-ops/types').AfeLine[] | null>;
 }
