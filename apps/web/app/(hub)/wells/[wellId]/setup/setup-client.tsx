@@ -59,11 +59,16 @@ export function WellSetupClient({ wellId }: { wellId: string }) {
   const model = useMemo(() => projectWellbore(setup), [setup]);
 
   const onSave = async () => {
+    // Cancel any pending "saved → idle" timer up front, so a rapid re-save can't
+    // have a stale timer flip the button back to idle mid-save.
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
     setSaveState('saving');
     try {
       await getRepo().saveWellSetup(wellId, setup);
       setSaveState('saved');
-      if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => setSaveState('idle'), 1800);
     } catch {
       // e.g. localStorage quota/security error — don't trap the button on 'saving'.
