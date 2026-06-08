@@ -83,7 +83,11 @@ export class SupabaseRepository implements Repository {
   private async deleteOrgRowsNotIn(table: string, keyCol: string, keys: string[]): Promise<void> {
     let query = this.client.from(table).delete().eq('org_id', this.orgId);
     if (keys.length > 0) {
-      query = query.not(keyCol, 'in', `(${keys.join(',')})`);
+      // PostgREST in-list values must be double-quoted (and embedded "/\ escaped)
+      // so text keys containing commas or reserved characters don't produce an
+      // invalid filter. Quote every key rather than bare-join.
+      const list = keys.map((k) => `"${k.replace(/(["\\])/g, '\\$1')}"`).join(',');
+      query = query.not(keyCol, 'in', `(${list})`);
     }
     const { error } = await query;
     if (error) this.fail(error, `${table}(cleanup)`);

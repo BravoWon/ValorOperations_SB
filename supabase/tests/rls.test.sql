@@ -22,7 +22,7 @@ select plan(4);
 
 -- --- Seed (owner context: RLS not yet enforced for us) -----------------------
 
--- Two auth users. gen_random_uuid() ids captured in psql vars for reuse.
+-- Two auth users with fixed UUID literals (deterministic, reused verbatim below).
 insert into auth.users (id, email)
 values
   ('00000000-0000-0000-0000-0000000000a1', 'user-a@example.com'),

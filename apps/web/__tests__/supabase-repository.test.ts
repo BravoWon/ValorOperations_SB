@@ -115,8 +115,10 @@ describe('SupabaseRepository (mocked client)', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ org_id: ORG, channel_key: 'c1', payload: ch });
     // The save also reconciles: a cleanup delete scoped to the org removes
-    // rows for keys no longer present.
-    expect(lastCallWithOp(calls, 'channels', 'delete')).toBeDefined();
+    // rows for keys no longer present, with the kept keys quoted in the in-list.
+    const del = lastCallWithOp(calls, 'channels', 'delete');
+    expect(del).toBeDefined();
+    expect(opArgs(del, 'not')).toEqual(['channel_key', 'in', '("c1")']);
   });
 
   it('listWells(org) selects wells filtered by org_id and maps rows to Well[]', async () => {
