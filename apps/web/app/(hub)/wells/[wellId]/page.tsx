@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronRight, GitBranch, Layers, Ruler } from 'lucide-react';
+import { ChevronRight, GitBranch, Layers, Ruler, PencilRuler } from 'lucide-react';
 import { getRepo } from '@/lib/repo';
 import { WellHeader } from '@/components/well-header';
 import { FormationsTable } from '@/components/formations-table';
@@ -15,13 +15,22 @@ export default async function WellPage({ params }: { params: Promise<{ wellId: s
 
   return (
     <div className="stagger space-y-6">
-      <nav className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-        <Link href="/assets" className="transition-colors hover:text-gold-light">
-          Assets
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <Link href="/assets" className="transition-colors hover:text-gold-light">
+            Assets
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+          <span className="text-cream">{detail.well.name}</span>
+        </nav>
+        <Link
+          href={`/wells/${wellId}/setup`}
+          className="flex items-center gap-1.5 rounded-md border border-gold/30 bg-gold/[0.06] px-3 py-1.5 font-mono text-[0.6875rem] uppercase tracking-wider text-gold-light transition-colors hover:bg-gold/[0.12]"
+        >
+          <PencilRuler className="h-3.5 w-3.5" strokeWidth={2} />
+          Well Setup
         </Link>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
-        <span className="text-cream">{detail.well.name}</span>
-      </nav>
+      </div>
 
       <WellHeader well={detail.well} />
 
