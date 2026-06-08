@@ -30,7 +30,11 @@ try {
     const e = [];
     p.on('pageerror', (x) => e.push(x.message));
     p.on('console', (m) => { if (m.type() === 'error') e.push(m.text()); });
-    await p.goto(`${BASE}${path}`, { waitUntil: 'networkidle' }).catch(() => {});
+    const navErr = await p
+      .goto(`${BASE}${path}`, { waitUntil: 'networkidle' })
+      .then(() => null)
+      .catch((err) => err.message);
+    if (navErr) e.push(`navigation failed: ${navErr}`);
     await p.waitForTimeout(700);
     await p.screenshot({ path: join(OUT, `${name}.png`), fullPage: true });
     if (e.length) errs[name] = e;
