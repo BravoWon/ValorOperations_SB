@@ -295,6 +295,7 @@ export default function RigDayPage() {
 
       {loaded && (
         <RecallDrawer
+          key={selectedBlockId ?? 'none'}
           block={selectedBlock}
           onReuse={onReuse}
           onQc={onQc}

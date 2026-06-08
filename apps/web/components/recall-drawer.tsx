@@ -43,7 +43,9 @@ function depthSpan(item: RecallItem): string | null {
  * no block is selected. All updates flow up via callbacks; the page persists.
  */
 export function RecallDrawer({ block, onReuse, onQc, onClose }: RecallDrawerProps) {
-  const [note, setNote] = useState('');
+  // Seed from any existing QC note so it round-trips. The page keys this
+  // component by selected block id, so this re-initializes per selection.
+  const [note, setNote] = useState(block?.qc?.note ?? '');
 
   if (!block) return null;
 

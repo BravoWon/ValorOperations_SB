@@ -27,4 +27,12 @@ describe('RecallDrawer', () => {
     );
     expect(container.firstChild).toBeNull();
   });
+
+  it('prefills the QC note from an existing block.qc.note', () => {
+    const qcBlock: TimeBlock = { ...block, qc: { status: 'flagged', note: 'Watch washout' } };
+    const { getByLabelText } = render(
+      <RecallDrawer block={qcBlock} onReuse={vi.fn()} onQc={vi.fn()} onClose={vi.fn()} />,
+    );
+    expect((getByLabelText(/QC note/i) as HTMLInputElement).value).toBe('Watch washout');
+  });
 });
