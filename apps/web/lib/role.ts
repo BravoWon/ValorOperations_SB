@@ -19,6 +19,11 @@ export const ROLE_RANK: Record<Role, number> = {
 export const DEFAULT_ROLE: Role = 'owner';
 export const ROLE_COOKIE = 'valor_demo_role';
 
+/** Type guard: is an arbitrary string one of the known roles? */
+export function isRole(value: string): value is Role {
+  return (ALL_ROLES as string[]).includes(value);
+}
+
 /** True when `current` is at least as privileged as `min`. */
 export function roleSatisfies(current: Role, min: Role): boolean {
   return ROLE_RANK[current] >= ROLE_RANK[min];
@@ -31,5 +36,5 @@ export function parseRoleCookie(cookieString: string): Role {
     .map((c) => c.trim())
     .find((c) => c.startsWith(`${ROLE_COOKIE}=`));
   const value = hit ? hit.slice(ROLE_COOKIE.length + 1) : '';
-  return (ALL_ROLES as string[]).includes(value) ? (value as Role) : DEFAULT_ROLE;
+  return isRole(value) ? value : DEFAULT_ROLE;
 }

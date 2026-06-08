@@ -1,6 +1,15 @@
 // apps/web/__tests__/role.test.ts
 import { describe, it, expect } from 'vitest';
-import { roleSatisfies, parseRoleCookie, ROLE_RANK, ALL_ROLES } from '@/lib/role';
+import { roleSatisfies, parseRoleCookie, ROLE_RANK, ALL_ROLES, isRole } from '@/lib/role';
+
+describe('isRole', () => {
+  it('accepts every known role and rejects anything else', () => {
+    for (const r of ALL_ROLES) expect(isRole(r)).toBe(true);
+    expect(isRole('bogus')).toBe(false);
+    expect(isRole('')).toBe(false);
+    expect(isRole('OWNER')).toBe(false); // case-sensitive
+  });
+});
 
 describe('roleSatisfies', () => {
   it('owner satisfies every minimum', () => {
