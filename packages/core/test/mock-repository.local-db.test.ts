@@ -19,4 +19,17 @@ describe('MockRepository local-db', () => {
     expect((await r.loadChannels())?.length).toBe(DEFAULT_CHANNELS.length);
     expect((await r.loadRigDay(DEFAULT_RIG_DAY.id))?.blocks.length).toBe(DEFAULT_RIG_DAY.blocks.length);
   });
+
+  it('importSnapshot tolerates malformed entries without throwing', async () => {
+    const r = new MockRepository();
+    const bad = {
+      version: 1 as const,
+      collections: {
+        dashboards: [null, { noOwnerId: true }] as never, // malformed → skipped
+        channels: DEFAULT_CHANNELS,                        // valid → imported
+      },
+    };
+    await expect(r.importSnapshot(bad)).resolves.toBeUndefined();
+    expect((await r.loadChannels())?.length).toBe(DEFAULT_CHANNELS.length);
+  });
 });

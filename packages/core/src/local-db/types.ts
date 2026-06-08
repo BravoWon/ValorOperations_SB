@@ -30,7 +30,9 @@ const COLLECTIONS: { key: keyof LocalDbSnapshot['collections']; label: string }[
 export function isValidSnapshot(v: unknown): v is LocalDbSnapshot {
   if (!v || typeof v !== 'object') return false;
   const s = v as Record<string, unknown>;
-  return s.version === 1 && !!s.collections && typeof s.collections === 'object';
+  return (
+    s.version === 1 && !!s.collections && typeof s.collections === 'object' && !Array.isArray(s.collections)
+  );
 }
 
 export function summarizeSnapshot(s: LocalDbSnapshot): CollectionInfo[] {

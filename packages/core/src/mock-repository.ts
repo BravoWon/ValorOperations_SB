@@ -321,13 +321,24 @@ export class MockRepository implements Repository {
   }
 
   async importSnapshot(snapshot: import('./local-db/types').LocalDbSnapshot): Promise<void> {
-    const c = snapshot?.collections ?? {};
-    for (const d of c.dashboards ?? []) await this.saveDashboard(d);
-    for (const w of c.wellSetups ?? []) await this.saveWellSetup(w.wellId, w.setup);
-    for (const r of c.rigDays ?? []) await this.saveRigDay(r.id, r);
-    if (c.channels) await this.saveChannels(c.channels);
-    if (c.vendors) await this.saveVendors(c.vendors);
-    if (c.afe) await this.saveAfe(c.afe);
+    // Defensive: user-provided JSON. Validate each entry's shape and skip bad
+    // ones so a malformed snapshot can't crash the import (spec: never throws).
+    const c = (snapshot && typeof snapshot === 'object' ? snapshot.collections : null) ?? {};
+    const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+    const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
+
+    for (const d of arr<import('./widgets/types').DashboardLayout>(c.dashboards)) {
+      if (obj(d) && typeof d.ownerId === 'string') { try { await this.saveDashboard(d); } catch { /* skip */ } }
+    }
+    for (const w of arr<{ wellId: string; setup: import('./well-setup/types').WellSetup }>(c.wellSetups)) {
+      if (obj(w) && typeof w.wellId === 'string' && obj(w.setup)) { try { await this.saveWellSetup(w.wellId, w.setup); } catch { /* skip */ } }
+    }
+    for (const r of arr<import('./rig-day/types').RigDay>(c.rigDays)) {
+      if (obj(r) && typeof r.id === 'string') { try { await this.saveRigDay(r.id, r); } catch { /* skip */ } }
+    }
+    if (Array.isArray(c.channels)) { try { await this.saveChannels(c.channels); } catch { /* skip */ } }
+    if (Array.isArray(c.vendors)) { try { await this.saveVendors(c.vendors); } catch { /* skip */ } }
+    if (Array.isArray(c.afe)) { try { await this.saveAfe(c.afe); } catch { /* skip */ } }
   }
 
   async listCollections(): Promise<import('./local-db/types').CollectionInfo[]> {

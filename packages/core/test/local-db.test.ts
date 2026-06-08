@@ -13,5 +13,6 @@ describe('local-db snapshot', () => {
     expect(isValidSnapshot({ version: 2, collections: {} })).toBe(false);
     expect(isValidSnapshot({ collections: {} })).toBe(false);
     expect(isValidSnapshot(null)).toBe(false);
+    expect(isValidSnapshot({ version: 1, collections: [] })).toBe(false); // array is not a collection map
   });
 });
