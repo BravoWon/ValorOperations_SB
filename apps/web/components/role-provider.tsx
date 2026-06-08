@@ -1,7 +1,7 @@
 // apps/web/components/role-provider.tsx
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Role } from '@/lib/role';
 import { DEFAULT_ROLE, ROLE_COOKIE, parseRoleCookie } from '@/lib/role';
 
@@ -21,12 +21,14 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     setRoleState(parseRoleCookie(document.cookie));
   }, []);
 
-  const setRole = (r: Role) => {
+  const setRole = useCallback((r: Role) => {
     document.cookie = `${ROLE_COOKIE}=${r}; path=/; max-age=86400; samesite=lax`;
     setRoleState(r);
-  };
+  }, []);
 
-  return <RoleContext.Provider value={{ role, setRole }}>{children}</RoleContext.Provider>;
+  const value = useMemo(() => ({ role, setRole }), [role, setRole]);
+
+  return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
 }
 
 export function useRole(): RoleContextValue {
