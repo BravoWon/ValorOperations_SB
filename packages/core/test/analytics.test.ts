@@ -147,4 +147,14 @@ describe('deriveOperationsKpis', () => {
     const { warnings } = deriveOperationsKpis({});
     expect(warnings.length).toBeGreaterThan(0);
   });
+
+  it('propagates sub-derivation warnings (e.g. orphan active jobs)', () => {
+    const { warnings } = deriveOperationsKpis({
+      rigDays: [DEFAULT_RIG_DAY],
+      afe,
+      assetTree,
+      jobs: [job('jx', 'ghost', 'executing')], // well not in the tree → orphan
+    });
+    expect(warnings.some((w) => /not in the asset tree/.test(w))).toBe(true);
+  });
 });

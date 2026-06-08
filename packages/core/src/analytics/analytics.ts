@@ -201,7 +201,10 @@ export function deriveOperationsKpis(input: AnalyticsInput): OperationsKpis {
     { key: 'activeJobs', label: 'Active jobs', value: roll.totals.activeJobs, unit: 'count', tone: 'neutral' },
   ];
 
-  const warnings: string[] = [];
+  // Surface the sub-derivations' warnings (e.g. orphan active jobs, empty
+  // collections) rather than dropping them — OperationsKpis.warnings exists so
+  // callers see these conditions. Deduped to avoid repeating the same note.
+  const warnings = [...new Set([...npt.warnings, ...cost.warnings, ...roll.warnings])];
   if (rigDays.length === 0 && afe.length === 0 && assetTree.length === 0) {
     warnings.push('No data available to summarize.');
   }
