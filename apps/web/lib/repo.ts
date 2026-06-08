@@ -38,6 +38,12 @@ function createRepo(): Repository {
     const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { SupabaseRepository } = require('./supabase-repository') as typeof import('./supabase-repository');
+    // SCAFFOLD LIMITATION (auth not yet wired): this is a plain anon-key client
+    // held as a module singleton. The RLS policies are `TO authenticated`, so
+    // until Supabase Auth is wired AND a per-request SSR client is used (e.g.
+    // @supabase/ssr, with the user's session cookies/headers), queries run as the
+    // anon role and RLS returns no rows / rejects writes. Wiring auth + the SSR
+    // client is the documented next step in supabase/README.md (Known limitations).
     const client = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL as string,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,

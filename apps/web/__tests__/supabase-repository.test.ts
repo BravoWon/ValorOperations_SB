@@ -137,13 +137,15 @@ describe('SupabaseRepository (mocked client)', () => {
     await expect(repo.listWells(ORG)).rejects.toThrow(/boom/);
   });
 
-  it('rejects a cross-org argument rather than reading another tenant', async () => {
-    const { client } = makeClient();
+  it('ignores a passed orgId and always scopes to the instance org', async () => {
+    const { client, calls } = makeClient({ data: [], error: null });
     const repo = new SupabaseRepository(client, ORG);
-    // The instance is scoped to ORG; passing a different org id is a programming
-    // error and must throw instead of silently querying another tenant.
-    await expect(repo.listWells('org-other')).rejects.toThrow(/scoped to org/);
-    await expect(repo.listJobs('org-other')).rejects.toThrow(/scoped to org/);
+    // App callers pass the mock's DEMO_ORG_ID placeholder; a UUID-scoped instance
+    // must not crash or cross tenants — it queries this.orgId regardless.
+    await repo.listWells('org-other');
+    expect(opArgs(lastCall(calls, 'wells'), 'eq')).toEqual(['org_id', ORG]);
+    await repo.listJobs('org-other');
+    expect(opArgs(lastCall(calls, 'jobs'), 'eq')).toEqual(['org_id', ORG]);
   });
 
   const MODULE_TABLES = ['dashboards', 'well_setups', 'rig_days', 'channels', 'vendors', 'afe_lines'] as const;

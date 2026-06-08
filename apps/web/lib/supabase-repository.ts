@@ -63,18 +63,13 @@ export class SupabaseRepository implements Repository {
 
   /**
    * Every query in this adapter is scoped to the single org the instance was
-   * constructed with (`this.orgId`). Some Repository methods still take an
-   * `orgId` argument; rather than trust it (which could read/write another
-   * tenant inconsistently with the methods that always use `this.orgId`), we
-   * assert it matches and then use `this.orgId`. A mismatch is a programming
-   * error, so it throws rather than silently crossing tenants.
+   * constructed with (`this.orgId`). The Repository interface accepts an `orgId`
+   * argument on some methods because the multi-org MockRepository uses it — here
+   * it is intentionally IGNORED and `this.orgId` always wins. (App callers pass
+   * the mock's `DEMO_ORG_ID` placeholder; a UUID-scoped Supabase instance must
+   * not crash or cross tenants on that, so we neither trust nor reject the arg.)
    */
-  private orgScope(orgId?: string): string {
-    if (orgId !== undefined && orgId !== this.orgId) {
-      throw new Error(
-        `SupabaseRepository is scoped to org "${this.orgId}" but received "${orgId}".`,
-      );
-    }
+  private orgScope(_orgId?: string): string {
     return this.orgId;
   }
 

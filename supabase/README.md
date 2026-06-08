@@ -98,12 +98,30 @@ with `supabase <group> --help` — flags change between versions.
 
    (`.env.local` is gitignored — never commit real keys.)
 
-7. **Done — the app auto-switches.** `apps/web/lib/repo.ts` is env-gated: when
-   **all three** of `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+7. **The app auto-switches the data layer.** `apps/web/lib/repo.ts` is env-gated:
+   when **all three** of `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    and `NEXT_PUBLIC_SUPABASE_ORG_ID` are set, it constructs a `SupabaseRepository`;
    otherwise it returns the `MockRepository`. `ORG_ID` is required (and has no
    fallback) because `org_id` columns are `uuid` — a non-UUID would break
    PostgREST's filters. No code change needed.
+
+   **But this is not yet end-to-end functional — see Known limitations.**
+
+## Known limitations (scaffold)
+
+This directory is **scaffold-ahead**: the schema/RLS/adapter are committed and
+type-checked, but the path is not yet a working backend. Before Supabase actually
+serves the app you still need to:
+
+- **Wire Supabase Auth + a per-request SSR client.** The RLS policies are all
+  `TO authenticated`. The current `repo.ts` builds a plain `anon`-key client held
+  as a module singleton with no session — so every query runs as the **anon** role
+  and RLS returns **no rows** (and rejects writes). Production needs Supabase Auth
+  (login → a real `auth.users` session) **and** a per-request server client created
+  from the request's cookies/headers (e.g. [`@supabase/ssr`](https://supabase.com/docs/guides/auth/server-side)),
+  not a singleton. This is the main remaining build step and is intentionally out
+  of scope for the scaffold (it needs the live project + auth UI to verify).
+- **Run the migrations + pgTAP** against the live project (steps 3 & 5 above).
 
 ## Notes
 

@@ -33,7 +33,8 @@ create table public.memberships (
   id          uuid primary key default gen_random_uuid(),
   org_id      uuid not null references public.orgs(id) on delete cascade,
   user_id     uuid not null references auth.users(id) on delete cascade,
-  role        text not null default 'viewer',
+  role        text not null default 'viewer'  -- Role (packages/core/src/enums.ts)
+                check (role in ('owner', 'admin', 'ops', 'field', 'vendor', 'viewer')),
   created_at  timestamptz not null default now(),
   unique (user_id, org_id)
 );
@@ -204,7 +205,7 @@ create table public.jobs (
   actual_start      timestamptz,
   actual_end        timestamptz,
   rig_id            text,
-  primary_vendor_id uuid,             -- soft ref to vendors (a JSONB module table) — no FK
+  primary_vendor_id text,             -- soft ref to a vendor_key (vendors is a JSONB module table keyed by text) — no FK
   created_by        uuid,             -- soft ref to auth.users — no FK so seed/demo data is portable
   created_at        timestamptz not null default now()
 );
