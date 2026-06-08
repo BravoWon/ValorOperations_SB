@@ -16,6 +16,31 @@
 -- role alone is not authorization — each policy also carries the org predicate.
 
 -- ============================================================================
+-- Authorization helper — is the caller an owner/admin of the given org?
+--
+-- SECURITY DEFINER so the inner read of public.memberships runs as the function
+-- owner with RLS bypassed. That is deliberate and required: a policy ON
+-- public.memberships that itself SELECTs public.memberships would recurse under
+-- RLS. Centralizing the admin predicate here also keeps it in one place.
+-- STABLE + a pinned search_path are the standard hardening for such helpers.
+-- ============================================================================
+create or replace function public.is_org_admin(p_org_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.memberships m
+    where m.org_id = p_org_id
+      and m.user_id = (select auth.uid())
+      and m.role in ('owner', 'admin')
+  );
+$$;
+
+-- ============================================================================
 -- Tenancy tables — bespoke policies
 -- ============================================================================
 
@@ -33,15 +58,23 @@ create policy "orgs_member_select" on public.orgs
 
 alter table public.memberships enable row level security;
 
--- You can see (and manage) your own membership rows.
+-- You can read your own membership rows.
 create policy "memberships_self_select" on public.memberships
   for select to authenticated
   using ( user_id = (select auth.uid()) );
 
-create policy "memberships_self_write" on public.memberships
+-- Writes are admin-gated, NOT self-service. A self-write policy
+-- (user_id = auth.uid()) would be a privilege-escalation vector: any user could
+-- INSERT a membership for themselves into an arbitrary org and thereby gain
+-- access to that org's rows through every other tenant policy. Only an existing
+-- owner/admin of the SAME org may create/modify/remove its memberships.
+--
+-- Bootstrapping: the first owner of a brand-new org is seeded with the
+-- service-role key (which bypasses RLS) — see supabase/README.md.
+create policy "memberships_admin_write" on public.memberships
   for all to authenticated
-  using ( user_id = (select auth.uid()) )
-  with check ( user_id = (select auth.uid()) );
+  using ( public.is_org_admin(org_id) )
+  with check ( public.is_org_admin(org_id) );
 
 -- ============================================================================
 -- Tenant tables — uniform org-isolation policies.

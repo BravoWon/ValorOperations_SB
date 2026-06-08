@@ -100,14 +100,27 @@ export class SupabaseRepository implements Repository {
     const pads = (padsRes.data ?? []).map(rowToPad);
     const wells = (wellsRes.data ?? []).map(rowToWell);
 
+    // Pre-group children by their FK once (O(P + W)) so the tree build is linear
+    // rather than the O(A×P + P×W) of repeated .filter() scans per parent.
+    const padsByAsset = new Map<string, Pad[]>();
+    for (const p of pads) {
+      const list = padsByAsset.get(p.assetId);
+      if (list) list.push(p);
+      else padsByAsset.set(p.assetId, [p]);
+    }
+    const wellsByPad = new Map<string, Well[]>();
+    for (const w of wells) {
+      const list = wellsByPad.get(w.padId);
+      if (list) list.push(w);
+      else wellsByPad.set(w.padId, [w]);
+    }
+
     return assets.map((asset) => ({
       asset,
-      pads: pads
-        .filter((p) => p.assetId === asset.id)
-        .map((pad) => ({
-          pad,
-          wells: wells.filter((w) => w.padId === pad.id),
-        })),
+      pads: (padsByAsset.get(asset.id) ?? []).map((pad) => ({
+        pad,
+        wells: wellsByPad.get(pad.id) ?? [],
+      })),
     }));
   }
 

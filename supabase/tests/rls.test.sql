@@ -18,7 +18,7 @@
 
 begin;
 
-select plan(3);
+select plan(4);
 
 -- --- Seed (owner context: RLS not yet enforced for us) -----------------------
 
@@ -85,6 +85,20 @@ select throws_ok(
   '42501',  -- insufficient_privilege: new row violates row-level security policy
   null,
   'user A cannot insert a well into org B'
+);
+
+-- 4. Privilege-escalation guard: user A (owner of org A, but NOT a member of
+--    org B) cannot grant themselves a membership in org B. is_org_admin('B')
+--    is false for A, so the admin-gated WITH CHECK rejects the insert. Without
+--    this, A could self-add to org B and read all of B's rows.
+select throws_ok(
+  $$ insert into public.memberships (org_id, user_id, role)
+     values ('00000000-0000-0000-0000-00000000b000',
+             '00000000-0000-0000-0000-0000000000a1',
+             'owner') $$,
+  '42501',
+  null,
+  'user A cannot self-add a membership into org B'
 );
 
 select * from finish();

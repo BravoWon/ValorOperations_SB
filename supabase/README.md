@@ -26,6 +26,13 @@ supabase/
   uniform policy: a row is visible/writable iff its `org_id` is one of the
   caller's memberships (`org_id in (select org_id from public.memberships where
   user_id = (select auth.uid()))`). `orgs`/`memberships` get bespoke policies.
+- **Memberships are admin-gated, not self-service.** A user can *read* their own
+  membership rows, but only an existing owner/admin of an org may create/modify
+  its memberships (enforced via the `public.is_org_admin(org_id)` SECURITY
+  DEFINER helper). This closes a privilege-escalation hole: a self-write policy
+  would let any user add themselves to an arbitrary org and read its data. The
+  consequence is that the **first** owner of a new org must be seeded out-of-band
+  (SQL editor / service role, which bypass RLS) — see step 4.
 
 ## One-time setup (the only human step)
 
@@ -49,9 +56,11 @@ with `supabase <group> --help` — flags change between versions.
    This runs `migrations/0001_schema.sql` then `migrations/0002_rls.sql`.
 
 4. **Seed an org + membership for the demo user.** RLS denies everything until a
-   `memberships` row links your auth user to an org. In the SQL editor (or
-   `psql`), after the demo user has signed up at least once (so an `auth.users`
-   row exists):
+   `memberships` row links your auth user to an org. Because membership writes
+   are admin-gated, this first row must be created here in the **SQL editor / via
+   the service-role key** (both bypass RLS) — an unprivileged user cannot grant
+   themselves the first membership. In the SQL editor (or `psql`), after the demo
+   user has signed up at least once (so an `auth.users` row exists):
 
    ```sql
    insert into public.orgs (id, name)
@@ -74,8 +83,9 @@ with `supabase <group> --help` — flags change between versions.
    supabase test db
    ```
 
-   This runs `tests/rls.test.sql` — it should report `plan(3)` all passing:
-   user A sees only org A's wells and cannot insert into org B.
+   This runs `tests/rls.test.sql` — it should report `plan(4)` all passing:
+   user A sees only org A's wells, cannot insert a well into org B, and cannot
+   self-add a membership into org B (the privilege-escalation guard).
 
 6. **Point the web app at Supabase.** Copy `apps/web/.env.example` to
    `apps/web/.env.local` and fill in:
@@ -89,9 +99,11 @@ with `supabase <group> --help` — flags change between versions.
    (`.env.local` is gitignored — never commit real keys.)
 
 7. **Done — the app auto-switches.** `apps/web/lib/repo.ts` is env-gated: when
-   both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set, it
-   constructs a `SupabaseRepository`; otherwise it returns the `MockRepository`.
-   No code change needed.
+   **all three** of `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   and `NEXT_PUBLIC_SUPABASE_ORG_ID` are set, it constructs a `SupabaseRepository`;
+   otherwise it returns the `MockRepository`. `ORG_ID` is required (and has no
+   fallback) because `org_id` columns are `uuid` — a non-UUID would break
+   PostgREST's filters. No code change needed.
 
 ## Notes
 
