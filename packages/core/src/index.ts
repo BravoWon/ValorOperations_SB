@@ -27,3 +27,5 @@ export * from './office-ops/vendors';
 export * from './office-ops/afe';
 export * from './notifications/notifications';
 export * from './local-db/types';
+export * from './analytics/types';
+export * from './analytics/analytics';
