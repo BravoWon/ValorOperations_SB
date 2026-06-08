@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Save } from 'lucide-react';
 import {
+  deriveNotifications,
   deriveProgress,
   deriveTimeAccounting,
   findBankCode,
@@ -26,6 +27,7 @@ import { BankPalette } from '@/components/bank-palette';
 import { RigDayEditors } from '@/components/rig-day-editors';
 import { LaneEditors } from '@/components/lane-editors';
 import { TimeAccountingRail } from '@/components/time-accounting-rail';
+import { NotificationsPanel } from '@/components/notifications-panel';
 import { RecallDrawer } from '@/components/recall-drawer';
 import { LoadingState } from '@/components/ui/states';
 
@@ -72,6 +74,8 @@ export default function RigDayPage() {
 
   const accounting = useMemo(() => deriveTimeAccounting(day.blocks), [day.blocks]);
   const progress = useMemo(() => deriveProgress(day.blocks), [day.blocks]);
+  // Notifications derive only from blocks (incl. QC) — key the memo on blocks, not the whole day.
+  const notifications = useMemo(() => deriveNotifications(day), [day.blocks]);
 
   const nowMin = day.blocks.length
     ? Math.max(...day.blocks.map((b) => b.endMin))
@@ -266,6 +270,22 @@ export default function RigDayPage() {
                 </CardHeader>
                 <CardContent>
                   <TimeAccountingRail accounting={accounting} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span>Notifications</span>
+                    {notifications.length > 0 && (
+                      <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full border border-red/40 bg-red/10 px-1.5 font-mono text-[0.625rem] font-medium tabular-nums text-red">
+                        {notifications.length}
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <NotificationsPanel notifications={notifications} />
                 </CardContent>
               </Card>
 
