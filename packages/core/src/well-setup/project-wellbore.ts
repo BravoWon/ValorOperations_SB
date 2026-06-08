@@ -17,7 +17,9 @@ export function projectWellbore(setup: WellSetup): WellboreModel {
   const formations = [...setup.formations]
     .filter((f) => f.name.trim() !== '' || f.topFt > 0 || f.bottomFt > 0)
     .sort((a, b) => a.topFt - b.topFt);
-  const completions = [...(setup.completions ?? [])].sort((a, b) => a.topFt - b.topFt);
+  const completions = [...(setup.completions ?? [])]
+    .filter((c) => c.name.trim() !== '' || c.topFt > 0 || (c.bottomFt ?? 0) > 0)
+    .sort((a, b) => a.topFt - b.topFt);
 
   const depths = [
     ...casings.map((c) => c.shoeMdFt),

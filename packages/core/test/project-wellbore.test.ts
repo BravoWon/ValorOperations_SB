@@ -51,4 +51,10 @@ describe('projectWellbore', () => {
     expect(m.completions).toEqual([]);
     expect(m.tubing).toBeUndefined();
   });
+  it('drops a fully-blank completion row (unfilled Add row)', () => {
+    const withBlank = structuredClone(DEFAULT_WELL_SETUP);
+    const before = (withBlank.completions ?? []).length;
+    withBlank.completions = [...(withBlank.completions ?? []), { id: 'comp-blank', type: 'perforation', name: '', topFt: 0 }];
+    expect(projectWellbore(withBlank).completions).toHaveLength(before);
+  });
 });

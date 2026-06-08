@@ -311,7 +311,7 @@ export const WellboreSchematic = forwardRef<SVGSVGElement, WellboreSchematicProp
               const lead = c.cementLeadPpg;
               const tail = c.cementTailPpg;
               const detail = [
-                Number.isFinite(lead) ? `lead ${fmt(lead!, 1)}` : null,
+                Number.isFinite(lead) ? `lead ${fmt(lead!, 1)} ppg` : null,
                 Number.isFinite(tail) ? `tail ${fmt(tail!, 1)} ppg` : null,
               ]
                 .filter(Boolean)
