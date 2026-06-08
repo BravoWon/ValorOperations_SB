@@ -18,6 +18,7 @@ export class MockRepository implements Repository {
   private tickMs = 0;
   private dashboards = new Map<string, DashboardLayout>();
   private wellSetups = new Map<string, import('./well-setup/types').WellSetup>();
+  private rigDays = new Map<string, import('./rig-day/types').RigDay>();
 
   constructor() {
     this.data = createSeed();
@@ -234,5 +235,19 @@ export class MockRepository implements Repository {
       return null;
     }
     return this.wellSetups.has(wellId) ? structuredClone(this.wellSetups.get(wellId)!) : null;
+  }
+
+  private rigDayKey(id: string) { return `valor:rigday:${id}`; }
+
+  async saveRigDay(id: string, day: import('./rig-day/types').RigDay): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem(this.rigDayKey(id), JSON.stringify(day));
+    else this.rigDays.set(id, structuredClone(day));
+  }
+
+  async loadRigDay(id: string): Promise<import('./rig-day/types').RigDay | null> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem(this.rigDayKey(id)); if (raw) { try { return JSON.parse(raw); } catch { return null; } } return null; }
+    return this.rigDays.has(id) ? structuredClone(this.rigDays.get(id)!) : null;
   }
 }
