@@ -1,4 +1,5 @@
 import type { JobStatus } from './enums';
+import { summarizeSnapshot } from './local-db/types';
 import { instantiateStages } from './templates';
 import { assertJobStatusTransition } from './transitions';
 import { createSeed, type SeedData } from './seed';
@@ -288,5 +289,71 @@ export class MockRepository implements Repository {
     const store = this.browserStorage;
     if (store) { const raw = store.getItem('valor:afe'); if (raw) { try { return JSON.parse(raw) as import('./office-ops/types').AfeLine[]; } catch { return null; } } return null; }
     return this.afe ? structuredClone(this.afe) : null;
+  }
+
+  async exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot> {
+    const store = this.browserStorage;
+    const collections: import('./local-db/types').LocalDbSnapshot['collections'] = {
+      dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [],
+    };
+    if (store) {
+      for (let i = 0; i < store.length; i++) {
+        const k = store.key(i); if (!k || !k.startsWith('valor:')) continue;
+        const raw = store.getItem(k); if (!raw) continue;
+        try {
+          if (k.startsWith('valor:dashboard:')) collections.dashboards!.push(JSON.parse(raw));
+          else if (k.startsWith('valor:wellsetup:')) collections.wellSetups!.push({ wellId: k.slice('valor:wellsetup:'.length), setup: JSON.parse(raw) });
+          else if (k.startsWith('valor:rigday:')) collections.rigDays!.push(JSON.parse(raw));
+          else if (k === 'valor:channels') collections.channels = JSON.parse(raw);
+          else if (k === 'valor:vendors') collections.vendors = JSON.parse(raw);
+          else if (k === 'valor:afe') collections.afe = JSON.parse(raw);
+        } catch { /* skip malformed */ }
+      }
+    } else {
+      collections.dashboards = [...this.dashboards.values()].map((d) => structuredClone(d));
+      collections.wellSetups = [...this.wellSetups.entries()].map(([wellId, setup]) => ({ wellId, setup: structuredClone(setup) }));
+      collections.rigDays = [...this.rigDays.values()].map((d) => structuredClone(d));
+      collections.channels = this.channels ? structuredClone(this.channels) : [];
+      collections.vendors = this.vendors ? structuredClone(this.vendors) : [];
+      collections.afe = this.afe ? structuredClone(this.afe) : [];
+    }
+    return { version: 1 as const, collections };
+  }
+
+  async importSnapshot(snapshot: import('./local-db/types').LocalDbSnapshot): Promise<void> {
+    // Defensive: user-provided JSON. Validate each entry's shape and skip bad
+    // ones so a malformed snapshot can't crash the import (spec: never throws).
+    const c = (snapshot && typeof snapshot === 'object' ? snapshot.collections : null) ?? {};
+    const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+    const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
+
+    for (const d of arr<import('./widgets/types').DashboardLayout>(c.dashboards)) {
+      if (obj(d) && typeof d.ownerId === 'string') { try { await this.saveDashboard(d); } catch { /* skip */ } }
+    }
+    for (const w of arr<{ wellId: string; setup: import('./well-setup/types').WellSetup }>(c.wellSetups)) {
+      if (obj(w) && typeof w.wellId === 'string' && obj(w.setup)) { try { await this.saveWellSetup(w.wellId, w.setup); } catch { /* skip */ } }
+    }
+    for (const r of arr<import('./rig-day/types').RigDay>(c.rigDays)) {
+      if (obj(r) && typeof r.id === 'string') { try { await this.saveRigDay(r.id, r); } catch { /* skip */ } }
+    }
+    if (Array.isArray(c.channels)) { try { await this.saveChannels(c.channels); } catch { /* skip */ } }
+    if (Array.isArray(c.vendors)) { try { await this.saveVendors(c.vendors); } catch { /* skip */ } }
+    if (Array.isArray(c.afe)) { try { await this.saveAfe(c.afe); } catch { /* skip */ } }
+  }
+
+  async listCollections(): Promise<import('./local-db/types').CollectionInfo[]> {
+    return summarizeSnapshot(await this.exportSnapshot());
+  }
+
+  async resetLocalDb(): Promise<void> {
+    const store = this.browserStorage;
+    if (store) {
+      const keys: string[] = [];
+      for (let i = 0; i < store.length; i++) { const k = store.key(i); if (k && k.startsWith('valor:')) keys.push(k); }
+      keys.forEach((k) => store.removeItem(k));
+    } else {
+      this.dashboards.clear(); this.wellSetups.clear(); this.rigDays.clear();
+      this.channels = null; this.vendors = null; this.afe = null;
+    }
   }
 }
