@@ -22,3 +22,6 @@ export * from './rig-day/lanes';
 export * from './rig-day/recall';
 export * from './data-manager/types';
 export * from './data-manager/channels';
+export * from './office-ops/types';
+export * from './office-ops/vendors';
+export * from './office-ops/afe';
