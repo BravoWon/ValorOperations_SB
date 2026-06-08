@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import {
   DEFAULT_AFE,
   DEFAULT_RIG_DAY,
@@ -35,18 +36,24 @@ export default function DataStudioPage() {
   useEffect(() => {
     let active = true;
     const repo = getRepo();
-    Promise.all([repo.exportSnapshot(), repo.getAssetTree(DEMO_ORG_ID), repo.listJobs(DEMO_ORG_ID)])
-      .then(([snap, assetTree, jobs]) => {
-        if (!active) return;
-        // Fall back to the seed defaults when a collection is empty so the demo
-        // always shows meaningful analytics (mirrors the other workspaces).
-        const rigDays = snap.collections.rigDays?.length ? snap.collections.rigDays : [DEFAULT_RIG_DAY];
-        const afe = snap.collections.afe?.length ? snap.collections.afe : DEFAULT_AFE;
-        setData({ rigDays, afe, assetTree, jobs });
-      })
-      .catch(() => {
-        if (active) setData({ rigDays: [DEFAULT_RIG_DAY], afe: DEFAULT_AFE, assetTree: [], jobs: [] });
-      });
+    // allSettled (not all): if one source fails — e.g. listJobs under RLS while
+    // exportSnapshot succeeds — keep the collections that loaded and only default
+    // the failed ones, rather than dropping the whole page to seed defaults.
+    Promise.allSettled([
+      repo.exportSnapshot(),
+      repo.getAssetTree(DEMO_ORG_ID),
+      repo.listJobs(DEMO_ORG_ID),
+    ]).then(([snapR, treeR, jobsR]) => {
+      if (!active) return;
+      const snap = snapR.status === 'fulfilled' ? snapR.value : null;
+      const assetTree = treeR.status === 'fulfilled' ? treeR.value : [];
+      const jobs = jobsR.status === 'fulfilled' ? jobsR.value : [];
+      // Fall back to the seed defaults when a collection is empty/unavailable so
+      // the demo always shows meaningful analytics (mirrors the other workspaces).
+      const rigDays = snap?.collections.rigDays?.length ? snap.collections.rigDays : [DEFAULT_RIG_DAY];
+      const afe = snap?.collections.afe?.length ? snap.collections.afe : DEFAULT_AFE;
+      setData({ rigDays, afe, assetTree, jobs });
+    });
     return () => {
       active = false;
     };
@@ -69,6 +76,20 @@ export default function DataStudioPage() {
 
       {analytics ? (
         <div className="space-y-6">
+          {analytics.kpis.warnings.length > 0 && (
+            <ul className="space-y-1.5">
+              {analytics.kpis.warnings.map((w, i) => (
+                <li
+                  key={`${w}-${i}`}
+                  className="flex items-start gap-2 rounded-md border border-red/20 bg-red/[0.06] px-3 py-2 text-xs text-red"
+                >
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <KpiGrid kpis={analytics.kpis.kpis} />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

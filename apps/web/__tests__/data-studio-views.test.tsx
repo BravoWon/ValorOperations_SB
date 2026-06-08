@@ -62,8 +62,19 @@ describe('Data Studio views', () => {
     expect(screen.getByText('Day 1')).toBeInTheDocument();
   });
 
-  it('renders empty states without crashing', () => {
-    render(<NptPareto data={deriveNptBreakdown([])} />);
-    expect(screen.getByText(/No non-productive time/i)).toBeInTheDocument();
+  it('distinguishes "no rig time" from "no NPT" empty states', () => {
+    // No rig days at all → no logged time.
+    const { unmount } = render(<NptPareto data={deriveNptBreakdown([])} />);
+    expect(screen.getByText(/No rig time logged/i)).toBeInTheDocument();
+    unmount();
+
+    // Logged time but zero NPT (only a productive DRL block).
+    const productiveOnly = {
+      id: 'd2',
+      label: 'Day 2',
+      blocks: [{ id: 'b1', code: 'DRL', startMin: 0, endMin: 120 }],
+    };
+    render(<NptPareto data={deriveNptBreakdown([productiveOnly])} />);
+    expect(screen.getByText(/all logged time was productive/i)).toBeInTheDocument();
   });
 });

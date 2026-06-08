@@ -77,7 +77,9 @@ export function NptPareto({ data }: { data: NptBreakdown }) {
   if (data.slices.length === 0) {
     return (
       <p className="text-sm text-muted-foreground/70">
-        No non-productive time logged — nothing to break down.
+        {data.totalLoggedMin === 0
+          ? 'No rig time logged yet — nothing to break down.'
+          : 'No non-productive time logged — all logged time was productive.'}
       </p>
     );
   }
