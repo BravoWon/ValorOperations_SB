@@ -54,6 +54,24 @@ it('seed includes people and equipment lanes', () => {
   expect((DEFAULT_RIG_DAY.equipment ?? []).length).toBeGreaterThanOrEqual(2);
 });
 
+import { RECALL_LIBRARY, findLikeItems } from '../src/rig-day/recall';
+import { findBankCode } from '../src/well-setup/bank';
+
+describe('rig-day recall', () => {
+  it('every library item uses a real Bank code', () => {
+    expect(RECALL_LIBRARY.every((i) => !!findBankCode(i.code))).toBe(true);
+  });
+  it('findLikeItems filters by code', () => {
+    const code = RECALL_LIBRARY[0]!.code;
+    const like = findLikeItems(code);
+    expect(like.length).toBeGreaterThan(0);
+    expect(like.every((i) => i.code === code)).toBe(true);
+  });
+  it('findLikeItems returns [] for an unknown code', () => {
+    expect(findLikeItems('NOPE')).toEqual([]);
+  });
+});
+
 import { PARTY_ROLES, EQUIPMENT_CATEGORIES, findPartyRole, deriveProgress } from '../src/rig-day/lanes';
 
 describe('rig-day lanes', () => {
