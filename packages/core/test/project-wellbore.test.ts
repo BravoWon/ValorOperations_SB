@@ -18,7 +18,7 @@ describe('projectWellbore', () => {
   });
   it('warns when a casing shoe is deeper than total hole', () => {
     const bad = structuredClone(DEFAULT_WELL_SETUP);
-    bad.casings[2].shoeMdFt = 9999;
+    bad.casings[2]!.shoeMdFt = 9999;
     expect(projectWellbore(bad).warnings.some((w) => /shoe/i.test(w))).toBe(true);
   });
   it('warns on unknown code', () => {
