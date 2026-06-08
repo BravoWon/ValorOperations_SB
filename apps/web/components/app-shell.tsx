@@ -54,7 +54,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
             return (
               <div key={plane.id}>
                 <div className="eyebrow mb-2 flex items-center gap-1.5 px-2">
-                  <PlaneIcon className="h-3 w-3 text-gold/70" />
+                  <PlaneIcon className="h-3 w-3 text-gold/70" aria-hidden="true" />
                   {plane.label}
                 </div>
                 <div className="space-y-1">
@@ -75,7 +75,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
                         {active && (
                           <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-gold" />
                         )}
-                        <Icon className={cn('h-4 w-4', active ? 'text-gold' : 'text-muted-foreground/70')} strokeWidth={1.75} />
+                        <Icon className={cn('h-4 w-4', active ? 'text-gold' : 'text-muted-foreground/70')} strokeWidth={1.75} aria-hidden="true" />
                         <span className="font-medium">{item.label}</span>
                       </Link>
                     );

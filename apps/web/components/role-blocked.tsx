@@ -1,9 +1,10 @@
 // apps/web/components/role-blocked.tsx
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
+import type { Role } from '@/lib/role';
 
 /** Branded "this route needs a higher role" state for direct visits. */
-export function RoleBlocked({ required }: { required: string }) {
+export function RoleBlocked({ required }: { required: Role }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-6">
       <div className="animate-fade-up glass-strong w-full max-w-md rounded-xl px-8 py-10 text-center">

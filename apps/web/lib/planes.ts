@@ -1,5 +1,5 @@
 // apps/web/lib/planes.ts
-import type { ComponentType } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Activity, Clock, Layers, Gauge, Compass,
   Database, Building2, BarChart3, HardDrive,
@@ -11,14 +11,14 @@ import { roleSatisfies } from '@/lib/role';
 export interface PlaneItem {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   minRole: Role;
 }
 
 export interface Plane {
   id: 'operate' | 'visualize' | 'administer' | 'data';
   label: string;
-  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   items: PlaneItem[];
 }
 
