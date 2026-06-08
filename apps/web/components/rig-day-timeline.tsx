@@ -1,9 +1,12 @@
 'use client';
 
+import { Check, Flag } from 'lucide-react';
 import { DAY_MINUTES, findBankCode, type RigDay } from '@valor/core';
 
 export interface RigDayTimelineProps {
   day: RigDay;
+  /** Select a block (opens the recall/QC drawer on the page). */
+  onSelect?: (id: string) => void;
 }
 
 /**
@@ -41,7 +44,7 @@ function hhmm(totalMin: number): string {
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i); // 0..24 gridlines
 
-export function RigDayTimeline({ day }: RigDayTimelineProps) {
+export function RigDayTimeline({ day, onSelect }: RigDayTimelineProps) {
   const blocks = day.blocks;
   const nowMin = blocks.length ? Math.max(...blocks.map((b) => b.endMin)) : 0;
 
@@ -82,21 +85,40 @@ export function RigDayTimeline({ day }: RigDayTimelineProps) {
           const dur = b.endMin - b.startMin;
           const color = colorForCode(b.code);
           return (
-            <div
+            <button
               key={b.id}
+              type="button"
               data-testid="rig-block"
+              aria-label={`${b.code} ${hhmm(b.startMin)}–${hhmm(b.endMin)}${
+                b.qc ? ` · QC ${b.qc.status}` : ''
+              }`}
               title={`${b.code} · ${hhmm(b.startMin)}–${hhmm(b.endMin)}`}
-              className="absolute inset-y-1 flex items-center justify-center overflow-hidden rounded-[3px] px-1"
+              onClick={() => onSelect?.(b.id)}
+              className="absolute inset-y-1 flex items-center justify-center gap-0.5 overflow-hidden rounded-[3px] px-1 outline-none transition-[filter,box-shadow] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-gold-light"
               style={{
                 left: pct(b.startMin),
                 width: pct(Math.max(0, dur)),
                 backgroundColor: color,
               }}
             >
+              {b.qc &&
+                (b.qc.status === 'approved' ? (
+                  <Check
+                    className="h-2.5 w-2.5 shrink-0 text-green"
+                    strokeWidth={3}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Flag
+                    className="h-2.5 w-2.5 shrink-0 text-red"
+                    strokeWidth={3}
+                    aria-hidden="true"
+                  />
+                ))}
               <span className="truncate font-mono text-[0.625rem] font-semibold uppercase tracking-wide text-[#0D1E35]">
                 {b.code}
               </span>
-            </div>
+            </button>
           );
         })}
 
