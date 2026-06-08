@@ -56,4 +56,73 @@ describe('WellSetupPanels', () => {
     const od = getAllByLabelText(/^OD$/i)[0] as HTMLInputElement;
     expect(Number(od.value)).toBeCloseTo(339.725, 1);
   });
+
+  it('renders tubing, completions, and wellhead groups', () => {
+    const onChange = vi.fn();
+    const { getByText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="ft" diaUnit="in" />,
+    );
+    expect(getByText(/^Completions$/i)).toBeTruthy();
+    expect(getByText(/Tubing String/i)).toBeTruthy();
+    expect(getByText(/^Wellhead$/i)).toBeTruthy();
+  });
+
+  it('renders cement columns that are NOT unit-converted', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="m" diaUnit="mm" />,
+    );
+    // Production casing carries cementSacks 765 — must display as 765 regardless of units.
+    const sacks = getAllByLabelText(/Cement \(sx\)/i) as HTMLInputElement[];
+    expect(sacks.some((i) => i.value === '765')).toBe(true);
+  });
+
+  it('edits a completion name and stores it via onChange', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="ft" diaUnit="in" />,
+    );
+    // Completion "Name" cells (one per completion row).
+    const names = getAllByLabelText(/^Name$/i);
+    expect(names.length).toBeGreaterThan(0);
+    fireEvent.change(names[0] as HTMLInputElement, { target: { value: 'Renamed Perfs' } });
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next.completions[0].name).toBe('Renamed Perfs');
+  });
+
+  it('adds a completion row with a deterministic comp-N id', () => {
+    const onChange = vi.fn();
+    const { getByText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="ft" diaUnit="in" />,
+    );
+    fireEvent.click(getByText(/Add completion/i));
+    const next = onChange.mock.calls.at(-1)?.[0];
+    const ids = next.completions.map((c: { id: string }) => c.id);
+    expect(ids).toContain('comp-4');
+    expect(next.completions.at(-1).type).toBe('perforation');
+  });
+
+  it('edits the tubing OD with diameter-unit conversion', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="ft" diaUnit="mm" />,
+    );
+    // Tubing OD 2.875 in → ~73.025 mm. The last /^OD$/ input is the tubing one.
+    const ods = getAllByLabelText(/^OD$/i);
+    const tubingOd = ods[ods.length - 1] as HTMLInputElement;
+    expect(Number(tubingOd.value)).toBeCloseTo(73.025, 1);
+    fireEvent.change(tubingOd, { target: { value: '254' } }); // 254 mm → 10 in
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next.tubing.odIn).toBeCloseTo(10, 4);
+  });
+
+  it('edits the wellhead working pressure', () => {
+    const onChange = vi.fn();
+    const { getByLabelText } = render(
+      <WellSetupPanels setup={DEFAULT_WELL_SETUP} onChange={onChange} depthUnit="ft" diaUnit="in" />,
+    );
+    fireEvent.change(getByLabelText(/Working pressure/i), { target: { value: '7500' } });
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next.wellhead.workingPressurePsi).toBe(7500);
+  });
 });
