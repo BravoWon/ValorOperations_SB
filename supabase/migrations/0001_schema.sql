@@ -38,8 +38,10 @@ create table public.memberships (
   created_at  timestamptz not null default now(),
   unique (user_id, org_id)
 );
+-- Lookups by user_id (the RLS predicate) are served by the leading column of the
+-- `unique (user_id, org_id)` index, so no separate user_id index is needed. The
+-- org_id index IS needed — org_id is not the unique index's leading column.
 create index memberships_org_id_idx on public.memberships (org_id);
-create index memberships_user_id_idx on public.memberships (user_id);
 
 -- ============================================================================
 -- Condition-state (the physical world: assets → pads → wells → wellbores → ...)
