@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { snapTo5, DAY_MINUTES } from '../src/rig-day/time-accounting';
 import { deriveTimeAccounting } from '../src/rig-day/time-accounting';
 import type { TimeBlock } from '../src/rig-day/types';
+import { DEFAULT_RIG_DAY } from '../src/rig-day/seed';
 
 describe('snapTo5', () => {
   it('rounds to nearest 5', () => { expect(snapTo5(72)).toBe(70); expect(snapTo5(73)).toBe(75); });
@@ -34,4 +35,10 @@ describe('deriveTimeAccounting', () => {
     const a = deriveTimeAccounting([B('ZZZ', 0, 30)]);
     expect(a.warnings.some((w) => /bank/i.test(w))).toBe(true);
   });
+});
+
+it('default rig day has blocks incl. an NPT one', () => {
+  expect(DEFAULT_RIG_DAY.blocks.length).toBeGreaterThanOrEqual(5);
+  const a = deriveTimeAccounting(DEFAULT_RIG_DAY.blocks);
+  expect(a.nptMin).toBeGreaterThan(0);
 });
