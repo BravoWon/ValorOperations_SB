@@ -1,8 +1,12 @@
 import type { LaneItem } from './lanes';
 
+export type QcStatus = 'approved' | 'flagged';
+export interface QcMark { status: QcStatus; note?: string; }
+
 export interface TimeBlock {
   id: string; code: string; startMin: number; endMin: number;
   depthStartFt?: number; depthEndFt?: number; note?: string;
+  qc?: QcMark;
 }
 export interface RigDay {
   id: string; label: string; blocks: TimeBlock[];
