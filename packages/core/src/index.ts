@@ -9,6 +9,7 @@ export * from './repository';
 export * from './seed';
 export * from './mock-repository';
 export * from './compute/hydraulics';
+export * from './compute/directional-survey';
 export * from './widgets/types';
 export * from './units/units';
 export * from './well-setup/types';
