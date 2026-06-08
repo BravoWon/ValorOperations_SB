@@ -554,10 +554,15 @@ export class SupabaseRepository implements Repository {
   // they are authored through dedicated flows, not bulk import/reset.
 
   async exportSnapshot(): Promise<LocalDbSnapshot> {
-    const [dashRes, wsRes, rdRes] = await Promise.all([
+    // All six reads are independent — fetch them in parallel (this also speeds up
+    // listCollections(), which calls exportSnapshot()).
+    const [dashRes, wsRes, rdRes, channels, vendors, afe] = await Promise.all([
       this.client.from('dashboards').select('payload').eq('org_id', this.orgId),
       this.client.from('well_setups').select('well_id, payload').eq('org_id', this.orgId),
       this.client.from('rig_days').select('payload').eq('org_id', this.orgId),
+      this.loadChannels(),
+      this.loadVendors(),
+      this.loadAfe(),
     ]);
     if (dashRes.error) this.fail(dashRes.error, 'exportSnapshot(dashboards)');
     if (wsRes.error) this.fail(wsRes.error, 'exportSnapshot(well_setups)');
@@ -570,9 +575,9 @@ export class SupabaseRepository implements Repository {
         setup: r.payload as WellSetup,
       })),
       rigDays: (rdRes.data ?? []).map((r) => r.payload as RigDay),
-      channels: (await this.loadChannels()) ?? [],
-      vendors: (await this.loadVendors()) ?? [],
-      afe: (await this.loadAfe()) ?? [],
+      channels: channels ?? [],
+      vendors: vendors ?? [],
+      afe: afe ?? [],
     };
     return { version: 1 as const, collections };
   }

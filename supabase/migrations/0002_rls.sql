@@ -252,3 +252,20 @@ create policy "dashboards_tenant_select" on public.dashboards for select to auth
 create policy "dashboards_tenant_write" on public.dashboards for all to authenticated
   using ( org_id in (select org_id from public.memberships where user_id = (select auth.uid())) )
   with check ( org_id in (select org_id from public.memberships where user_id = (select auth.uid())) );
+
+-- ============================================================================
+-- Data API GRANTs.
+--
+-- RLS decides WHICH ROWS a role may touch, but Postgres GRANTs decide whether
+-- the role may touch the table AT ALL — the Supabase Data API (PostgREST) needs
+-- both. Supabase's default privileges usually cover tables created via the
+-- dashboard, but migrations applied by other roles may not inherit them, so we
+-- grant explicitly. Scoped to `authenticated` only (RLS is `TO authenticated`);
+-- `anon` is intentionally NOT granted. Row-level isolation still comes from the
+-- policies above — these grants do not widen which rows are visible.
+-- ============================================================================
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+-- Cover tables added by later migrations too.
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
