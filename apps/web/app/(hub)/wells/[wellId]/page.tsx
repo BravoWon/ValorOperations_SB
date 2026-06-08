@@ -1,12 +1,20 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, GitBranch, Layers, Ruler, PencilRuler } from 'lucide-react';
-import { getRepo } from '@/lib/repo';
+import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
 import { WellHeader } from '@/components/well-header';
 import { FormationsTable } from '@/components/formations-table';
 import { CasingTable } from '@/components/casing-table';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/states';
+
+// Pre-render a page per seeded well for static export (the server component
+// reads the in-memory seed at build). Unknown ids 404 rather than fall back.
+export async function generateStaticParams() {
+  const wells = await getRepo().listWells(DEMO_ORG_ID);
+  return wells.map((w) => ({ wellId: w.id }));
+}
+export const dynamicParams = false;
 
 export default async function WellPage({ params }: { params: Promise<{ wellId: string }> }) {
   const { wellId } = await params;
