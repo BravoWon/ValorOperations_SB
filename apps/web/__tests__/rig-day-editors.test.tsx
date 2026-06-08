@@ -41,7 +41,7 @@ describe('RigDayEditors', () => {
       <RigDayEditors day={DEFAULT_RIG_DAY} onChange={onChange} />,
     );
     const removeButtons = getAllByRole('button', { name: /remove/i });
-    fireEvent.click(removeButtons[0]);
+    fireEvent.click(removeButtons[0] as HTMLElement);
     const next = onChange.mock.calls.at(-1)?.[0];
     expect(next.blocks.length).toBe(DEFAULT_RIG_DAY.blocks.length - 1);
   });
