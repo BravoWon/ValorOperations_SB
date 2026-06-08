@@ -37,4 +37,6 @@ export interface Repository {
   saveDashboard(layout: DashboardLayout): Promise<void>;
   saveWellSetup(wellId: string, setup: import('./well-setup/types').WellSetup): Promise<void>;
   loadWellSetup(wellId: string): Promise<import('./well-setup/types').WellSetup | null>;
+  saveRigDay(id: string, day: import('./rig-day/types').RigDay): Promise<void>;
+  loadRigDay(id: string): Promise<import('./rig-day/types').RigDay | null>;
 }
