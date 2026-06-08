@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { AssetTreeNode } from '@valor/core';
-import { Activity, Layers, Gauge, LayoutDashboard, Home } from 'lucide-react';
+import { Activity, Layers, Gauge, LayoutDashboard, Home, Clock } from 'lucide-react';
 import { AssetTree } from '@/components/asset-tree';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/jobs', label: 'Active Jobs', icon: Activity },
+  { href: '/rig-day', label: 'Rig Day', icon: Clock },
   { href: '/assets', label: 'Assets', icon: Layers },
   { href: '/tools/hydraulics', label: 'Hydraulics', icon: Gauge },
 ];
