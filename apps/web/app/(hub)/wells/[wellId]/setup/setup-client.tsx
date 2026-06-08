@@ -53,9 +53,14 @@ export function WellSetupClient({ wellId }: { wellId: string }) {
 
   const onSave = async () => {
     setSaveState('saving');
-    await getRepo().saveWellSetup(wellId, setup);
-    setSaveState('saved');
-    setTimeout(() => setSaveState('idle'), 1800);
+    try {
+      await getRepo().saveWellSetup(wellId, setup);
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 1800);
+    } catch {
+      // e.g. localStorage quota/security error — don't trap the button on 'saving'.
+      setSaveState('idle');
+    }
   };
 
   const onExportPng = () => {

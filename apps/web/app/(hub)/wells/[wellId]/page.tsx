@@ -8,13 +8,14 @@ import { CasingTable } from '@/components/casing-table';
 import { Separator } from '@/components/ui/separator';
 import { EmptyState } from '@/components/ui/states';
 
-// Pre-render a page per seeded well for static export (the server component
-// reads the in-memory seed at build). Unknown ids 404 rather than fall back.
+// Pre-render a page per seeded well. For the static export these become the
+// emitted pages; on normal dev/Vercel builds dynamicParams stays at its default
+// (true), so a future Supabase backend can still resolve wells that weren't
+// known at build time (they render on demand).
 export async function generateStaticParams() {
   const wells = await getRepo().listWells(DEMO_ORG_ID);
   return wells.map((w) => ({ wellId: w.id }));
 }
-export const dynamicParams = false;
 
 export default async function WellPage({ params }: { params: Promise<{ wellId: string }> }) {
   const { wellId } = await params;

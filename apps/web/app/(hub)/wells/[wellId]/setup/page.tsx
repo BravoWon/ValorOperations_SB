@@ -8,7 +8,6 @@ export async function generateStaticParams() {
   const wells = await getRepo().listWells(DEMO_ORG_ID);
   return wells.map((w) => ({ wellId: w.id }));
 }
-export const dynamicParams = false;
 
 export default async function WellSetupPage({ params }: { params: Promise<{ wellId: string }> }) {
   const { wellId } = await params;

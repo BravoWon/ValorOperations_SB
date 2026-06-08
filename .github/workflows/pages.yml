@@ -38,7 +38,9 @@ jobs:
         run: corepack pnpm --filter @valor/web build
         env:
           STATIC_EXPORT: 'true'
-          PAGES_BASE_PATH: /ValorOperations_SB
+          # Project-site subpath = the repo name (portable across forks/renames).
+          # Clear this for a user/org site or a custom domain.
+          PAGES_BASE_PATH: ${{ github.event.repository.name }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -18,7 +18,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const ok = document.cookie.split('; ').some((c) => c.startsWith('valor_demo_auth='));
+    // Split on ';' and trim — the optional space after ';' isn't guaranteed.
+    const ok = document.cookie.split(';').some((c) => c.trim().startsWith('valor_demo_auth='));
     if (ok) {
       setAuthed(true);
     } else {

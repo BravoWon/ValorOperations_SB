@@ -5,7 +5,10 @@
 // is the repo subpath a project Pages site serves under (e.g. /ValorOperations_SB);
 // leave it empty for a user/org site or a custom domain.
 const isExport = process.env.STATIC_EXPORT === 'true';
-const basePath = process.env.PAGES_BASE_PATH || '';
+// Normalize once: a valid basePath is '' or '/segment...' with no trailing slash.
+// This tolerates workflow inputs like 'repo', '/repo/' or 'repo/'.
+const rawBasePath = process.env.PAGES_BASE_PATH || '';
+const basePath = rawBasePath ? `/${rawBasePath.replace(/^\/+|\/+$/g, '')}` : '';
 
 const nextConfig = {
   transpilePackages: ['@valor/core'],
