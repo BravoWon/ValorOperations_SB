@@ -64,6 +64,10 @@ completion on the PR.
   WSL/Mac if desired.
 - **Ignored paths:** `pnpm-lock.yaml` (lockfile noise).
 - **Re-trigger manually** on a PR: `@coderabbitai review` (incremental) or `@coderabbitai full review`.
+- **`/code-review ultra` (ultrareview) — known tooling limitations + our mitigations** (external L1 audit, verified against the installed plugin 2026-06-07): the `code-review` plugin discovers its target via `gh pr list` (can mis-target or skip when several PRs are open) and posts **top-level** comments via `gh pr comment` (not line-anchored; no "Resolve conversation"). These are plugin-internal and not ours to patch durably — but we mitigate:
+  1. **Always invoke ultrareview with an explicit PR number** — `/code-review ultra <PR#>` — never the no-arg auto-detect form, to avoid target drift.
+  2. Triage its output by fetching **both** `gh api repos/$REPO/pulls/$PR/comments` **and** `gh pr view $PR --json comments` (the snippet below) — top-level comments live in the latter.
+  3. When **we** dispatch review/implementer subagents, **always pass the absolute repo path / CWD** in the prompt (the plugin's subagents drop CWD inside worktrees; ours don't — keep it that way).
 
 ### Fetching CodeRabbit findings for triage (no browser)
 
