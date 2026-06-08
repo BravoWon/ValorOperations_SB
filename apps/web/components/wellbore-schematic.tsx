@@ -1,8 +1,17 @@
 'use client';
 
-import { forwardRef } from 'react';
-import type { WellboreModel } from '@valor/core';
-import { convertLength, type LengthUnit } from '@valor/core';
+import { forwardRef, type ReactElement } from 'react';
+import type { WellboreModel, CompletionType } from '@valor/core';
+import { convertLength, COMPLETION_TYPES, type LengthUnit } from '@valor/core';
+
+// type → display label, derived from the shared registry so the legend stays in sync.
+const COMPLETION_LABELS: Record<CompletionType, string> = COMPLETION_TYPES.reduce(
+  (acc, t) => {
+    acc[t.value] = t.label;
+    return acc;
+  },
+  {} as Record<CompletionType, string>,
+);
 
 export interface WellboreSchematicProps {
   model: WellboreModel;
@@ -29,6 +38,9 @@ const CREAM = '#F4EEE1';
 const MUTED = '#8FA0B8';
 const HOLE_FILL = '#091627';
 const CASING_FILL = '#1B355C';
+const CEMENT_FILL = '#6B7787'; // neutral grey for the cement annulus
+const TUBING_STROKE = '#E3C677'; // gold-light inner string
+const STEEL = '#9FB0C8'; // hardware glyphs (packer/valve/wellhead)
 
 function fmt(n: number, decimals = 0): string {
   if (!Number.isFinite(n)) return '—';
@@ -40,7 +52,7 @@ function fmt(n: number, decimals = 0): string {
 
 export const WellboreSchematic = forwardRef<SVGSVGElement, WellboreSchematicProps>(
   function WellboreSchematic({ model, depthUnit, diaUnit }, ref) {
-    const { header, casings, holes, formations, totalDepthFt } = model;
+    const { header, casings, holes, formations, totalDepthFt, tubing, completions, wellhead } = model;
 
     const bodyTop = TITLE_H + PAD_TOP;
     const bodyBottom = H - PAD_BOTTOM;
@@ -57,6 +69,19 @@ export const WellboreSchematic = forwardRef<SVGSVGElement, WellboreSchematicProp
       const ratio = maxOd > 0 ? odIn / maxOd : 1;
       // Keep a readable minimum so the innermost string is still visible.
       return Math.max(20, MAX_HALF_WIDTH * ratio);
+    };
+
+    // Innermost (smallest-OD) casing — completions/tubing live inside it.
+    const innerCasing = casings.length ? casings[casings.length - 1] : undefined;
+    const innerHalf = innerCasing ? halfWidthOf(innerCasing.odIn) : MAX_HALF_WIDTH * 0.4;
+    // Casing wall a given depth sits inside: the deepest string whose shoe is at
+    // or below the depth (falls back to the innermost string).
+    const wallHalfAt = (ft: number): number => {
+      let half = innerHalf;
+      for (const c of casings) {
+        if (Number.isFinite(c.shoeMdFt) && c.shoeMdFt >= ft) half = halfWidthOf(c.odIn);
+      }
+      return half;
     };
 
     // Depth-axis ticks (rounded to a sensible interval).
@@ -260,6 +285,213 @@ export const WellboreSchematic = forwardRef<SVGSVGElement, WellboreSchematicProp
                 </g>
               );
             })}
+          </g>
+        )}
+
+        {/* -------- Cement (annulus shade shoe→TOC where sacks present) -------- */}
+        {totalDepthFt > 0 && (
+          <g>
+            {casings.map((c, i) => {
+              const sacks = c.cementSacks;
+              if (
+                !Number.isFinite(sacks) ||
+                (sacks ?? 0) <= 0 ||
+                !Number.isFinite(c.tocFt) ||
+                !Number.isFinite(c.shoeMdFt) ||
+                c.shoeMdFt <= c.tocFt
+              ) {
+                return null;
+              }
+              const half = halfWidthOf(c.odIn);
+              const outerHalf = i > 0 ? halfWidthOf(casings[i - 1]!.odIn) : Math.min(MAX_HALF_WIDTH, half + 22);
+              const topY = yOf(c.tocFt);
+              const shoeY = yOf(c.shoeMdFt);
+              const bandH = Math.max(0, shoeY - topY);
+              const bandW = Math.max(2, outerHalf - half);
+              const lead = c.cementLeadPpg;
+              const tail = c.cementTailPpg;
+              const detail = [
+                Number.isFinite(lead) ? `lead ${fmt(lead!, 1)}` : null,
+                Number.isFinite(tail) ? `tail ${fmt(tail!, 1)} ppg` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ');
+              return (
+                <g key={`cement-${c.role}-${i}`} data-testid="cement">
+                  {/* both annulus columns, hatched so it reads as cement, print-clean */}
+                  <rect
+                    x={CENTER_X - outerHalf}
+                    y={topY}
+                    width={bandW}
+                    height={bandH}
+                    fill={CEMENT_FILL}
+                    opacity={0.4}
+                  />
+                  <rect
+                    x={CENTER_X + half}
+                    y={topY}
+                    width={bandW}
+                    height={bandH}
+                    fill={CEMENT_FILL}
+                    opacity={0.4}
+                  />
+                  {/* TOC tick + label on the right rail */}
+                  <line
+                    x1={CENTER_X + outerHalf}
+                    y1={topY}
+                    x2={CENTER_X + outerHalf + 8}
+                    y2={topY}
+                    stroke={CEMENT_FILL}
+                    strokeWidth={1.5}
+                  />
+                  <text
+                    x={CENTER_X + outerHalf + 12}
+                    y={topY + 4}
+                    fill={MUTED}
+                    fontSize={10}
+                    fontFamily="monospace"
+                  >
+                    {`cmt ${fmt(sacks!)} sx${detail ? ` · ${detail}` : ''}`}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+        {/* -------- Tubing (thin inner production string) -------- */}
+        {totalDepthFt > 0 &&
+          tubing &&
+          Number.isFinite(tubing.hangerDepthFt) &&
+          Number.isFinite(tubing.shoeDepthFt) &&
+          tubing.shoeDepthFt > tubing.hangerDepthFt && (
+            <g data-testid="tubing">
+              {(() => {
+                const half = Math.max(6, innerHalf * 0.42);
+                const topY = yOf(tubing.hangerDepthFt);
+                const shoeY = yOf(tubing.shoeDepthFt);
+                return (
+                  <>
+                    {/* double-line string walls */}
+                    <line x1={CENTER_X - half} y1={topY} x2={CENTER_X - half} y2={shoeY} stroke={TUBING_STROKE} strokeWidth={1.5} />
+                    <line x1={CENTER_X + half} y1={topY} x2={CENTER_X + half} y2={shoeY} stroke={TUBING_STROKE} strokeWidth={1.5} />
+                    {/* tubing shoe */}
+                    <line x1={CENTER_X - half} y1={shoeY} x2={CENTER_X + half} y2={shoeY} stroke={TUBING_STROKE} strokeWidth={2} />
+                    <text
+                      x={CENTER_X + half + 6}
+                      y={Math.max(topY + 12, bodyTop + 12)}
+                      fill={TUBING_STROKE}
+                      fontSize={10}
+                      fontFamily="monospace"
+                    >
+                      {`TBG ${diaLabel(tubing.odIn)} · ${fmt(tubing.weightPpf, 1)}# · ${tubing.grade || '—'}`}
+                    </text>
+                  </>
+                );
+              })()}
+            </g>
+          )}
+
+        {/* -------- Completions (perforations / packers / SSSV / …) -------- */}
+        {totalDepthFt > 0 && (
+          <g>
+            {completions.map((comp, i) => {
+              if (!Number.isFinite(comp.topFt)) return null;
+              const topY = yOf(comp.topFt);
+              const hasBottom = Number.isFinite(comp.bottomFt) && (comp.bottomFt ?? 0) > comp.topFt;
+              const botY = hasBottom ? yOf(comp.bottomFt!) : topY;
+              const wall = wallHalfAt(comp.topFt);
+              const tbgHalf = Math.max(6, innerHalf * 0.42);
+              const interval = hasBottom
+                ? `${depthLabel(comp.topFt)}–${depthLabel(comp.bottomFt!)} ${depthUnit}`
+                : `${depthLabel(comp.topFt)} ${depthUnit}`;
+              const railY = (topY + botY) / 2;
+
+              let glyph: ReactElement;
+              if (comp.type === 'perforation') {
+                // hatched bands on both casing walls over the interval
+                const bandH = Math.max(3, botY - topY);
+                const rows = Math.max(3, Math.round(bandH / 6));
+                const ticks: ReactElement[] = [];
+                for (let r = 0; r < rows; r++) {
+                  const y = topY + (bandH * (r + 0.5)) / rows;
+                  ticks.push(
+                    <g key={`perf-${r}`}>
+                      <path d={`M ${CENTER_X - wall - 8} ${y} l 8 -3 M ${CENTER_X - wall - 8} ${y} l 8 3`} stroke={GOLD_LIGHT} strokeWidth={1.5} fill="none" />
+                      <path d={`M ${CENTER_X + wall + 8} ${y} l -8 -3 M ${CENTER_X + wall + 8} ${y} l -8 3`} stroke={GOLD_LIGHT} strokeWidth={1.5} fill="none" />
+                    </g>,
+                  );
+                }
+                glyph = <>{ticks}</>;
+              } else if (comp.type === 'packer') {
+                // filled bar across the tubing-casing annulus at top
+                glyph = (
+                  <>
+                    <rect x={CENTER_X - wall} y={topY - 4} width={wall - tbgHalf} height={8} fill={STEEL} />
+                    <rect x={CENTER_X + tbgHalf} y={topY - 4} width={wall - tbgHalf} height={8} fill={STEEL} />
+                  </>
+                );
+              } else if (comp.type === 'sssv') {
+                // small valve glyph on the tubing at top
+                glyph = (
+                  <>
+                    <rect x={CENTER_X - tbgHalf - 4} y={topY - 6} width={tbgHalf * 2 + 8} height={12} fill={NAVY} stroke={STEEL} strokeWidth={1.5} />
+                    <path d={`M ${CENTER_X - tbgHalf} ${topY - 4} L ${CENTER_X + tbgHalf} ${topY + 4} M ${CENTER_X - tbgHalf} ${topY + 4} L ${CENTER_X + tbgHalf} ${topY - 4}`} stroke={STEEL} strokeWidth={1.5} />
+                  </>
+                );
+              } else {
+                // generic labeled tick on the right wall
+                glyph = (
+                  <line x1={CENTER_X + tbgHalf} y1={topY} x2={CENTER_X + wall} y2={topY} stroke={STEEL} strokeWidth={2} />
+                );
+              }
+
+              return (
+                <g key={`completion-${comp.id}-${i}`} data-testid={`completion-${comp.type}`}>
+                  {glyph}
+                  <line x1={CENTER_X + wall} y1={railY} x2={W - 150} y2={railY} stroke={MUTED} strokeWidth={0.5} strokeDasharray="2 3" opacity={0.4} />
+                  <text x={W - 146} y={railY - 3} fill={CREAM} fontSize={10} fontFamily="sans-serif">
+                    {comp.name || COMPLETION_LABELS[comp.type]}
+                  </text>
+                  <text x={W - 146} y={railY + 9} fill={MUTED} fontSize={9} fontFamily="monospace">
+                    {`${COMPLETION_LABELS[comp.type]} · ${interval}`}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+        {/* -------- Wellhead / tree (stacked-spool glyph above MD 0) -------- */}
+        {wellhead && (
+          <g data-testid="wellhead">
+            {(() => {
+              const baseY = bodyTop;
+              const cx = CENTER_X;
+              const spoolW = Math.max(40, innerHalf * 0.9);
+              return (
+                <>
+                  {/* casing/tubing head spools */}
+                  <rect x={cx - spoolW / 2} y={baseY - 18} width={spoolW} height={14} fill={NAVY_PANEL} stroke={STEEL} strokeWidth={1.5} />
+                  <rect x={cx - spoolW / 2 + 6} y={baseY - 34} width={spoolW - 12} height={14} fill={NAVY_PANEL} stroke={STEEL} strokeWidth={1.5} />
+                  {/* tree cap + wing valves */}
+                  <rect x={cx - 8} y={baseY - 50} width={16} height={16} fill={NAVY_PANEL} stroke={STEEL} strokeWidth={1.5} />
+                  <line x1={cx - spoolW / 2 + 6} y1={baseY - 27} x2={cx - spoolW / 2 - 6} y2={baseY - 27} stroke={STEEL} strokeWidth={2} />
+                  <line x1={cx + spoolW / 2 - 6} y1={baseY - 27} x2={cx + spoolW / 2 + 6} y2={baseY - 27} stroke={STEEL} strokeWidth={2} />
+                  <line x1={cx} y1={baseY - 50} x2={cx} y2={baseY - 58} stroke={STEEL} strokeWidth={2} />
+                  {Number.isFinite(wellhead.workingPressurePsi) && (wellhead.workingPressurePsi ?? 0) > 0 ? (
+                    <text x={cx + spoolW / 2 + 12} y={baseY - 26} fill={STEEL} fontSize={11} fontFamily="monospace">
+                      {`WP ${fmt(wellhead.workingPressurePsi!)} psi`}
+                    </text>
+                  ) : null}
+                  {wellhead.treeType ? (
+                    <text x={cx - spoolW / 2 - 12} y={baseY - 26} fill={MUTED} fontSize={10} textAnchor="end" fontFamily="sans-serif">
+                      {wellhead.treeType}
+                    </text>
+                  ) : null}
+                </>
+              );
+            })()}
           </g>
         )}
 
