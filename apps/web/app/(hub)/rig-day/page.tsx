@@ -12,6 +12,8 @@ import {
   EQUIPMENT_CATEGORIES,
   PARTY_ROLES,
   type LaneItem,
+  type QcMark,
+  type RecallItem,
   type RigDay,
   type TimeBlock,
 } from '@valor/core';
@@ -24,6 +26,7 @@ import { BankPalette } from '@/components/bank-palette';
 import { RigDayEditors } from '@/components/rig-day-editors';
 import { LaneEditors } from '@/components/lane-editors';
 import { TimeAccountingRail } from '@/components/time-accounting-rail';
+import { RecallDrawer } from '@/components/recall-drawer';
 import { LoadingState } from '@/components/ui/states';
 
 const RIG_DAY_ID = 'demo';
@@ -43,6 +46,7 @@ export default function RigDayPage() {
   const [day, setDay] = useState<RigDay>(DEFAULT_RIG_DAY);
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // Monotonic counter for deterministic block ids — no Date.now()/Math.random().
   const addCounter = useRef(0);
@@ -97,6 +101,37 @@ export default function RigDayPage() {
     });
   };
 
+  const selectedBlock = day.blocks.find((b) => b.id === selectedBlockId) ?? null;
+
+  // Copy-forward depth/note from a recalled like-item onto the selected block.
+  const onReuse = (item: RecallItem) => {
+    if (!selectedBlockId) return;
+    setDay((prev) => ({
+      ...prev,
+      blocks: prev.blocks.map((b) =>
+        b.id === selectedBlockId
+          ? { ...b, depthStartFt: item.depthStartFt, depthEndFt: item.depthEndFt, note: item.note }
+          : b,
+      ),
+    }));
+  };
+
+  // Set or clear the QC mark on the selected block (immutable update).
+  const onQc = (mark: QcMark | undefined) => {
+    if (!selectedBlockId) return;
+    setDay((prev) => ({
+      ...prev,
+      blocks: prev.blocks.map((b) => {
+        if (b.id !== selectedBlockId) return b;
+        if (mark === undefined) {
+          const { qc: _omit, ...rest } = b;
+          return rest;
+        }
+        return { ...b, qc: mark };
+      }),
+    }));
+  };
+
   const onSave = async () => {
     setSaveState('saving');
     await getRepo().saveRigDay(RIG_DAY_ID, day);
@@ -133,7 +168,7 @@ export default function RigDayPage() {
               <CardTitle>24-Hour Timeline</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
-              <RigDayTimeline day={day} />
+              <RigDayTimeline day={day} onSelect={setSelectedBlockId} />
 
               {/* "Rig Now" strip */}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-gold/15 bg-gold/[0.04] px-4 py-3">
@@ -196,7 +231,7 @@ export default function RigDayPage() {
                   <CardTitle>Coded Blocks</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <RigDayEditors day={day} onChange={setDay} />
+                  <RigDayEditors day={day} onChange={setDay} onSelect={setSelectedBlockId} />
                 </CardContent>
               </Card>
 
@@ -256,6 +291,15 @@ export default function RigDayPage() {
         </div>
       ) : (
         <LoadingState />
+      )}
+
+      {loaded && (
+        <RecallDrawer
+          block={selectedBlock}
+          onReuse={onReuse}
+          onQc={onQc}
+          onClose={() => setSelectedBlockId(null)}
+        />
       )}
     </div>
   );
