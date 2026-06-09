@@ -10,6 +10,11 @@
 
 **Constraints:** No `Date.now`/`Math.random` in `@valor/core`. `warnings: string[]`, never throw (except the deliberate Supabase stub). Additive — existing tests stay green; both typechecks 0; both web builds (normal + static export) pass. MockRepository stays default. IP guardrail: generic terms only (use `DEMO_ORG_ID`, never the literal org string).
 
+> **Post-review deviations (as-built, PR #23).** Code blocks below are the original pre-implementation recipe; three refinements landed during dual-bot review and are the source of truth in the merged code:
+> 1. **`asTrimmed` is shared, not local.** Extracted to `packages/core/src/internal/coerce.ts` and imported by both `templates.ts` and `well-setup/bank.ts` (DRY); it is NOT re-exported from `index.ts`.
+> 2. **Seed `templateStageDefs` gained `defaultCode: 'DRL'`** so the seed (read by `getTemplate`) matches `DEFAULT_TEMPLATE_BUNDLES`.
+> 3. **Collision-safe ids.** The three `add` helpers (template/stage/field) use a shared `nextSuffixId(prefix, ids)` (`apps/web/lib/next-id.ts`, max-existing-suffix + 1) instead of a length-based `${prefix}${len+1}` counter, which could collide after add→remove→add. Plus proactive tests (saved-empty `[]` sentinel, Supabase stub throws, add/remove-template id-uniqueness).
+
 Commands (repo root `C:\Users\Deving-1\Desktop\dev\ValorOperations_SB`):
 - Core one: `corepack pnpm --filter @valor/core test -- <name>` · all: `corepack pnpm --filter @valor/core test` · typecheck: `corepack pnpm --filter @valor/core typecheck`
 - Web one: `corepack pnpm --filter @valor/web test -- <name>` · all: `corepack pnpm --filter @valor/web test` · typecheck: `corepack pnpm --filter @valor/web typecheck` · build: `corepack pnpm --filter @valor/web build`
