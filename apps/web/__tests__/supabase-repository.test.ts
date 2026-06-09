@@ -219,4 +219,11 @@ describe('SupabaseRepository (mocked client)', () => {
     // Both dashboard entries were malformed → saveDashboard never ran, so the table is never touched.
     expect(calls.some((c) => c.table === 'dashboards')).toBe(false);
   });
+
+  it('template-bundle methods throw (mock-only; cloud template tables deferred)', async () => {
+    const { client } = makeClient({ data: [], error: null });
+    const repo = new SupabaseRepository(client, ORG);
+    await expect(repo.saveTemplateBundles([])).rejects.toThrow(/mock-only/i);
+    await expect(repo.loadTemplateBundles()).rejects.toThrow(/mock-only/i);
+  });
 });

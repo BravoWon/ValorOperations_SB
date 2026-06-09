@@ -7,14 +7,21 @@ describe('MockRepository template bundles', () => {
     expect(await new MockRepository().loadTemplateBundles()).toBeNull();
   });
   it('round-trips and returns an independent clone', async () => {
+    const seedId = DEFAULT_TEMPLATE_BUNDLES[0]!.template.id;
+    const seedName = DEFAULT_TEMPLATE_BUNDLES[0]!.template.name;
     const r = new MockRepository();
     await r.saveTemplateBundles(DEFAULT_TEMPLATE_BUNDLES);
     const loaded = await r.loadTemplateBundles();
     expect(loaded?.length).toBe(1);
-    expect(loaded![0]!.template.id).toBe('tmpl-drill-vert');
+    expect(loaded![0]!.template.id).toBe(seedId);
     loaded![0]!.template.name = 'MUTATED';
     const again = await r.loadTemplateBundles();
-    expect(again![0]!.template.name).toBe('Vertical Well — Drill & Case');
+    expect(again![0]!.template.name).toBe(seedName);
+  });
+  it('saved-but-empty reads back as [] (distinct from the null "never saved" sentinel)', async () => {
+    const r = new MockRepository();
+    await r.saveTemplateBundles([]);
+    expect(await r.loadTemplateBundles()).toEqual([]);
   });
   it('resetLocalDb clears persisted template bundles (in-memory path)', async () => {
     const r = new MockRepository();
