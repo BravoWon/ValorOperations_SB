@@ -27,9 +27,10 @@ describe('OperatorsDayBoard', () => {
   });
 
   it('renders notifications tagged with their section', () => {
-    const { getByText, getByTestId } = render(<OperatorsDayBoard rows={entries} />);
+    const { getByText, getAllByTestId } = render(<OperatorsDayBoard rows={entries} />);
     expect(getByText(/Unaccounted 0:45 gap/)).toBeTruthy();
-    const item = getByTestId('day-notification');
-    expect(item.textContent).toMatch(/Section B/);
+    const items = getAllByTestId('day-notification');
+    expect(items.length).toBe(1);
+    expect(items[0]!.textContent).toMatch(/Section B/);
   });
 });

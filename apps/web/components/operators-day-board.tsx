@@ -72,7 +72,7 @@ export function OperatorsDayBoard({ rows }: OperatorsDayBoardProps) {
                   <div className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted-foreground">{c.label}</div>
                 </div>
                 <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${tone.ring}`}>
-                  <Icon className={`h-4 w-4 ${tone.text}`} strokeWidth={1.75} />
+                  <Icon className={`h-4 w-4 ${tone.text}`} strokeWidth={1.75} aria-hidden="true" />
                 </div>
               </div>
             </div>
