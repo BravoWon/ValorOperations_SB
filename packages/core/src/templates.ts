@@ -2,6 +2,7 @@ import type { StageStatus } from './enums';
 import type { TemplateStageDef, TemplateFieldDef } from './types';
 import type { TemplateBundle } from './repository'; // type-only: no runtime cycle
 import { DEMO_ORG_ID } from './seed';
+import { asTrimmed } from './internal/coerce';
 
 export interface NewStage {
   stageNo: number;
@@ -21,11 +22,6 @@ export function instantiateStages(defs: TemplateStageDef[]): NewStage[] {
       status: 'planned',
       sortOrder: d.defaultSortOrder,
     }));
-}
-
-/** Coerce a possibly-malformed persisted field to a trimmed string (keeps the fn total). */
-function asTrimmed(v: unknown): string {
-  return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
 }
 
 /**
@@ -49,7 +45,7 @@ export function validateTemplateFieldDefs(defs: TemplateFieldDef[]): string[] {
   for (const d of defs) {
     const key = asTrimmed(d.key);
     if (!key) continue;
-    const composite = `${d.scope}:${key}`;
+    const composite = `${asTrimmed(d.scope)}:${key}`;
     const entry = counts.get(composite);
     if (entry) entry.n += 1;
     else counts.set(composite, { display: composite, n: 1 });

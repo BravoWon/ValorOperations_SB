@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { instantiateStages, validateTemplateFieldDefs, DEFAULT_TEMPLATE_BUNDLES } from '../src/templates';
 import type { TemplateStageDef, TemplateFieldDef } from '../src/types';
+import { DEMO_ORG_ID } from '../src/seed';
 
 const defs: TemplateStageDef[] = [
   { id: 'sd-3', templateId: 't1', name: 'Production', stageType: 'drill_case', defaultSortOrder: 30 },
@@ -73,6 +74,7 @@ describe('DEFAULT_TEMPLATE_BUNDLES', () => {
   it('has one bundle: 3 stages (each with a defaultCode) + 5 field-defs', () => {
     expect(DEFAULT_TEMPLATE_BUNDLES.length).toBe(1);
     const b = DEFAULT_TEMPLATE_BUNDLES[0]!;
+    expect(b.template.orgId).toBe(DEMO_ORG_ID);
     expect(b.stageDefs.length).toBe(3);
     expect(b.stageDefs.every((s) => typeof s.defaultCode === 'string' && s.defaultCode.length > 0)).toBe(true);
     expect(b.fieldDefs.length).toBe(5);
