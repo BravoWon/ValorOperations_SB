@@ -33,4 +33,11 @@ describe('DayBoardRow', () => {
     expect(getByText('12¼" Intermediate')).toBeTruthy();
     expect(getByText(/2 blocks/i)).toBeTruthy();
   });
+
+  it('uses the singular for a single block', () => {
+    const single = { ...day, blocks: day.blocks.slice(0, 1) };
+    const { getByText, queryByText } = render(<DayBoardRow day={single} href="/tickets/sec-int-1" />);
+    expect(getByText(/1 block$/i)).toBeTruthy();
+    expect(queryByText(/1 blocks/i)).toBeNull();
+  });
 });
