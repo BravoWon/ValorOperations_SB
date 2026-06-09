@@ -28,7 +28,10 @@ export default function TemplateBuilderPage() {
     Promise.all([getRepo().loadTemplateBundles(), getRepo().loadBankCodes()])
       .then(([storedBundles, storedCodes]) => {
         if (!active) return;
-        if (storedBundles) setBundles(storedBundles);
+        // Fall back to the seed when nothing is persisted OR the persisted catalog is
+        // empty — a builder with zero templates isn't a usable starting point, and this
+        // also shields against an imported empty snapshot blanking the editor.
+        if (storedBundles && storedBundles.length > 0) setBundles(storedBundles);
         if (storedCodes) setBankCodes(storedCodes.map((b) => b.code));
         setLoaded(true);
       })
@@ -40,8 +43,13 @@ export default function TemplateBuilderPage() {
     };
   }, []);
 
+  // Validate each template independently — a key reused across DIFFERENT templates is
+  // not a duplicate. Prefix each warning with the template it belongs to.
   const warnings = useMemo(
-    () => validateTemplateFieldDefs(bundles.flatMap((b) => b.fieldDefs)),
+    () =>
+      bundles.flatMap((b) =>
+        validateTemplateFieldDefs(b.fieldDefs).map((w) => `${b.template.name || '(unnamed)'}: ${w}`),
+      ),
     [bundles],
   );
 

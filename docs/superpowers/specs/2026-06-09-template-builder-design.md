@@ -30,17 +30,20 @@
   /** Advisory validation for edited template field-defs. Never throws; returns warnings[]. */
   export function validateTemplateFieldDefs(defs: TemplateFieldDef[]): string[];
   ```
+
   Warnings: empty `key` ("Field key cannot be empty."); empty `label` (`${key||'(unnamed)'}: label cannot be empty.`); `enum` with no/zero `enumOptions` (`${key}: enum fields need at least one option.`); `minValue > maxValue` (`${key}: min (X) must be ≤ max (Y).`); duplicate `scope:key` (`Duplicate field "scope:key" (N×).`). Per-row issues first (array order), then duplicates.
 
 - New seed constant `DEFAULT_TEMPLATE_BUNDLES: TemplateBundle[]` — assembles the existing `tmpl-drill-vert` (3 stages, 5 field-defs) into one bundle, with demo `defaultCode: 'DRL'` on each stage. Derived from / consistent with the existing `seed.ts` template data (no brand names).
 
 ## Repository extension (additive — interface + MockRepository + snapshot + Supabase stub)
 
-`packages/core/src/repository.ts` — add to `Repository`:
+`packages/core/src/repository.ts` — add to `Repository` (reference `TemplateBundle` directly — it is defined in this file):
+
 ```ts
-saveTemplateBundles(bundles: import('./repository').TemplateBundle[]): Promise<void>;
-loadTemplateBundles(): Promise<import('./repository').TemplateBundle[] | null>;
+saveTemplateBundles(bundles: TemplateBundle[]): Promise<void>;
+loadTemplateBundles(): Promise<TemplateBundle[] | null>;
 ```
+
 (`TemplateBundle` is already defined/exported from `repository.ts`.)
 
 `packages/core/src/mock-repository.ts` — `private templateBundles: TemplateBundle[] | null = null;`; `saveTemplateBundles`/`loadTemplateBundles` mirroring `saveBankCodes`/`loadBankCodes` (`valor:templatebundles` key; try/catch parse → null; empty → null; `structuredClone`); `resetLocalDb` in-memory branch nulls the field; `exportSnapshot`/`importSnapshot`/`COLLECTIONS`/`LocalDbSnapshot` include `templateBundles` as a peer collection.

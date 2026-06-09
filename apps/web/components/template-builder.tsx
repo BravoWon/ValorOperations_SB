@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import type { TemplateBundle, JobTemplate, JobType, TemplateStageDef, TemplateFieldDef } from '@valor/core';
+import { DEMO_ORG_ID, type TemplateBundle, type JobTemplate, type JobType, type TemplateStageDef, type TemplateFieldDef } from '@valor/core';
 import { StageDefTable } from '@/components/stage-def-table';
 import { FieldDefTable } from '@/components/field-def-table';
 import { nextSuffixId } from '@/lib/next-id';
@@ -39,7 +39,7 @@ export function TemplateBuilder({ bundles, bankCodes, onChange }: TemplateBuilde
     const n = bundles.length + 1;
     const id = nextSuffixId('tmpl-new-', bundles.map((b) => b.template.id));
     const fresh: TemplateBundle = {
-      template: { id, orgId: bundle?.template.orgId ?? '', name: `New Template ${n}`, jobType: 'drilling', version: 1, isActive: true },
+      template: { id, orgId: bundle?.template.orgId ?? DEMO_ORG_ID, name: `New Template ${n}`, jobType: 'drilling', version: 1, isActive: true },
       stageDefs: [],
       fieldDefs: [],
     };

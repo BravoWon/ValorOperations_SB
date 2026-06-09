@@ -15,7 +15,7 @@
 > 2. **Seed `templateStageDefs` gained `defaultCode: 'DRL'`** so the seed (read by `getTemplate`) matches `DEFAULT_TEMPLATE_BUNDLES`.
 > 3. **Collision-safe ids.** The three `add` helpers (template/stage/field) use a shared `nextSuffixId(prefix, ids)` (`apps/web/lib/next-id.ts`, max-existing-suffix + 1) instead of a length-based `${prefix}${len+1}` counter, which could collide after add→remove→add. Plus proactive tests (saved-empty `[]` sentinel, Supabase stub throws, add/remove-template id-uniqueness).
 
-Commands (repo root `C:\Users\Deving-1\Desktop\dev\ValorOperations_SB`):
+Commands (run from the repository root):
 - Core one: `corepack pnpm --filter @valor/core test -- <name>` · all: `corepack pnpm --filter @valor/core test` · typecheck: `corepack pnpm --filter @valor/core typecheck`
 - Web one: `corepack pnpm --filter @valor/web test -- <name>` · all: `corepack pnpm --filter @valor/web test` · typecheck: `corepack pnpm --filter @valor/web typecheck` · build: `corepack pnpm --filter @valor/web build`
 
