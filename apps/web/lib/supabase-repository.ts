@@ -604,6 +604,9 @@ export class SupabaseRepository implements Repository {
     if (Array.isArray(c.channels)) { try { await this.saveChannels(c.channels); } catch { /* skip */ } }
     if (Array.isArray(c.vendors)) { try { await this.saveVendors(c.vendors); } catch { /* skip */ } }
     if (Array.isArray(c.afe)) { try { await this.saveAfe(c.afe); } catch { /* skip */ } }
+    // c.bankCodes is intentionally not restored here: the cloud bank_codes table is
+    // deferred (saveBankCodes throws in this scaffold). The MockRepository — the default
+    // seam and the one the LocalDB workbench uses — does carry bank codes in snapshots.
   }
 
   async listCollections(): Promise<CollectionInfo[]> {
