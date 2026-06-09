@@ -32,15 +32,21 @@ export function assembleTicket(graph: CodedGraph, events: TimelineEvent[], ticke
 
   const warnings: string[] = [];
   const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  const outgoing = graph.relations.filter((r) => r.fromId === ticketId);
 
+  // Dangling-relation detection: exactly one warning per outgoing relation whose target is missing.
+  for (const r of outgoing) {
+    if (!byId.has(r.toId)) {
+      warnings.push(`Relation ${r.id} (${r.kind}) points to missing object ${r.toId}.`);
+    }
+  }
+
+  // Resolve a bucket by relation kind + target type. `uses` is polymorphic (equipment + bha);
+  // a target of the wrong type for this bucket is filtered out silently (not an error).
   const resolve = (kind: RelationKind, type: ObjectType): CodedObject[] =>
-    graph.relations
-      .filter((r) => r.fromId === ticketId && r.kind === kind)
-      .map((r) => {
-        const o = byId.get(r.toId);
-        if (!o) warnings.push(`Relation ${r.id} (${kind}) points to missing object ${r.toId}.`);
-        return o;
-      })
+    outgoing
+      .filter((r) => r.kind === kind)
+      .map((r) => byId.get(r.toId))
       .filter((o): o is CodedObject => o !== undefined && o.type === type);
 
   const parties = resolve('assigned', 'party');

@@ -20,7 +20,10 @@ export interface Relation {
 }
 
 export type EventKind = 'activity' | 'note' | 'qc' | 'hse' | 'milestone' | (string & {});
-export interface EventQcMark { status: 'approved' | 'flagged'; note?: string; }
+export interface EventQcMark {
+  status: 'approved' | 'flagged';
+  note?: string;
+}
 
 /** Append-only. Corrections are new events; never mutate an existing one. */
 export interface TimelineEvent {
@@ -28,7 +31,7 @@ export interface TimelineEvent {
   orgId: string;
   ticketId: string;
   seq: number;       // monotonic per ticket (assigned on append)
-  atMin: number;     // minute-of-day on the 24h axis (caller-supplied)
+  atMin: number;     // minutes from the start of the 24h operational day (0–1440); caller-supplied
   kind: EventKind;
   code?: string;
   note?: string;
