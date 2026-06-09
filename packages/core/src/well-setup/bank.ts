@@ -30,3 +30,28 @@ export function listBankByCategory(category: string): BankCode[] {
   return BANK_SEED.filter((b) => b.category === category);
 }
 export const BANK_CATEGORIES: string[] = [...new Set(BANK_SEED.map((b) => b.category))];
+
+/** Advisory validation for an edited Bank catalog. Never throws; returns warnings[]. */
+export function validateBankCodes(codes: BankCode[]): string[] {
+  const warnings: string[] = [];
+  // Per-row empties, in array order.
+  for (const c of codes) {
+    const code = c.code.trim();
+    if (!code) warnings.push('Code cannot be empty.');
+    if (!c.label.trim()) warnings.push(`${code || '(unnamed)'}: label cannot be empty.`);
+  }
+  // Duplicate codes (case-insensitive, trimmed), reported in first-seen order.
+  const counts = new Map<string, { display: string; n: number }>();
+  for (const c of codes) {
+    const code = c.code.trim();
+    if (!code) continue;
+    const key = code.toLowerCase();
+    const entry = counts.get(key);
+    if (entry) entry.n += 1;
+    else counts.set(key, { display: code, n: 1 });
+  }
+  for (const { display, n } of counts.values()) {
+    if (n > 1) warnings.push(`Duplicate code "${display}" (${n}×).`);
+  }
+  return warnings;
+}
