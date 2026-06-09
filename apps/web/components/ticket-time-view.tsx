@@ -63,6 +63,11 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
 
   useEffect(() => {
     let active = true;
+    // Reset on ticket change (client-side nav re-uses this instance): clears stale data so the
+    // previous ticket never flashes, and `!day` blocks onPick until the new load resolves.
+    setLoaded(false);
+    setDay(null);
+    setWarnings([]);
     load()
       .then((view) => {
         if (!active) return;
