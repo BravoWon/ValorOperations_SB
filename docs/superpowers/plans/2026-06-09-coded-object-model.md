@@ -552,7 +552,7 @@ Remove-Item -Recurse -Force apps/web/.next, apps/web/out -ErrorAction SilentlyCo
 $env:STATIC_EXPORT='true'; $env:PAGES_BASE_PATH='ValorOperations_SB'
 corepack pnpm --filter @valor/web build
 ```
-Expected: "Generating static pages (18/18)", exit 0.
+Expected: "Generating static pages (20/20)", exit 0 (the emitted `out/` dir then holds ~18 `.html` files — a different metric, since dynamic-route variants don't map 1:1 to the "static pages" count).
 
 - [ ] **Step 4: Clean export env + open PR**
 
