@@ -24,11 +24,18 @@ describe('deriveMorningReport', () => {
     const flagged: TimelineEvent[] = [
       ...DEFAULT_TIMELINE,
       { id: 'q2', orgId: ORG, ticketId: SEED_TICKET_ID, seq: 5, atMin: 700, kind: 'qc', qc: { status: 'flagged', note: 'Re-check depth' } },
+      { id: 'q3', orgId: ORG, ticketId: SEED_TICKET_ID, seq: 6, atMin: 800, kind: 'qc', qc: { status: 'flagged' } },
     ];
     const r = deriveMorningReport({ ...view, timeline: flagged });
-    expect(r.flaggedQc).toEqual([{ atMin: 700, note: 'Re-check depth' }]);
+    // The noteless flag carries no `note` key; the seed's approved qc (ev-4) is excluded.
+    expect(r.flaggedQc).toEqual([{ atMin: 700, note: 'Re-check depth' }, { atMin: 800 }]);
     const base = deriveMorningReport(view);
     expect(base.flaggedQc).toEqual([]);
+  });
+
+  it('merges view warnings with accounting warnings', () => {
+    const r = deriveMorningReport({ ...view, warnings: ['synthetic view warning'] });
+    expect(r.warnings).toContain('synthetic view warning');
   });
 
   it('surfaces note/hse/milestone events as the journal, in seq order', () => {
