@@ -30,8 +30,12 @@ function pct(min: number): string {
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i);
 
+/** Gutter sizing shared with the board's axis spacer so labels and tracks stay aligned. */
+export const DAY_BOARD_GUTTER_CLASS = 'w-40 shrink-0';
+
 /** One compact section row on the shared 24h axis. Read-only; the row links to the ticket. */
 export function DayBoardRow({ day, href }: DayBoardRowProps) {
+  const n = day.blocks.length;
   return (
     <Link
       href={href}
@@ -39,9 +43,9 @@ export function DayBoardRow({ day, href }: DayBoardRowProps) {
       aria-label={`Open ${day.label} timeline`}
       className="group flex items-center gap-3 rounded-md px-1 py-1 transition-colors hover:bg-white/[0.03]"
     >
-      <div className="w-40 shrink-0">
+      <div className={DAY_BOARD_GUTTER_CLASS}>
         <div className="truncate font-mono text-xs text-cream group-hover:text-gold-light">{day.label}</div>
-        <div className="font-mono text-[0.625rem] text-muted-foreground/60">{day.blocks.length} blocks</div>
+        <div className="font-mono text-[0.625rem] text-muted-foreground/60">{n} {n === 1 ? 'block' : 'blocks'}</div>
       </div>
       <div className="relative h-8 flex-1 overflow-hidden rounded-md border border-gold/15 bg-background/40">
         {HOURS.map((h) => (

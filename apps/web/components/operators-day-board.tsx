@@ -1,6 +1,6 @@
 import { Activity, AlertOctagon, AlertTriangle, Flame, Info, type LucideIcon } from 'lucide-react';
 import { DAY_MINUTES, type Notification, type NotificationSeverity, type RigDay, type TimeAccounting } from '@valor/core';
-import { DayBoardRow } from '@/components/day-board-row';
+import { DayBoardRow, DAY_BOARD_GUTTER_CLASS } from '@/components/day-board-row';
 
 export interface DayBoardEntry {
   day: RigDay;
@@ -83,7 +83,7 @@ export function OperatorsDayBoard({ rows }: OperatorsDayBoardProps) {
       {/* Shared hour axis (once), offset by the row gutter width + gap. */}
       <div>
         <div className="mb-1 flex items-center gap-3">
-          <div className="w-40 shrink-0" />
+          <div className={DAY_BOARD_GUTTER_CLASS} />
           <div className="relative h-4 flex-1">
             {HOURS.filter((h) => h % 3 === 0).map((h) => (
               <span
