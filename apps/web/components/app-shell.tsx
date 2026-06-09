@@ -2,18 +2,46 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import type { AssetTreeNode } from '@valor/core';
+import { BANK_SEED, type BankCode } from '@valor/core';
 import { Home } from 'lucide-react';
 import { AssetTree } from '@/components/asset-tree';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { useRole } from '@/components/role-provider';
 import { planesForRole } from '@/lib/planes';
 import { cn } from '@/lib/utils';
+import { getRepo } from '@/lib/repo';
+import { BankSearchPalette } from '@/components/bank-search-palette';
 
 export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: React.ReactNode }) {
   const pathname = usePathname();
   const { role } = useRole();
   const planes = planesForRole(role);
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [bankCodes, setBankCodes] = useState<BankCode[]>(BANK_SEED);
+
+  useEffect(() => {
+    let active = true;
+    getRepo().loadBankCodes().then((stored) => { if (active && stored) setBankCodes(stored); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) return;
+      if (e.repeat) return; // holding the combo shouldn't strobe the palette open/closed
+      // Don't hijack the shortcut while typing — notably macOS Ctrl-K (kill-to-end-of-line)
+      // in text fields. The palette opens from normal page focus; Esc/backdrop close it.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      setPaletteOpen((o) => !o);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="flex min-h-screen">
@@ -106,6 +134,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
       <main className="flex-1 px-6 py-8 md:px-8 lg:px-10">
         <div className="page-container">{children}</div>
       </main>
+      <BankSearchPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} codes={bankCodes} />
     </div>
   );
 }
