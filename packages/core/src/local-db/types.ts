@@ -4,6 +4,7 @@ import type { RigDay } from '../rig-day/types';
 import type { ChannelDef } from '../data-manager/types';
 import type { Vendor, AfeLine } from '../office-ops/types';
 import type { BankCode } from '../well-setup/bank';
+import type { TemplateBundle } from '../repository';
 
 export interface LocalDbSnapshot {
   version: 1;
@@ -16,6 +17,7 @@ export interface LocalDbSnapshot {
     vendors?: Vendor[];
     afe?: AfeLine[];
     bankCodes?: BankCode[];
+    templateBundles?: TemplateBundle[];
   };
 }
 export interface CollectionInfo { key: string; label: string; count: number; }
@@ -28,6 +30,7 @@ const COLLECTIONS: { key: keyof LocalDbSnapshot['collections']; label: string }[
   { key: 'vendors', label: 'Vendors' },
   { key: 'afe', label: 'AFE Lines' },
   { key: 'bankCodes', label: 'Bank Codes' },
+  { key: 'templateBundles', label: 'Templates' },
 ];
 
 export function isValidSnapshot(v: unknown): v is LocalDbSnapshot {

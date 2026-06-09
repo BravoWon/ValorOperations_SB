@@ -1,3 +1,5 @@
+import { asTrimmed } from '../internal/coerce';
+
 export interface BankCode {
   code: string;        // selected code, e.g. 'DRL'
   label: string;       // human label
@@ -30,11 +32,6 @@ export function listBankByCategory(category: string): BankCode[] {
   return BANK_SEED.filter((b) => b.category === category);
 }
 export const BANK_CATEGORIES: string[] = [...new Set(BANK_SEED.map((b) => b.category))];
-
-/** Coerce a possibly-malformed persisted field to a trimmed string (keeps the fn total). */
-function asTrimmed(v: unknown): string {
-  return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
-}
 
 /**
  * Advisory validation for an edited Bank catalog. Never throws; returns warnings[].

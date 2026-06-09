@@ -79,9 +79,9 @@ export function createSeed(): SeedData {
   ];
 
   const templateStageDefs: TemplateStageDef[] = [
-    { id: 'tsd-1', templateId: 'tmpl-drill-vert', name: 'Conductor', stageType: 'drill_case', defaultSortOrder: 10 },
-    { id: 'tsd-2', templateId: 'tmpl-drill-vert', name: 'Surface', stageType: 'drill_case', defaultSortOrder: 20 },
-    { id: 'tsd-3', templateId: 'tmpl-drill-vert', name: 'Production', stageType: 'drill_case', defaultSortOrder: 30 },
+    { id: 'tsd-1', templateId: 'tmpl-drill-vert', name: 'Conductor', stageType: 'drill_case', defaultSortOrder: 10, defaultCode: 'DRL' },
+    { id: 'tsd-2', templateId: 'tmpl-drill-vert', name: 'Surface', stageType: 'drill_case', defaultSortOrder: 20, defaultCode: 'DRL' },
+    { id: 'tsd-3', templateId: 'tmpl-drill-vert', name: 'Production', stageType: 'drill_case', defaultSortOrder: 30, defaultCode: 'DRL' },
   ];
 
   const templateFieldDefs: TemplateFieldDef[] = [

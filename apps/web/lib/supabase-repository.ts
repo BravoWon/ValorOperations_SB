@@ -607,6 +607,7 @@ export class SupabaseRepository implements Repository {
     // c.bankCodes is intentionally not restored here: the cloud bank_codes table is
     // deferred (saveBankCodes throws in this scaffold). The MockRepository — the default
     // seam and the one the LocalDB workbench uses — does carry bank codes in snapshots.
+    // c.templateBundles is likewise not restored here (cloud template tables deferred).
   }
 
   async listCollections(): Promise<CollectionInfo[]> {
@@ -646,6 +647,15 @@ export class SupabaseRepository implements Repository {
   }
   async saveBankCodes(_codes: BankCode[]): Promise<void> { this.bankUnsupported('saveBankCodes'); }
   async loadBankCodes(): Promise<BankCode[] | null> { this.bankUnsupported('loadBankCodes'); }
+
+  // --- template bundles (Slice D is mock-only; cloud template tables are a later step) ---
+  private templatesUnsupported(method: string): never {
+    throw new Error(
+      `SupabaseRepository.${method}: template catalog not implemented in the Supabase scaffold (Slice D is mock-only).`,
+    );
+  }
+  async saveTemplateBundles(_bundles: TemplateBundle[]): Promise<void> { this.templatesUnsupported('saveTemplateBundles'); }
+  async loadTemplateBundles(): Promise<TemplateBundle[] | null> { this.templatesUnsupported('loadTemplateBundles'); }
 }
 
 // ============================================================================
