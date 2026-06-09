@@ -56,7 +56,7 @@ export function TicketCard({ summary }: TicketCardProps) {
           )}
         </div>
         {summary.warningCount > 0 && (
-          <span aria-label={`${summary.warningCount} warning(s)`} className="inline-flex w-fit items-center gap-1 rounded-md border border-red/20 bg-red/[0.06] px-2 py-0.5 text-[0.6875rem] text-red">
+          <span aria-label={`${summary.warningCount} ${summary.warningCount === 1 ? 'warning' : 'warnings'}`} className="inline-flex w-fit items-center gap-1 rounded-md border border-red/20 bg-red/[0.06] px-2 py-0.5 text-[0.6875rem] text-red">
             <AlertTriangle className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             {summary.warningCount}
           </span>

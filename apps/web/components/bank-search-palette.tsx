@@ -59,7 +59,6 @@ export function BankSearchPalette({ open, onClose, codes, onSelect }: BankSearch
             placeholder="Search the Bank — code, label, or category…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
             className="w-full bg-transparent py-3 pl-10 pr-3 font-mono text-sm text-cream outline-none placeholder:text-muted-foreground/50"
           />
         </label>
