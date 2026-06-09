@@ -3,7 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { PLANES, planesForRole, minRoleForPath } from '@/lib/planes';
 import { ALL_ROLES, ROLE_RANK } from '@/lib/role';
 
-// The flat nav that existed before Slice A — every one must be placed exactly once.
+// The CURRENT route manifest — every registered hub route must appear here exactly once.
+// (Started as the pre-Slice-A flat nav; each slice that adds a route also adds it here.)
 const EXISTING_NAV = [
   '/dashboard', '/jobs', '/tickets', '/rig-day', '/assets',
   '/day', '/tools/hydraulics', '/tools/directional',

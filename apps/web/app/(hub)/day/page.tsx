@@ -72,7 +72,7 @@ export default function OperatorsDayPage() {
       {!loaded ? (
         <LoadingState />
       ) : failed ? (
-        <EmptyState title="Couldn't load the day board" description="The coded-object graph couldn't be read. Refresh to try again." />
+        <EmptyState title="Couldn’t load the day board" description="The coded-object graph couldn’t be read. Refresh to try again." />
       ) : rows.length > 0 ? (
         <OperatorsDayBoard rows={rows} />
       ) : (
