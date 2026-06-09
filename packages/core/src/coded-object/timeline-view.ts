@@ -12,8 +12,9 @@ function laneFrom(o: CodedObject): LaneItem {
  * Project a Ticket (section + append-only timeline + related objects) into the `RigDay`
  * shape the existing rig-day visual components consume. Pure/deterministic.
  *
- * - Only `activity` events become blocks; each spans from its `atMin` to the NEXT activity's
- *   `atMin` (or `DAY_MINUTES` for the last). Activities are taken in seq order.
+ * - Only `activity` events that carry a `code` become blocks (codeless activities are skipped);
+ *   each spans from its `atMin` to the NEXT such activity's `atMin` (or `DAY_MINUTES` for the
+ *   last). Activities are taken in seq order.
  * - A `qc` event's mark is attached to the block whose [startMin, endMin) covers its `atMin`.
  * - Parties → `people` lanes, equipment → `equipment` lanes (present the full day).
  * - Depth is unavailable in the timeline schema, so blocks carry no depth (progress is empty).
