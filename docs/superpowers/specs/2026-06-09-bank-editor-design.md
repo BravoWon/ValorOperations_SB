@@ -21,6 +21,7 @@ The existing `BankCode { code; label; category; npt; billable }`, `BANK_SEED`, `
 /** Advisory validation for an edited Bank catalog. Never throws; returns warnings[]. */
 export function validateBankCodes(codes: BankCode[]): string[];
 ```
+
 - Warns on: an empty `code` (after trim); an empty `label` (after trim) — message includes the code or "(unnamed)"; any duplicate `code` (case-insensitive, trimmed) with its occurrence count.
 - Order: per-row empties first (in array order), then duplicates. Deterministic; no `Date.now`/`Math.random`.
 
@@ -29,6 +30,7 @@ export function validateBankCodes(codes: BankCode[]): string[];
 Mirror the channel-catalog pair exactly.
 
 `packages/core/src/repository.ts` — add to the `Repository` interface:
+
 ```ts
 saveBankCodes(codes: import('./well-setup/bank').BankCode[]): Promise<void>;
 loadBankCodes(): Promise<import('./well-setup/bank').BankCode[] | null>;

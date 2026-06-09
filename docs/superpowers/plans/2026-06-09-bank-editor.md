@@ -199,7 +199,9 @@ In `resetLocalDb`, the in-memory (non-browser) `else` branch currently nulls the
       this.codedObjects = null; this.relationsList = null; this.timelines = null;
 ```
 
-(The browser branch already removes every `valor:`-prefixed key, including `valor:bankcodes`, so no change is needed there. `exportSnapshot`/`importSnapshot` intentionally do not include the Bank catalog — same deferral as the coded-object collections.)
+(The browser branch already removes every `valor:`-prefixed key, including `valor:bankcodes`, so no change is needed there.)
+
+> **As-built (revised during review):** the Bank IS included in the MockRepository LocalDB snapshot — it is a full peer of channels/vendors/afe (all editable definitional catalogs). `bankCodes` was added to `LocalDbSnapshot`/`COLLECTIONS` and to `exportSnapshot`/`importSnapshot`/`summarizeSnapshot`. (Only the coded-object graph stays out of snapshots, because it is a not-yet-wired substrate.) Do NOT reintroduce the exclusion.
 
 - [ ] **Step 7: Run the test + typecheck, verify pass**
 
@@ -654,13 +656,13 @@ End the message body with: `Co-Authored-By: Claude Opus 4.8 (1M context) <norepl
 
 - [ ] **Step 1: Full core suite + typecheck**
 
-Run: `corepack pnpm --filter @valor/core test` → all pass (178 existing + 4 + 3 new = 185).
+Run: `corepack pnpm --filter @valor/core test` → all pass (as-built: 187 — the prior suite plus the validateBankCodes, bank-persistence, and snapshot round-trip tests; treat "all pass" as the contract, not the exact count).
 Run: `corepack pnpm --filter @valor/core typecheck` → exit 0.
 
 - [ ] **Step 2: Web typecheck + tests + normal build**
 
 Run: `corepack pnpm --filter @valor/web typecheck` → exit 0.
-Run: `corepack pnpm --filter @valor/web test` → all pass (117 + 7 new = 124, +1 todo).
+Run: `corepack pnpm --filter @valor/web test` → all pass (as-built: 126 + 1 todo, including the BankRegistry tests and the updated listCollections count; treat "all pass" as the contract, not the exact count).
 Run: `corepack pnpm --filter @valor/web build` → "Compiled successfully", exit 0.
 
 - [ ] **Step 3: Static-export build (PowerShell, no MSYS path-mangling)**

@@ -45,4 +45,27 @@ describe('Bank', () => {
     ]);
     expect(w.some((m) => /Duplicate code "DRL" \(3×\)/.test(m))).toBe(true);
   });
+
+  it('validateBankCodes: empty array yields no warnings', () => {
+    expect(validateBankCodes([])).toEqual([]);
+  });
+
+  it('validateBankCodes: emits per-row empties before duplicates', () => {
+    const w = validateBankCodes([
+      { code: '', label: 'x', category: 'Make Hole', npt: false, billable: true },
+      { code: 'DRL', label: 'a', category: 'Make Hole', npt: false, billable: true },
+      { code: 'DRL', label: 'b', category: 'Make Hole', npt: false, billable: true },
+    ]);
+    const emptyIdx = w.findIndex((m) => /Code cannot be empty/i.test(m));
+    const dupIdx = w.findIndex((m) => /Duplicate code "DRL"/.test(m));
+    expect(emptyIdx).toBeGreaterThanOrEqual(0);
+    expect(dupIdx).toBeGreaterThan(emptyIdx);
+  });
+
+  it('validateBankCodes: tolerates malformed (non-string) persisted fields without throwing', () => {
+    // Untrusted localStorage/snapshot JSON could carry non-strings; the fn must not throw.
+    const bad = [{ code: null, label: 123, category: 'x', npt: false, billable: true }] as unknown as Parameters<typeof validateBankCodes>[0];
+    expect(() => validateBankCodes(bad)).not.toThrow();
+    expect(validateBankCodes(bad).some((m) => /Code cannot be empty/i.test(m))).toBe(true);
+  });
 });

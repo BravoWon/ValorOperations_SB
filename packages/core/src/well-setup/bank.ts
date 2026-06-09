@@ -31,19 +31,28 @@ export function listBankByCategory(category: string): BankCode[] {
 }
 export const BANK_CATEGORIES: string[] = [...new Set(BANK_SEED.map((b) => b.category))];
 
-/** Advisory validation for an edited Bank catalog. Never throws; returns warnings[]. */
+/** Coerce a possibly-malformed persisted field to a trimmed string (keeps the fn total). */
+function asTrimmed(v: unknown): string {
+  return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
+}
+
+/**
+ * Advisory validation for an edited Bank catalog. Never throws; returns warnings[].
+ * Fields are coerced defensively because the catalog can be loaded from untrusted
+ * persisted JSON (localStorage / snapshot import) where a value may not be a string.
+ */
 export function validateBankCodes(codes: BankCode[]): string[] {
   const warnings: string[] = [];
   // Per-row empties, in array order.
   for (const c of codes) {
-    const code = c.code.trim();
+    const code = asTrimmed(c.code);
     if (!code) warnings.push('Code cannot be empty.');
-    if (!c.label.trim()) warnings.push(`${code || '(unnamed)'}: label cannot be empty.`);
+    if (!asTrimmed(c.label)) warnings.push(`${code || '(unnamed)'}: label cannot be empty.`);
   }
   // Duplicate codes (case-insensitive, trimmed), reported in first-seen order.
   const counts = new Map<string, { display: string; n: number }>();
   for (const c of codes) {
-    const code = c.code.trim();
+    const code = asTrimmed(c.code);
     if (!code) continue;
     const key = code.toLowerCase();
     const entry = counts.get(key);

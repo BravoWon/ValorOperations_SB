@@ -15,7 +15,7 @@ const BTN_CLASS =
 export default function BankEditorPage() {
   const [codes, setCodes] = useState<BankCode[]>(BANK_SEED);
   const [loaded, setLoaded] = useState(false);
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   useEffect(() => {
     let active = true;
@@ -37,14 +37,18 @@ export default function BankEditorPage() {
   const warnings = useMemo(() => validateBankCodes(codes), [codes]);
 
   const onSave = async () => {
+    // Don't persist before the load resolves (would clobber stored codes with the seed),
+    // and ignore re-entrant clicks while a save is in flight.
+    if (!loaded || saveState === 'saving') return;
     setSaveState('saving');
     try {
       await getRepo().saveBankCodes(codes);
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1800);
     } catch {
-      // Don't leave the button stuck on "Saving…" if persistence fails.
-      setSaveState('idle');
+      // Surface failure (e.g. the Supabase scaffold stub) instead of silently resetting.
+      setSaveState('error');
+      setTimeout(() => setSaveState('idle'), 2400);
     }
   };
 
@@ -55,9 +59,15 @@ export default function BankEditorPage() {
         title="Bank Editor"
         subtitle="The editable activity-code catalog every plane consumes — set each code's label, category, NPT flag, and billable flag."
         actions={
-          <button type="button" onClick={onSave} disabled={saveState === 'saving'} className={BTN_CLASS}>
+          <button type="button" onClick={onSave} disabled={!loaded || saveState === 'saving'} className={BTN_CLASS}>
             <Save className="h-3.5 w-3.5" strokeWidth={2} />
-            {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Save'}
+            {saveState === 'saved'
+              ? 'Saved'
+              : saveState === 'saving'
+                ? 'Saving…'
+                : saveState === 'error'
+                  ? 'Save failed'
+                  : 'Save'}
           </button>
         }
       />
