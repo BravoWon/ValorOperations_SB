@@ -177,8 +177,11 @@ describe('SupabaseRepository (mocked client)', () => {
     }
 
     // Empty store → every collection summarizes to count 0.
+    // listCollections summarizes ALL known collections: the 6 Supabase-backed module
+    // tables + the mock-only Bank Codes catalog (no cloud bank_codes table yet, so it
+    // summarizes to count 0 here).
     const info = await repo.listCollections();
-    expect(info.length).toBe(MODULE_TABLES.length);
+    expect(info.length).toBe(MODULE_TABLES.length + 1);
     expect(info.every((c) => c.count === 0)).toBe(true);
   });
 

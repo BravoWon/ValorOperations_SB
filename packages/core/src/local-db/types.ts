@@ -3,6 +3,7 @@ import type { WellSetup } from '../well-setup/types';
 import type { RigDay } from '../rig-day/types';
 import type { ChannelDef } from '../data-manager/types';
 import type { Vendor, AfeLine } from '../office-ops/types';
+import type { BankCode } from '../well-setup/bank';
 
 export interface LocalDbSnapshot {
   version: 1;
@@ -14,6 +15,7 @@ export interface LocalDbSnapshot {
     channels?: ChannelDef[];
     vendors?: Vendor[];
     afe?: AfeLine[];
+    bankCodes?: BankCode[];
   };
 }
 export interface CollectionInfo { key: string; label: string; count: number; }
@@ -25,6 +27,7 @@ const COLLECTIONS: { key: keyof LocalDbSnapshot['collections']; label: string }[
   { key: 'channels', label: 'Channels' },
   { key: 'vendors', label: 'Vendors' },
   { key: 'afe', label: 'AFE Lines' },
+  { key: 'bankCodes', label: 'Bank Codes' },
 ];
 
 export function isValidSnapshot(v: unknown): v is LocalDbSnapshot {
