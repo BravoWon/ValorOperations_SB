@@ -60,7 +60,7 @@ export default function MorningReportPage() {
       <PageHeader
         eyebrow="Visualize · Morning Report"
         title="Morning Report"
-        subtitle="The day's coded record per section — time accounting, code tallies, QC flags, journal, and exceptions. Print-ready."
+        subtitle="The day’s coded record per section — time accounting, code tallies, QC flags, journal, and exceptions. Print-ready."
         actions={
           <button type="button" onClick={() => window.print()} disabled={!loaded || sections.length === 0} className={BTN_CLASS}>
             <Printer className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Print
@@ -70,7 +70,7 @@ export default function MorningReportPage() {
       {!loaded ? (
         <LoadingState />
       ) : failed ? (
-        <EmptyState title="Couldn't load the report" description="The coded-object graph couldn't be read. Refresh to try again." />
+        <EmptyState title="Couldn’t load the report" description="The coded-object graph couldn’t be read. Refresh to try again." />
       ) : sections.length > 0 ? (
         <MorningReportView sections={sections} />
       ) : (
