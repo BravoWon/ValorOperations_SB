@@ -33,6 +33,7 @@ import type { ChannelDef } from '@valor/core';
 import type { Vendor, AfeLine } from '@valor/core';
 import type { WellSetup } from '@valor/core';
 import type { RigDay } from '@valor/core';
+import type { CodedObject, Relation, CodedGraph, TimelineEvent, ObjectType } from '@valor/core';
 
 /**
  * SupabaseRepository — the real backend adapter (SCAFFOLD).
@@ -618,6 +619,20 @@ export class SupabaseRepository implements Repository {
       if (error) this.fail(error, `resetLocalDb(${table})`);
     }
   }
+
+  // --- coded-object graph (Slice B is mock-only; cloud graph tables are a later step) ---
+  private codedObjectsUnsupported(method: string): never {
+    throw new Error(
+      `SupabaseRepository.${method}: coded-object graph not implemented in the Supabase scaffold (Slice B is mock-only).`,
+    );
+  }
+  async saveCodedObject(_obj: CodedObject): Promise<void> { this.codedObjectsUnsupported('saveCodedObject'); }
+  async loadCodedObjects(_orgId: string, _type?: ObjectType): Promise<CodedObject[]> { this.codedObjectsUnsupported('loadCodedObjects'); }
+  async saveRelation(_rel: Relation): Promise<void> { this.codedObjectsUnsupported('saveRelation'); }
+  async loadRelations(_orgId: string): Promise<Relation[]> { this.codedObjectsUnsupported('loadRelations'); }
+  async loadCodedGraph(_orgId: string): Promise<CodedGraph> { this.codedObjectsUnsupported('loadCodedGraph'); }
+  async appendTimelineEvent(_event: Omit<TimelineEvent, 'seq'> & { seq?: number }): Promise<TimelineEvent> { this.codedObjectsUnsupported('appendTimelineEvent'); }
+  async loadTimeline(_ticketId: string): Promise<TimelineEvent[]> { this.codedObjectsUnsupported('loadTimeline'); }
 }
 
 // ============================================================================
