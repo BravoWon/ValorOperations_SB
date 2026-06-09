@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Activity, Clock, Layers, Gauge, Compass,
   Database, Building2, BarChart3, HardDrive, Tags, LayoutTemplate,
-  HardHat, Eye, SlidersHorizontal, Server, ClipboardList, CalendarClock,
+  HardHat, Eye, SlidersHorizontal, Server, ClipboardList, CalendarClock, FileText,
 } from 'lucide-react';
 import type { Role } from '@/lib/role';
 import { roleSatisfies } from '@/lib/role';
@@ -37,6 +37,7 @@ export const PLANES: Plane[] = [
     id: 'visualize', label: 'Visualize', icon: Eye,
     items: [
       { href: '/day', label: "Operator's Day", icon: CalendarClock, minRole: 'viewer' },
+      { href: '/morning-report', label: 'Morning Report', icon: FileText, minRole: 'field' },
       { href: '/data-studio', label: 'Data Studio', icon: BarChart3, minRole: 'viewer' },
       { href: '/tools/hydraulics', label: 'Hydraulics', icon: Gauge, minRole: 'field' },
       { href: '/tools/directional', label: 'Directional', icon: Compass, minRole: 'field' },
