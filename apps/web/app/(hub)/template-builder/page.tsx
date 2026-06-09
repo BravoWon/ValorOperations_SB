@@ -28,10 +28,11 @@ export default function TemplateBuilderPage() {
     Promise.all([getRepo().loadTemplateBundles(), getRepo().loadBankCodes()])
       .then(([storedBundles, storedCodes]) => {
         if (!active) return;
-        // Fall back to the seed when nothing is persisted OR the persisted catalog is
-        // empty — a builder with zero templates isn't a usable starting point, and this
-        // also shields against an imported empty snapshot blanking the editor.
-        if (storedBundles && storedBundles.length > 0) setBundles(storedBundles);
+        // A persisted catalog is authoritative — including an explicitly-saved empty `[]`
+        // (distinct from the `null` never-saved sentinel, which keeps the seed fallback).
+        // Mirrors BankEditorPage. (The null→[] collapse through LocalDB snapshots is a
+        // pre-existing, cross-catalog behavior tracked separately, not specific to templates.)
+        if (storedBundles) setBundles(storedBundles);
         if (storedCodes) setBankCodes(storedCodes.map((b) => b.code));
         setLoaded(true);
       })
