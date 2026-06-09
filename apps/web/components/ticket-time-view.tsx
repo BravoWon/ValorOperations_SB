@@ -38,6 +38,7 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
   const [bankCodes, setBankCodes] = useState<BankCode[]>(BANK_SEED);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     setLoaded(false);
     setDay(null);
     setWarnings([]);
+    setFailed(false);
     load()
       .then((view) => {
         if (!active) return;
@@ -76,7 +78,8 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
         setLoaded(true);
       })
       .catch(() => {
-        if (active) setLoaded(true);
+        // Distinguish a repo/load failure from a genuinely missing section.
+        if (active) { setFailed(true); setLoaded(true); }
       });
     return () => {
       active = false;
@@ -95,14 +98,15 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
 
   const onPick = async (code: BankCode) => {
     if (!day || saving) return; // guard re-entrancy + the not-loaded case
+    // Append 30 min after the LATEST time-of-day block start (max startMin — not "last in
+    // seq", which could be earlier on the axis and create a non-positive span). Uses the
+    // loaded blocks — no extra round-trip. Clamp strictly below end-of-day so the new block
+    // always has a visible, accountable span (atMin 1440 would project to [1440,1440)).
+    const maxAt = day.blocks.reduce((m, b) => Math.max(m, b.startMin), -30);
+    const atMin = Math.max(0, Math.min(1439, maxAt + 30));
+    if (atMin <= maxAt) return; // day is full near midnight — appending couldn't advance the timeline
     setSaving(true);
     try {
-      // Append 30 min after the LATEST time-of-day block start (max startMin — not "last in
-      // seq", which could be earlier on the axis and create a non-positive span). Uses the
-      // loaded blocks — no extra round-trip. Clamp strictly below end-of-day so the new block
-      // always has a visible, accountable span (atMin 1440 would project to [1440,1440)).
-      const maxAt = day.blocks.reduce((m, b) => Math.max(m, b.startMin), -30);
-      const atMin = Math.max(0, Math.min(1439, maxAt + 30));
       const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${day.blocks.length + 1}`;
       await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin, kind: 'activity', code: code.code });
       const view = await load();
@@ -138,6 +142,8 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
 
       {!loaded ? (
         <LoadingState />
+      ) : failed ? (
+        <EmptyState title="Couldn’t load this ticket" description="The coded-object graph couldn’t be read. Refresh to try again." />
       ) : !day ? (
         <EmptyState title="Ticket not found" description="No section with this id exists in the coded-object graph." />
       ) : (
