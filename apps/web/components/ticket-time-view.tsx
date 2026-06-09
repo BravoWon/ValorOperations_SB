@@ -92,9 +92,10 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     if (!day || saving) return; // guard re-entrancy + the not-loaded case
     setSaving(true);
     try {
-      // Append after the last logged activity (use the loaded blocks — no extra round-trip).
-      // Clamp strictly below end-of-day so the new block always has a visible, accountable span
-      // (an atMin of 1440 would project to a zero-duration [1440,1440) block).
+      // Append 30 min after the LATEST time-of-day block start (max startMin — not "last in
+      // seq", which could be earlier on the axis and create a non-positive span). Uses the
+      // loaded blocks — no extra round-trip. Clamp strictly below end-of-day so the new block
+      // always has a visible, accountable span (atMin 1440 would project to [1440,1440)).
       const maxAt = day.blocks.reduce((m, b) => Math.max(m, b.startMin), -30);
       const atMin = Math.max(0, Math.min(1439, maxAt + 30));
       const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${day.blocks.length + 1}`;
