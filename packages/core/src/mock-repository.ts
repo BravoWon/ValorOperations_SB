@@ -316,11 +316,11 @@ export class MockRepository implements Repository {
     event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number },
   ): Promise<import('./coded-object/types').TimelineEvent> {
     const { nextSeq } = await import('./coded-object/graph');
-    const existing = await this.loadTimeline(event.ticketId);
+    const map = await this.allTimelines();
+    const existing = map[event.ticketId] ?? [];
     const seq = event.seq ?? nextSeq(existing, event.ticketId);
     const stored: import('./coded-object/types').TimelineEvent = { ...event, seq };
-    const map = await this.allTimelines();
-    map[event.ticketId] = [...(map[event.ticketId] ?? []), structuredClone(stored)];
+    map[event.ticketId] = [...existing, structuredClone(stored)];
     this.writeTimelines(map);
     return stored;
   }
@@ -362,6 +362,10 @@ export class MockRepository implements Repository {
 
   async exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot> {
     const store = this.browserStorage;
+    // NOTE: the coded-object graph collections (valor:codedobjects / valor:relations /
+    // valor:timelines) are intentionally NOT included in LocalDB snapshots yet — the graph
+    // substrate (Slice B) is not wired into the app. Snapshot/restore for it lands when the
+    // graph is surfaced (a later slice). resetLocalDb DOES clear them (full valor:* sweep).
     const collections: import('./local-db/types').LocalDbSnapshot['collections'] = {
       dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [],
     };
@@ -393,6 +397,7 @@ export class MockRepository implements Repository {
     // Defensive: user-provided JSON. Validate each entry's shape and skip bad
     // ones so a malformed snapshot can't crash the import (spec: never throws).
     const c = (snapshot && typeof snapshot === 'object' ? snapshot.collections : null) ?? {};
+    // (coded-object graph collections are not part of the snapshot yet — see exportSnapshot note.)
     const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
     const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
 
@@ -423,6 +428,7 @@ export class MockRepository implements Repository {
     } else {
       this.dashboards.clear(); this.wellSetups.clear(); this.rigDays.clear();
       this.channels = null; this.vendors = null; this.afe = null;
+      this.codedObjects = null; this.relationsList = null; this.timelines = null;
     }
   }
 }

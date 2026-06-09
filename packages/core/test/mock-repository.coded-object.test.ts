@@ -48,8 +48,21 @@ describe('MockRepository coded-object graph', () => {
   });
 
   it('appendTimelineEvent respects a caller-supplied seq', async () => {
+    // Caller-supplied seq is taken verbatim; duplicate seq is surfaced as a warning by
+    // assembleTicket, not prevented here (append-only log; corrections are new events).
     const repo = new MockRepository();
     const e = await repo.appendTimelineEvent({ id: 'e9', orgId: ORG, ticketId: 's1', seq: 42, atMin: 5, kind: 'note' });
     expect(e.seq).toBe(42);
+  });
+
+  it('loadCodedGraph isolates by org', async () => {
+    const repo = new MockRepository();
+    await repo.saveCodedObject(section); // org-valor
+    await repo.saveCodedObject({ id: 's2', orgId: 'org-other', type: 'section', fields: {} });
+    await repo.saveRelation(rel); // org-valor
+    await repo.saveRelation({ id: 'r2', orgId: 'org-other', fromId: 's2', toId: 'p1', kind: 'uses' });
+    const graph = await repo.loadCodedGraph(ORG);
+    expect(graph.objects.map((o) => o.id)).toEqual(['s1']);
+    expect(graph.relations.map((r) => r.id)).toEqual(['r1']);
   });
 });
