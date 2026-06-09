@@ -93,8 +93,10 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     setSaving(true);
     try {
       // Append after the last logged activity (use the loaded blocks — no extra round-trip).
+      // Clamp strictly below end-of-day so the new block always has a visible, accountable span
+      // (an atMin of 1440 would project to a zero-duration [1440,1440) block).
       const maxAt = day.blocks.reduce((m, b) => Math.max(m, b.startMin), -30);
-      const atMin = Math.max(0, Math.min(1440, maxAt + 30));
+      const atMin = Math.max(0, Math.min(1439, maxAt + 30));
       const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${day.blocks.length + 1}`;
       await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin, kind: 'activity', code: code.code });
       const view = await load();
