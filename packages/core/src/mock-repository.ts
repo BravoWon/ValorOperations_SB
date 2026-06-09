@@ -295,15 +295,16 @@ export class MockRepository implements Repository {
   }
 
   async saveCodedObject(obj: import('./coded-object/types').CodedObject): Promise<void> {
-    // Upsert by id: drop any existing object with this id, then append.
-    const others = (await this.allCodedObjects()).filter((o) => o.id !== obj.id);
+    // Upsert by (orgId, id): drop only the same org's object with this id, then append.
+    const others = (await this.allCodedObjects()).filter((o) => !(o.id === obj.id && o.orgId === obj.orgId));
     this.writeCodedObjects([...others, structuredClone(obj)]);
   }
   async loadCodedObjects(orgId: string, type?: import('./coded-object/types').ObjectType): Promise<import('./coded-object/types').CodedObject[]> {
     return (await this.allCodedObjects()).filter((o) => o.orgId === orgId && (type === undefined || o.type === type));
   }
   async saveRelation(rel: import('./coded-object/types').Relation): Promise<void> {
-    const others = (await this.allRelations()).filter((r) => r.id !== rel.id);
+    // Upsert by (orgId, id): drop only the same org's relation with this id, then append.
+    const others = (await this.allRelations()).filter((r) => !(r.id === rel.id && r.orgId === rel.orgId));
     this.writeRelations([...others, structuredClone(rel)]);
   }
   async loadRelations(orgId: string): Promise<import('./coded-object/types').Relation[]> {
@@ -316,17 +317,22 @@ export class MockRepository implements Repository {
     event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number },
   ): Promise<import('./coded-object/types').TimelineEvent> {
     const { nextSeq } = await import('./coded-object/graph');
+    // Single-map store rewritten per append: fine at demo scale, and consistent with the other
+    // collections (channels/vendors/afe) which also rewrite their whole value on save.
+    const key = this.timelineKey(event.orgId, event.ticketId);
     const map = await this.allTimelines();
-    const existing = map[event.ticketId] ?? [];
+    const existing = map[key] ?? [];
     const seq = event.seq ?? nextSeq(existing, event.ticketId);
     const stored: import('./coded-object/types').TimelineEvent = { ...event, seq };
-    map[event.ticketId] = [...existing, structuredClone(stored)];
+    map[key] = [...existing, structuredClone(stored)];
     this.writeTimelines(map);
     return stored;
   }
-  async loadTimeline(ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]> {
-    return [...((await this.allTimelines())[ticketId] ?? [])].sort((a, b) => a.seq - b.seq);
+  async loadTimeline(orgId: string, ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]> {
+    return [...((await this.allTimelines())[this.timelineKey(orgId, ticketId)] ?? [])].sort((a, b) => a.seq - b.seq);
   }
+  /** Composite key isolates timelines per (org, ticket) even if ticketIds collide across orgs. */
+  private timelineKey(orgId: string, ticketId: string): string { return `${orgId}::${ticketId}`; }
 
   // --- coded-object storage helpers (browser localStorage or in-memory) ---
   private async allCodedObjects(): Promise<import('./coded-object/types').CodedObject[]> {

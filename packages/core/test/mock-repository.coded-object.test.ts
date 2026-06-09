@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { MockRepository } from '../src/mock-repository';
 import { assembleTicket, type CodedObject, type Relation, type TimelineEvent } from '../src/coded-object/graph';
+import { DEMO_ORG_ID } from '../src/seed';
 
-const ORG = 'org-valor';
+const ORG = DEMO_ORG_ID;
 const section: CodedObject = { id: 's1', orgId: ORG, type: 'section', code: 'DRL', fields: { status: 'in_progress' } };
 const party: CodedObject = { id: 'p1', orgId: ORG, type: 'party', code: 'DD', fields: {} };
 const rel: Relation = { id: 'r1', orgId: ORG, fromId: 's1', toId: 'p1', kind: 'assigned' };
@@ -43,7 +44,7 @@ describe('MockRepository coded-object graph', () => {
     const b = await repo.appendTimelineEvent({ id: 'e2', ...base, code: 'DRL' });
     expect(a.seq).toBe(1);
     expect(b.seq).toBe(2);
-    const timeline = await repo.loadTimeline('s1');
+    const timeline = await repo.loadTimeline(ORG, 's1');
     expect(timeline.map((e) => e.id)).toEqual(['e1', 'e2']); // first not dropped
   });
 
@@ -53,6 +54,32 @@ describe('MockRepository coded-object graph', () => {
     const repo = new MockRepository();
     const e = await repo.appendTimelineEvent({ id: 'e9', orgId: ORG, ticketId: 's1', seq: 42, atMin: 5, kind: 'note' });
     expect(e.seq).toBe(42);
+  });
+
+  it('does not overwrite across orgs when object id collides', async () => {
+    const repo = new MockRepository();
+    const OTHER = 'org-other';
+    await repo.saveCodedObject(section); // id 's1' under ORG
+    await repo.saveCodedObject({ id: 's1', orgId: OTHER, type: 'section', code: 'DRL', fields: { status: 'planned' } });
+    const mine = await repo.loadCodedObjects(ORG);
+    const theirs = await repo.loadCodedObjects(OTHER);
+    expect(mine.map((o) => o.id)).toEqual(['s1']);
+    expect(theirs.map((o) => o.id)).toEqual(['s1']);
+    expect(mine[0]!.fields.status).toBe('in_progress'); // ORG's record intact
+    expect(theirs[0]!.fields.status).toBe('planned');   // OTHER's record intact
+  });
+
+  it('loadTimeline isolates by org when ticketId collides', async () => {
+    const repo = new MockRepository();
+    const OTHER = 'org-other';
+    await repo.appendTimelineEvent({ id: 'a1', orgId: ORG, ticketId: 'sec-1', atMin: 10, kind: 'note' });
+    await repo.appendTimelineEvent({ id: 'b1', orgId: OTHER, ticketId: 'sec-1', atMin: 20, kind: 'note' });
+    const mine = await repo.loadTimeline(ORG, 'sec-1');
+    const theirs = await repo.loadTimeline(OTHER, 'sec-1');
+    expect(mine.map((e) => e.id)).toEqual(['a1']);
+    expect(theirs.map((e) => e.id)).toEqual(['b1']);
+    expect(mine[0]!.seq).toBe(1);   // each org's seq starts fresh
+    expect(theirs[0]!.seq).toBe(1);
   });
 
   it('loadCodedGraph isolates by org', async () => {

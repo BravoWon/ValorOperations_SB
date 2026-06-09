@@ -6,6 +6,12 @@ import type {
 export * from './types';
 export { DEFAULT_CODED_GRAPH, DEFAULT_TIMELINE, SEED_TICKET_ID } from './seed';
 
+/**
+ * Pure graph helpers. They assume the passed-in `CodedGraph`/`events` are already
+ * scoped to a single org (the Repository does this: `loadCodedGraph(orgId)` filters
+ * objects + relations by `orgId`, and `loadTimeline(orgId, ticketId)` is org-keyed).
+ * Org isolation is therefore enforced at the persistence boundary, not re-checked here.
+ */
 export function objectsByType(graph: CodedGraph, type: ObjectType): CodedObject[] {
   return graph.objects.filter((o) => o.type === type);
 }

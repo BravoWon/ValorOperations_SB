@@ -67,23 +67,23 @@ export interface TicketView {
 
 ### `graph.ts` (pure helpers, `warnings[]`, no `Date.now`/`Math.random`)
 - `objectsByType(graph, type): CodedObject[]`
-- `relatedObjects(graph, fromId, kind?): CodedObject[]` — resolves edges from `fromId` to their target objects (optionally filtered by kind), skipping dangling edges (→ warning).
+- `relatedObjects(graph, fromId, kind?): CodedObject[]` — resolves edges from `fromId` to their target objects (optionally filtered by kind), silently skipping dangling edges (missing targets). Dangling relations surface as warnings during `assembleTicket`, not here.
 - `nextSeq(events, ticketId): number` — max existing `seq` for the ticket + 1 (deterministic; the repository uses this on append).
-- `assembleTicket(graph, events, ticketId): TicketView | null` — null if no section with that id/type; else assembles parties (`assigned`), equipment (`uses`), bha (`uses` + type `bha`), timeline (events for the ticket, sorted by `seq`), and warnings (dangling relations, out-of-order seq, unknown Bank codes via `findBankCode`).
+- `assembleTicket(graph, events, ticketId): TicketView | null` — null if no section with that id/type; else assembles parties (`assigned`), equipment (`uses`), bha (`uses` + type `bha`), timeline (events for the ticket, sorted by `seq`), and warnings (dangling relations, duplicate `seq`, unknown Bank codes via `findBankCode`; the timeline is sorted by `seq`, so out-of-order input is corrected, not flagged).
 
 ### `seed.ts`
 - `DEFAULT_CODED_GRAPH` + `DEFAULT_TIMELINE`: one seed section Ticket (brand-scrubbed, e.g. `code: 'DRL'`, fields: section name/diameter/planned-actual/status) + 2 parties + 2 equipment + 1 BHA object, the relations linking them, and ~4 timeline events (activity + a qc mark) referencing Bank codes — so the model has demo data and `assembleTicket` is exercised end-to-end.
 
 ## Repository extension (additive — interface + MockRepository)
 
-Add to the `Repository` interface and `MockRepository` (mock keys `valor:codedobjects`, `valor:relations`, `valor:timeline:{ticketId}`; in-memory maps for node):
+Add to the `Repository` interface and `MockRepository` (mock keys `valor:codedobjects`, `valor:relations`, `valor:timelines` (a single map keyed by `{orgId}::{ticketId}`); in-memory maps for node):
 - `saveCodedObject(obj: CodedObject): Promise<void>` (upsert by id)
 - `loadCodedObjects(orgId: string, type?: ObjectType): Promise<CodedObject[]>`
 - `saveRelation(rel: Relation): Promise<void>` (upsert by id)
 - `loadRelations(orgId: string): Promise<Relation[]>`
 - `loadCodedGraph(orgId: string): Promise<CodedGraph>` (objects + relations)
 - `appendTimelineEvent(e: Omit<TimelineEvent,'seq'> & { seq?: number }): Promise<TimelineEvent>` — assigns `seq = nextSeq(...)` if not given; **append-only** (never overwrites); returns the stored event.
-- `loadTimeline(ticketId: string): Promise<TimelineEvent[]>` (ordered by `seq`)
+- `loadTimeline(orgId: string, ticketId: string): Promise<TimelineEvent[]>` (org-scoped; ordered by `seq`)
 
 Mirrors the existing module-table persistence patterns (the same `valor:*` localStorage / in-memory map approach already used for dashboards/rig-days/etc.).
 
@@ -95,7 +95,7 @@ Mirrors the existing module-table persistence patterns (the same `valor:*` local
 - Supabase coded_objects/relations/events tables + RLS + adapter methods (a later cloud step, alongside Auth/SSR).
 
 ## Testing
-- **Model (`graph.test.ts`):** `objectsByType`, `relatedObjects` (incl. dangling-edge warning), `nextSeq`, `assembleTicket` over `DEFAULT_CODED_GRAPH`/`DEFAULT_TIMELINE` (asserts parties/equipment/bha resolved, timeline seq-ordered, warnings on unknown code).
+- **Model (`graph.test.ts`):** `objectsByType`, `relatedObjects` (incl. dangling-target skip; the dangling-edge **warning** is asserted via `assembleTicket`), `nextSeq`, `assembleTicket` over `DEFAULT_CODED_GRAPH`/`DEFAULT_TIMELINE` (asserts parties/equipment/bha resolved, timeline seq-ordered, warnings on unknown code).
 - **Repository (`mock-repository.coded-object.test.ts`):** save objects/relations/events → load → `loadCodedGraph` + `assembleTicket` round-trips; `appendTimelineEvent` assigns increasing `seq` and is append-only (a second append doesn't drop the first); `loadCodedObjects(org, type)` filters.
 - Determinism: no `Date.now`/`Math.random` in core; `atMin`/ids caller-supplied; `seq` derived from existing events.
 

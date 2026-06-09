@@ -1,7 +1,8 @@
 import type { CodedGraph, TimelineEvent } from './types';
+import { DEMO_ORG_ID } from '../seed';
 
 export const SEED_TICKET_ID = 'sec-int-1';
-const ORG = 'org-valor';
+const ORG = DEMO_ORG_ID;
 
 export const DEFAULT_CODED_GRAPH: CodedGraph = {
   objects: [

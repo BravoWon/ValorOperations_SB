@@ -57,5 +57,5 @@ export interface Repository {
   loadRelations(orgId: string): Promise<import('./coded-object/types').Relation[]>;
   loadCodedGraph(orgId: string): Promise<import('./coded-object/types').CodedGraph>;
   appendTimelineEvent(event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number }): Promise<import('./coded-object/types').TimelineEvent>;
-  loadTimeline(ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]>;
+  loadTimeline(orgId: string, ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]>;
 }

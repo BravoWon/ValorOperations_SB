@@ -536,7 +536,7 @@ git commit -m "feat(web): SupabaseRepository coded-object stubs (throw; Slice B 
 
 - [ ] **Step 1: Full core suite + typecheck**
 
-Run: `corepack pnpm --filter @valor/core test` → all pass (162 existing + 11 new = 173).
+Run: `corepack pnpm --filter @valor/core test` → all pass (162 existing + 14 new = 176).
 Run: `corepack pnpm --filter @valor/core typecheck` → exit 0.
 
 - [ ] **Step 2: Web typecheck + tests + normal build**
@@ -552,7 +552,7 @@ Remove-Item -Recurse -Force apps/web/.next, apps/web/out -ErrorAction SilentlyCo
 $env:STATIC_EXPORT='true'; $env:PAGES_BASE_PATH='ValorOperations_SB'
 corepack pnpm --filter @valor/web build
 ```
-Expected: "Generating static pages (20/20)", exit 0.
+Expected: "Generating static pages (18/18)", exit 0.
 
 - [ ] **Step 4: Clean export env + open PR**
 

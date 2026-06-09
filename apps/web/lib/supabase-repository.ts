@@ -632,7 +632,7 @@ export class SupabaseRepository implements Repository {
   async loadRelations(_orgId: string): Promise<Relation[]> { this.codedObjectsUnsupported('loadRelations'); }
   async loadCodedGraph(_orgId: string): Promise<CodedGraph> { this.codedObjectsUnsupported('loadCodedGraph'); }
   async appendTimelineEvent(_event: Omit<TimelineEvent, 'seq'> & { seq?: number }): Promise<TimelineEvent> { this.codedObjectsUnsupported('appendTimelineEvent'); }
-  async loadTimeline(_ticketId: string): Promise<TimelineEvent[]> { this.codedObjectsUnsupported('loadTimeline'); }
+  async loadTimeline(_orgId: string, _ticketId: string): Promise<TimelineEvent[]> { this.codedObjectsUnsupported('loadTimeline'); }
 }
 
 // ============================================================================
