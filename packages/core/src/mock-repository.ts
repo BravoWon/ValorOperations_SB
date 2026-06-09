@@ -386,7 +386,7 @@ export class MockRepository implements Repository {
     // substrate (Slice B) is not wired into the app. Snapshot/restore for it lands when the
     // graph is surfaced (a later slice). resetLocalDb DOES clear them (full valor:* sweep).
     const collections: import('./local-db/types').LocalDbSnapshot['collections'] = {
-      dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [],
+      dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [], bankCodes: [],
     };
     if (store) {
       for (let i = 0; i < store.length; i++) {
@@ -399,6 +399,7 @@ export class MockRepository implements Repository {
           else if (k === 'valor:channels') collections.channels = JSON.parse(raw);
           else if (k === 'valor:vendors') collections.vendors = JSON.parse(raw);
           else if (k === 'valor:afe') collections.afe = JSON.parse(raw);
+          else if (k === 'valor:bankcodes') collections.bankCodes = JSON.parse(raw);
         } catch { /* skip malformed */ }
       }
     } else {
@@ -408,6 +409,7 @@ export class MockRepository implements Repository {
       collections.channels = this.channels ? structuredClone(this.channels) : [];
       collections.vendors = this.vendors ? structuredClone(this.vendors) : [];
       collections.afe = this.afe ? structuredClone(this.afe) : [];
+      collections.bankCodes = this.bankCodes ? structuredClone(this.bankCodes) : [];
     }
     return { version: 1 as const, collections };
   }
@@ -432,6 +434,7 @@ export class MockRepository implements Repository {
     if (Array.isArray(c.channels)) { try { await this.saveChannels(c.channels); } catch { /* skip */ } }
     if (Array.isArray(c.vendors)) { try { await this.saveVendors(c.vendors); } catch { /* skip */ } }
     if (Array.isArray(c.afe)) { try { await this.saveAfe(c.afe); } catch { /* skip */ } }
+    if (Array.isArray(c.bankCodes)) { try { await this.saveBankCodes(c.bankCodes); } catch { /* skip */ } }
   }
 
   async listCollections(): Promise<import('./local-db/types').CollectionInfo[]> {

@@ -24,4 +24,14 @@ describe('MockRepository bank codes', () => {
     await r.resetLocalDb();
     expect(await r.loadBankCodes()).toBeNull();
   });
+
+  it('round-trips bank codes through export/import snapshot', async () => {
+    const a = new MockRepository();
+    await a.saveBankCodes(BANK_SEED);
+    const snap = await a.exportSnapshot();
+    expect(snap.collections.bankCodes?.length).toBe(BANK_SEED.length);
+    const b = new MockRepository();
+    await b.importSnapshot(snap);
+    expect((await b.loadBankCodes())?.length).toBe(BANK_SEED.length);
+  });
 });

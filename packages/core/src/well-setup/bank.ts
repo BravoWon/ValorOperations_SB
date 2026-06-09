@@ -48,6 +48,7 @@ export function validateBankCodes(codes: BankCode[]): string[] {
     const key = code.toLowerCase();
     const entry = counts.get(key);
     if (entry) entry.n += 1;
+    // First-seen spelling wins for `display`; codes are folded case-insensitively for the key.
     else counts.set(key, { display: code, n: 1 });
   }
   for (const { display, n } of counts.values()) {

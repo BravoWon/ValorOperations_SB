@@ -36,4 +36,13 @@ describe('Bank', () => {
     ]);
     expect(w.some((m) => /Duplicate code "DRL" \(2×\)/.test(m))).toBe(true);
   });
+
+  it('validateBankCodes: counts three occurrences of a duplicate', () => {
+    const w = validateBankCodes([
+      { code: 'DRL', label: 'a', category: 'Make Hole', npt: false, billable: true },
+      { code: 'drl', label: 'b', category: 'Make Hole', npt: false, billable: true },
+      { code: 'Drl', label: 'c', category: 'Make Hole', npt: false, billable: true },
+    ]);
+    expect(w.some((m) => /Duplicate code "DRL" \(3×\)/.test(m))).toBe(true);
+  });
 });
