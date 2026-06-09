@@ -7,7 +7,7 @@ import { ALL_ROLES, ROLE_RANK } from '@/lib/role';
 const EXISTING_NAV = [
   '/dashboard', '/jobs', '/rig-day', '/assets',
   '/tools/hydraulics', '/tools/directional',
-  '/data-manager', '/bank-editor', '/office-ops', '/data-studio', '/local-db',
+  '/data-manager', '/template-builder', '/bank-editor', '/office-ops', '/data-studio', '/local-db',
 ];
 
 describe('planes registry', () => {
