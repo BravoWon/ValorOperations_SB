@@ -5,7 +5,7 @@ import { ALL_ROLES, ROLE_RANK } from '@/lib/role';
 
 // The flat nav that existed before Slice A — every one must be placed exactly once.
 const EXISTING_NAV = [
-  '/dashboard', '/jobs', '/rig-day', '/assets',
+  '/dashboard', '/jobs', '/tickets', '/rig-day', '/assets',
   '/tools/hydraulics', '/tools/directional',
   '/data-manager', '/template-builder', '/bank-editor', '/office-ops', '/data-studio', '/local-db',
 ];

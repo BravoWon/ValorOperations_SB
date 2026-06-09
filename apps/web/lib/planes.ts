@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Activity, Clock, Layers, Gauge, Compass,
   Database, Building2, BarChart3, HardDrive, Tags, LayoutTemplate,
-  HardHat, Eye, SlidersHorizontal, Server,
+  HardHat, Eye, SlidersHorizontal, Server, ClipboardList,
 } from 'lucide-react';
 import type { Role } from '@/lib/role';
 import { roleSatisfies } from '@/lib/role';
@@ -28,6 +28,7 @@ export const PLANES: Plane[] = [
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, minRole: 'viewer' },
       { href: '/jobs', label: 'Active Jobs', icon: Activity, minRole: 'field' },
+      { href: '/tickets', label: 'Tickets', icon: ClipboardList, minRole: 'field' },
       { href: '/rig-day', label: 'Rig Day', icon: Clock, minRole: 'ops' },
       { href: '/assets', label: 'Assets', icon: Layers, minRole: 'viewer' },
     ],
