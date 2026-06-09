@@ -23,6 +23,7 @@ export class MockRepository implements Repository {
   private channels: import('./data-manager/types').ChannelDef[] | null = null;
   private vendors: import('./office-ops/types').Vendor[] | null = null;
   private afe: import('./office-ops/types').AfeLine[] | null = null;
+  private bankCodes: import('./well-setup/bank').BankCode[] | null = null;
   private codedObjects: import('./coded-object/types').CodedObject[] | null = null;
   private relationsList: import('./coded-object/types').Relation[] | null = null;
   private timelines: Record<string, import('./coded-object/types').TimelineEvent[]> | null = null;
@@ -294,6 +295,18 @@ export class MockRepository implements Repository {
     return this.afe ? structuredClone(this.afe) : null;
   }
 
+  async saveBankCodes(codes: import('./well-setup/bank').BankCode[]): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:bankcodes', JSON.stringify(codes));
+    else this.bankCodes = structuredClone(codes);
+  }
+
+  async loadBankCodes(): Promise<import('./well-setup/bank').BankCode[] | null> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:bankcodes'); if (raw) { try { return JSON.parse(raw) as import('./well-setup/bank').BankCode[]; } catch { return null; } } return null; }
+    return this.bankCodes ? structuredClone(this.bankCodes) : null;
+  }
+
   async saveCodedObject(obj: import('./coded-object/types').CodedObject): Promise<void> {
     // Upsert by (orgId, id): drop only the same org's object with this id, then append.
     const others = (await this.allCodedObjects()).filter((o) => !(o.id === obj.id && o.orgId === obj.orgId));
@@ -434,6 +447,7 @@ export class MockRepository implements Repository {
     } else {
       this.dashboards.clear(); this.wellSetups.clear(); this.rigDays.clear();
       this.channels = null; this.vendors = null; this.afe = null;
+      this.bankCodes = null;
       this.codedObjects = null; this.relationsList = null; this.timelines = null;
     }
   }
