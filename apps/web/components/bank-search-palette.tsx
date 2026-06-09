@@ -86,7 +86,9 @@ export function BankSearchPalette({ open, onClose, codes, onSelect }: BankSearch
             </div>
           ))}
           {groups.length === 0 && (
-            <p className="font-mono text-xs text-muted-foreground/50">No codes match "{query}".</p>
+            <p className="font-mono text-xs text-muted-foreground/50">
+              {query.trim() ? `No codes match "${query}".` : 'The Bank is empty.'}
+            </p>
           )}
         </div>
       </div>

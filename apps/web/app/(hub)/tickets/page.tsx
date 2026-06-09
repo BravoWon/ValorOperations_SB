@@ -19,6 +19,7 @@ import { LoadingState, EmptyState } from '@/components/ui/states';
 export default function TicketsPage() {
   const [summaries, setSummaries] = useState<TicketSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -44,7 +45,8 @@ export default function TicketsPage() {
       setSummaries(views.filter((v): v is NonNullable<typeof v> => v !== null).map(summarizeTicket));
       setLoaded(true);
     })().catch(() => {
-      if (active) setLoaded(true);
+      // Distinguish a load failure from a genuinely empty graph (don't show "no tickets").
+      if (active) { setFailed(true); setLoaded(true); }
     });
     return () => {
       active = false;
@@ -58,18 +60,18 @@ export default function TicketsPage() {
         title="Tickets"
         subtitle="Every section of the well as a coded ticket — parties, equipment, and the day's activity timeline. Press ⌘K / Ctrl-K to search the Bank."
       />
-      {loaded ? (
-        summaries.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {summaries.map((s) => (
-              <TicketCard key={s.id} summary={s} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState title="No tickets yet" description="Sections will appear here as they're added to the coded-object graph." />
-        )
-      ) : (
+      {!loaded ? (
         <LoadingState />
+      ) : failed ? (
+        <EmptyState title="Couldn’t load tickets" description="The coded-object graph couldn’t be read. Refresh to try again." />
+      ) : summaries.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {summaries.map((s) => (
+            <TicketCard key={s.id} summary={s} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState title="No tickets yet" description="Sections will appear here as they're added to the coded-object graph." />
       )}
     </div>
   );
