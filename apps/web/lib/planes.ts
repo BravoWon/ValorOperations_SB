@@ -2,7 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Activity, Clock, Layers, Gauge, Compass,
-  Database, Building2, BarChart3, HardDrive,
+  Database, Building2, BarChart3, HardDrive, Tags,
   HardHat, Eye, SlidersHorizontal, Server,
 } from 'lucide-react';
 import type { Role } from '@/lib/role';
@@ -44,6 +44,7 @@ export const PLANES: Plane[] = [
     id: 'administer', label: 'Administer', icon: SlidersHorizontal,
     items: [
       { href: '/data-manager', label: 'Data Manager', icon: Database, minRole: 'admin' },
+      { href: '/bank-editor', label: 'Bank Editor', icon: Tags, minRole: 'admin' },
       { href: '/office-ops', label: 'Office Ops', icon: Building2, minRole: 'admin' },
     ],
   },
