@@ -18,7 +18,7 @@ import { MorningReportView } from '@/components/morning-report-view';
 import { LoadingState, EmptyState } from '@/components/ui/states';
 
 const BTN_CLASS =
-  'no-print flex items-center gap-1.5 rounded-md border border-gold/30 bg-gold/[0.06] px-3 py-1.5 font-mono text-[0.6875rem] uppercase tracking-wider text-gold-light transition-colors hover:bg-gold/[0.12] disabled:opacity-40';
+  'print:hidden flex items-center gap-1.5 rounded-md border border-gold/30 bg-gold/[0.06] px-3 py-1.5 font-mono text-[0.6875rem] uppercase tracking-wider text-gold-light transition-colors hover:bg-gold/[0.12] disabled:opacity-40';
 
 export default function MorningReportPage() {
   const [sections, setSections] = useState<MorningReportSection[]>([]);

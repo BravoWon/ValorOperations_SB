@@ -29,7 +29,7 @@ export function MorningReportView({ sections }: MorningReportViewProps) {
           <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2 border-b border-white/[0.08] pb-2 print:border-black/10">
             <h2 className="font-display text-lg text-cream print:text-black">{s.sectionLabel}</h2>
             <span className="font-mono text-[0.6875rem] uppercase tracking-wider text-muted-foreground">
-              {s.code}{s.bankLabel ? ` · ${s.bankLabel}` : ''}{s.status ? ` · ${s.status}` : ''}
+              {[s.code, s.bankLabel, s.status].filter(Boolean).join(' · ')}
             </span>
           </header>
 
