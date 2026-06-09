@@ -49,4 +49,13 @@ export interface Repository {
   importSnapshot(snapshot: import('./local-db/types').LocalDbSnapshot): Promise<void>;
   listCollections(): Promise<import('./local-db/types').CollectionInfo[]>;
   resetLocalDb(): Promise<void>;
+
+  // --- coded-object graph (Slice B) ---
+  saveCodedObject(obj: import('./coded-object/types').CodedObject): Promise<void>;
+  loadCodedObjects(orgId: string, type?: import('./coded-object/types').ObjectType): Promise<import('./coded-object/types').CodedObject[]>;
+  saveRelation(rel: import('./coded-object/types').Relation): Promise<void>;
+  loadRelations(orgId: string): Promise<import('./coded-object/types').Relation[]>;
+  loadCodedGraph(orgId: string): Promise<import('./coded-object/types').CodedGraph>;
+  appendTimelineEvent(event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number }): Promise<import('./coded-object/types').TimelineEvent>;
+  loadTimeline(orgId: string, ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]>;
 }

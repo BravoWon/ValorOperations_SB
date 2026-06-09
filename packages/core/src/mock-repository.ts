@@ -23,6 +23,9 @@ export class MockRepository implements Repository {
   private channels: import('./data-manager/types').ChannelDef[] | null = null;
   private vendors: import('./office-ops/types').Vendor[] | null = null;
   private afe: import('./office-ops/types').AfeLine[] | null = null;
+  private codedObjects: import('./coded-object/types').CodedObject[] | null = null;
+  private relationsList: import('./coded-object/types').Relation[] | null = null;
+  private timelines: Record<string, import('./coded-object/types').TimelineEvent[]> | null = null;
 
   constructor() {
     this.data = createSeed();
@@ -291,8 +294,84 @@ export class MockRepository implements Repository {
     return this.afe ? structuredClone(this.afe) : null;
   }
 
+  async saveCodedObject(obj: import('./coded-object/types').CodedObject): Promise<void> {
+    // Upsert by (orgId, id): drop only the same org's object with this id, then append.
+    const others = (await this.allCodedObjects()).filter((o) => !(o.id === obj.id && o.orgId === obj.orgId));
+    this.writeCodedObjects([...others, structuredClone(obj)]);
+  }
+  async loadCodedObjects(orgId: string, type?: import('./coded-object/types').ObjectType): Promise<import('./coded-object/types').CodedObject[]> {
+    return (await this.allCodedObjects()).filter((o) => o.orgId === orgId && (type === undefined || o.type === type));
+  }
+  async saveRelation(rel: import('./coded-object/types').Relation): Promise<void> {
+    // Upsert by (orgId, id): drop only the same org's relation with this id, then append.
+    const others = (await this.allRelations()).filter((r) => !(r.id === rel.id && r.orgId === rel.orgId));
+    this.writeRelations([...others, structuredClone(rel)]);
+  }
+  async loadRelations(orgId: string): Promise<import('./coded-object/types').Relation[]> {
+    return (await this.allRelations()).filter((r) => r.orgId === orgId);
+  }
+  async loadCodedGraph(orgId: string): Promise<import('./coded-object/types').CodedGraph> {
+    return { objects: await this.loadCodedObjects(orgId), relations: await this.loadRelations(orgId) };
+  }
+  async appendTimelineEvent(
+    event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number },
+  ): Promise<import('./coded-object/types').TimelineEvent> {
+    const { nextSeq } = await import('./coded-object/graph');
+    // Single-map store rewritten per append: fine at demo scale, and consistent with the other
+    // collections (channels/vendors/afe) which also rewrite their whole value on save.
+    const key = this.timelineKey(event.orgId, event.ticketId);
+    const map = await this.allTimelines();
+    const existing = map[key] ?? [];
+    const seq = event.seq ?? nextSeq(existing, event.ticketId);
+    const stored: import('./coded-object/types').TimelineEvent = { ...event, seq };
+    map[key] = [...existing, structuredClone(stored)];
+    this.writeTimelines(map);
+    return stored;
+  }
+  async loadTimeline(orgId: string, ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]> {
+    return [...((await this.allTimelines())[this.timelineKey(orgId, ticketId)] ?? [])].sort((a, b) => a.seq - b.seq);
+  }
+  /** Composite key isolates timelines per (org, ticket) even if ticketIds collide across orgs. */
+  private timelineKey(orgId: string, ticketId: string): string { return `${orgId}::${ticketId}`; }
+
+  // --- coded-object storage helpers (browser localStorage or in-memory) ---
+  private async allCodedObjects(): Promise<import('./coded-object/types').CodedObject[]> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:codedobjects'); if (raw) { try { return JSON.parse(raw) as import('./coded-object/types').CodedObject[]; } catch { return []; } } return []; }
+    return this.codedObjects ? structuredClone(this.codedObjects) : [];
+  }
+  private writeCodedObjects(list: import('./coded-object/types').CodedObject[]): void {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:codedobjects', JSON.stringify(list));
+    else this.codedObjects = structuredClone(list);
+  }
+  private async allRelations(): Promise<import('./coded-object/types').Relation[]> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:relations'); if (raw) { try { return JSON.parse(raw) as import('./coded-object/types').Relation[]; } catch { return []; } } return []; }
+    return this.relationsList ? structuredClone(this.relationsList) : [];
+  }
+  private writeRelations(list: import('./coded-object/types').Relation[]): void {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:relations', JSON.stringify(list));
+    else this.relationsList = structuredClone(list);
+  }
+  private async allTimelines(): Promise<Record<string, import('./coded-object/types').TimelineEvent[]>> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:timelines'); if (raw) { try { return JSON.parse(raw) as Record<string, import('./coded-object/types').TimelineEvent[]>; } catch { return {}; } } return {}; }
+    return this.timelines ? structuredClone(this.timelines) : {};
+  }
+  private writeTimelines(map: Record<string, import('./coded-object/types').TimelineEvent[]>): void {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:timelines', JSON.stringify(map));
+    else this.timelines = structuredClone(map);
+  }
+
   async exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot> {
     const store = this.browserStorage;
+    // NOTE: the coded-object graph collections (valor:codedobjects / valor:relations /
+    // valor:timelines) are intentionally NOT included in LocalDB snapshots yet — the graph
+    // substrate (Slice B) is not wired into the app. Snapshot/restore for it lands when the
+    // graph is surfaced (a later slice). resetLocalDb DOES clear them (full valor:* sweep).
     const collections: import('./local-db/types').LocalDbSnapshot['collections'] = {
       dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [],
     };
@@ -324,6 +403,7 @@ export class MockRepository implements Repository {
     // Defensive: user-provided JSON. Validate each entry's shape and skip bad
     // ones so a malformed snapshot can't crash the import (spec: never throws).
     const c = (snapshot && typeof snapshot === 'object' ? snapshot.collections : null) ?? {};
+    // (coded-object graph collections are not part of the snapshot yet — see exportSnapshot note.)
     const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
     const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object';
 
@@ -354,6 +434,7 @@ export class MockRepository implements Repository {
     } else {
       this.dashboards.clear(); this.wellSetups.clear(); this.rigDays.clear();
       this.channels = null; this.vendors = null; this.afe = null;
+      this.codedObjects = null; this.relationsList = null; this.timelines = null;
     }
   }
 }
