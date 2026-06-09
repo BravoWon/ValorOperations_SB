@@ -9,8 +9,15 @@ describe('TicketTimeView', () => {
     expect(await findByText(/12¼" Intermediate/)).toBeTruthy();
   });
 
-  it('shows a not-found state for an unknown ticket', async () => {
-    const { findByText } = render(<TicketTimeView ticketId="does-not-exist" />);
+  it('offers "Log activity" once a ticket loads', async () => {
+    const { findByText, getByRole } = render(<TicketTimeView ticketId={SEED_TICKET_ID} />);
+    await findByText(/12¼" Intermediate/);
+    expect(getByRole('button', { name: /log activity/i })).toBeTruthy();
+  });
+
+  it('shows a not-found state (and no "Log activity") for an unknown ticket', async () => {
+    const { findByText, queryByRole } = render(<TicketTimeView ticketId="does-not-exist" />);
     expect(await findByText(/not found/i)).toBeTruthy();
+    expect(queryByRole('button', { name: /log activity/i })).toBeNull();
   });
 });

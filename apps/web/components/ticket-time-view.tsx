@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Search } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -37,6 +37,13 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
   const [loaded, setLoaded] = useState(false);
   const [bankCodes, setBankCodes] = useState<BankCode[]>(BANK_SEED);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const load = useMemo(
     () => async () => {
@@ -82,14 +89,23 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
   const notifications = useMemo(() => (day ? deriveNotifications(day) : []), [day]);
 
   const onPick = async (code: BankCode) => {
-    const events = await getRepo().loadTimeline(DEMO_ORG_ID, ticketId);
-    const maxAt = events.reduce((m, e) => Math.max(m, e.atMin), -30);
-    const atMin = Math.max(0, Math.min(1440, maxAt + 30));
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${events.length + 1}`;
-    await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin, kind: 'activity', code: code.code });
-    const view = await load();
-    setDay(view ? timelineToRigDay(view) : null);
-    setWarnings(view?.warnings ?? []);
+    if (!day || saving) return; // guard re-entrancy + the not-loaded case
+    setSaving(true);
+    try {
+      // Append after the last logged activity (use the loaded blocks — no extra round-trip).
+      const maxAt = day.blocks.reduce((m, b) => Math.max(m, b.startMin), -30);
+      const atMin = Math.max(0, Math.min(1440, maxAt + 30));
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${day.blocks.length + 1}`;
+      await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin, kind: 'activity', code: code.code });
+      const view = await load();
+      if (!mountedRef.current) return;
+      setDay(view ? timelineToRigDay(view) : null);
+      setWarnings(view?.warnings ?? []);
+    } catch {
+      // Append failed (e.g. the Supabase scaffold throws) — leave the view as-is.
+    } finally {
+      if (mountedRef.current) setSaving(false);
+    }
   };
 
   return (
@@ -104,8 +120,8 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
               <ArrowLeft className="h-3 w-3" /> Board
             </Link>
             {day && (
-              <button type="button" onClick={() => setPaletteOpen(true)} className={BTN_CLASS}>
-                <Search className="h-3.5 w-3.5" strokeWidth={2} /> Log activity
+              <button type="button" onClick={() => setPaletteOpen(true)} disabled={saving} className={BTN_CLASS}>
+                <Search className="h-3.5 w-3.5" strokeWidth={2} /> {saving ? 'Logging…' : 'Log activity'}
               </button>
             )}
           </div>
