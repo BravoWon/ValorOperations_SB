@@ -23,6 +23,9 @@ export class MockRepository implements Repository {
   private channels: import('./data-manager/types').ChannelDef[] | null = null;
   private vendors: import('./office-ops/types').Vendor[] | null = null;
   private afe: import('./office-ops/types').AfeLine[] | null = null;
+  private codedObjects: import('./coded-object/types').CodedObject[] | null = null;
+  private relationsList: import('./coded-object/types').Relation[] | null = null;
+  private timelines: Record<string, import('./coded-object/types').TimelineEvent[]> | null = null;
 
   constructor() {
     this.data = createSeed();
@@ -289,6 +292,72 @@ export class MockRepository implements Repository {
     const store = this.browserStorage;
     if (store) { const raw = store.getItem('valor:afe'); if (raw) { try { return JSON.parse(raw) as import('./office-ops/types').AfeLine[]; } catch { return null; } } return null; }
     return this.afe ? structuredClone(this.afe) : null;
+  }
+
+  async saveCodedObject(obj: import('./coded-object/types').CodedObject): Promise<void> {
+    // Upsert by id: drop any existing object with this id, then append.
+    const others = (await this.allCodedObjects()).filter((o) => o.id !== obj.id);
+    this.writeCodedObjects([...others, structuredClone(obj)]);
+  }
+  async loadCodedObjects(orgId: string, type?: import('./coded-object/types').ObjectType): Promise<import('./coded-object/types').CodedObject[]> {
+    return (await this.allCodedObjects()).filter((o) => o.orgId === orgId && (type === undefined || o.type === type));
+  }
+  async saveRelation(rel: import('./coded-object/types').Relation): Promise<void> {
+    const others = (await this.allRelations()).filter((r) => r.id !== rel.id);
+    this.writeRelations([...others, structuredClone(rel)]);
+  }
+  async loadRelations(orgId: string): Promise<import('./coded-object/types').Relation[]> {
+    return (await this.allRelations()).filter((r) => r.orgId === orgId);
+  }
+  async loadCodedGraph(orgId: string): Promise<import('./coded-object/types').CodedGraph> {
+    return { objects: await this.loadCodedObjects(orgId), relations: await this.loadRelations(orgId) };
+  }
+  async appendTimelineEvent(
+    event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number },
+  ): Promise<import('./coded-object/types').TimelineEvent> {
+    const { nextSeq } = await import('./coded-object/graph');
+    const existing = await this.loadTimeline(event.ticketId);
+    const seq = event.seq ?? nextSeq(existing, event.ticketId);
+    const stored: import('./coded-object/types').TimelineEvent = { ...event, seq };
+    const map = await this.allTimelines();
+    map[event.ticketId] = [...(map[event.ticketId] ?? []), structuredClone(stored)];
+    this.writeTimelines(map);
+    return stored;
+  }
+  async loadTimeline(ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]> {
+    return [...((await this.allTimelines())[ticketId] ?? [])].sort((a, b) => a.seq - b.seq);
+  }
+
+  // --- coded-object storage helpers (browser localStorage or in-memory) ---
+  private async allCodedObjects(): Promise<import('./coded-object/types').CodedObject[]> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:codedobjects'); if (raw) { try { return JSON.parse(raw) as import('./coded-object/types').CodedObject[]; } catch { return []; } } return []; }
+    return this.codedObjects ? structuredClone(this.codedObjects) : [];
+  }
+  private writeCodedObjects(list: import('./coded-object/types').CodedObject[]): void {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:codedobjects', JSON.stringify(list));
+    else this.codedObjects = structuredClone(list);
+  }
+  private async allRelations(): Promise<import('./coded-object/types').Relation[]> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:relations'); if (raw) { try { return JSON.parse(raw) as import('./coded-object/types').Relation[]; } catch { return []; } } return []; }
+    return this.relationsList ? structuredClone(this.relationsList) : [];
+  }
+  private writeRelations(list: import('./coded-object/types').Relation[]): void {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:relations', JSON.stringify(list));
+    else this.relationsList = structuredClone(list);
+  }
+  private async allTimelines(): Promise<Record<string, import('./coded-object/types').TimelineEvent[]>> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:timelines'); if (raw) { try { return JSON.parse(raw) as Record<string, import('./coded-object/types').TimelineEvent[]>; } catch { return {}; } } return {}; }
+    return this.timelines ? structuredClone(this.timelines) : {};
+  }
+  private writeTimelines(map: Record<string, import('./coded-object/types').TimelineEvent[]>): void {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:timelines', JSON.stringify(map));
+    else this.timelines = structuredClone(map);
   }
 
   async exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot> {
