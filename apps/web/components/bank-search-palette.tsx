@@ -48,6 +48,7 @@ export function BankSearchPalette({ open, onClose, codes, onSelect }: BankSearch
         aria-label="Bank search palette"
         className="glass-strong w-full max-w-lg overflow-hidden rounded-lg border border-gold/20 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
       >
         <label className="relative block border-b border-white/[0.08]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" aria-hidden="true" />

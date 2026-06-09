@@ -10,6 +10,11 @@
 
 **Constraints:** No `Date.now`/`Math.random` in `@valor/core`. Additive — existing tests + `/rig-day` + `/jobs` untouched; both typechecks 0; both web builds (normal + static export) pass. MockRepository stays default. IP guardrail: generic terms only.
 
+> **Post-review deviations (as-built, PR #24).** Code blocks below are the original pre-implementation recipe; refinements landed during dual-bot review and are the source of truth in the merged code:
+> 1. **`summarizeTicket` tidy** — uses `section.fields.status` (not `?.`; the field map is non-optional), the `== null` idiom, and resolves the latest activity's Bank label once. A 4th test (`'treats an empty-string status as undefined'`) was added.
+> 2. **Board load-error state** — `tickets/page.tsx` adds a `failed` state: a load rejection renders a "Couldn't load tickets" error (distinct from the genuinely-empty "No tickets yet"), rather than silently showing empty.
+> 3. **Palette** — the empty message reads "The Bank is empty." when no query is typed (vs `No codes match ""`), the dialog `aria-label` is "Bank search palette" (input keeps "Search the Bank" — no a11y-label collision), and Escape closes from anywhere in the modal (handler on the dialog container, not just the input).
+
 Commands (run from the repository root):
 - Core: `corepack pnpm --filter @valor/core test -- <name>` / `test` / `typecheck`
 - Web: `corepack pnpm --filter @valor/web test -- <name>` / `test` / `typecheck` / `build`
