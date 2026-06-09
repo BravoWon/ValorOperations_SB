@@ -6,6 +6,7 @@ import type {
 export * from './types';
 export { DEFAULT_CODED_GRAPH, DEFAULT_TIMELINE, SEED_TICKET_ID } from './seed';
 export * from './summary';
+export * from './timeline-view';
 
 /**
  * Pure graph helpers. They assume the passed-in `CodedGraph`/`events` are already
