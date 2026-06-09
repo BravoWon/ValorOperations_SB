@@ -71,4 +71,31 @@ describe('TemplateBuilder', () => {
     const next = onChange.mock.calls.at(-1)?.[0];
     expect(next[0].template.jobType).toBe('completion');
   });
+
+  it('adds a template with a unique id even after a remove (no id collision)', () => {
+    // start from a 2-template list whose ids would collide under a length-based counter
+    const two = [
+      DEFAULT_TEMPLATE_BUNDLES[0]!,
+      { ...DEFAULT_TEMPLATE_BUNDLES[0]!, template: { ...DEFAULT_TEMPLATE_BUNDLES[0]!.template, id: 'tmpl-new-2', name: 'Second' } },
+    ];
+    const onChange = vi.fn();
+    const { getByText } = render(<TemplateBuilder bundles={two} bankCodes={bankCodes} onChange={onChange} />);
+    fireEvent.click(getByText(/Add template/i));
+    const next = onChange.mock.calls.at(-1)?.[0];
+    const ids = next.map((b: { template: { id: string } }) => b.template.id);
+    expect(new Set(ids).size).toBe(ids.length); // all unique
+    expect(next.length).toBe(3);
+  });
+
+  it('removes a template via onChange', () => {
+    const two = [
+      DEFAULT_TEMPLATE_BUNDLES[0]!,
+      { ...DEFAULT_TEMPLATE_BUNDLES[0]!, template: { ...DEFAULT_TEMPLATE_BUNDLES[0]!.template, id: 'tmpl-x', name: 'Second' } },
+    ];
+    const onChange = vi.fn();
+    const { getByLabelText } = render(<TemplateBuilder bundles={two} bankCodes={bankCodes} onChange={onChange} />);
+    fireEvent.click(getByLabelText(/Remove template/i));
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next.length).toBe(1);
+  });
 });

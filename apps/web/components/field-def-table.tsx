@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import type { TemplateFieldDef, FieldScope, FieldDataType } from '@valor/core';
+import { nextSuffixId } from '@/lib/next-id';
 
 export interface FieldDefTableProps {
   fields: TemplateFieldDef[];
@@ -38,7 +39,7 @@ export function FieldDefTable({ fields, templateId, onChange }: FieldDefTablePro
   const add = () =>
     onChange([
       ...fields,
-      { id: `tfd-new-${fields.length + 1}`, templateId, scope: 'job', key: '', label: '', dataType: 'number', required: false, sortOrder: fields.length + 1 },
+      { id: nextSuffixId('tfd-new-', fields.map((f) => f.id)), templateId, scope: 'job', key: '', label: '', dataType: 'number', required: false, sortOrder: fields.length + 1 },
     ]);
 
   return (

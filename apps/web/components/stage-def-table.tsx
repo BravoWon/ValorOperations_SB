@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import type { TemplateStageDef } from '@valor/core';
+import { nextSuffixId } from '@/lib/next-id';
 
 export interface StageDefTableProps {
   stages: TemplateStageDef[];
@@ -26,7 +27,7 @@ export function StageDefTable({ stages, bankCodes, templateId, onChange }: Stage
   const add = () =>
     onChange([
       ...stages,
-      { id: `tsd-new-${stages.length + 1}`, templateId, name: '', stageType: '', defaultSortOrder: (stages.length + 1) * 10 },
+      { id: nextSuffixId('tsd-new-', stages.map((s) => s.id)), templateId, name: '', stageType: '', defaultSortOrder: (stages.length + 1) * 10 },
     ]);
 
   return (
