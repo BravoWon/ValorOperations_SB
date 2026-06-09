@@ -107,6 +107,7 @@ export interface TemplateStageDef {
   name: string;
   stageType: string;
   defaultSortOrder: number;
+  defaultCode?: string; // optional Bank code seeded onto the section Ticket on instantiation (Slice E)
 }
 
 export interface TemplateFieldDef {
