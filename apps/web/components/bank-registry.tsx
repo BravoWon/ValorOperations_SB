@@ -94,7 +94,10 @@ export function BankRegistry({ codes, onChange }: BankRegistryProps) {
           </thead>
           <tbody>
             {visible.map(({ c, i }) => (
-              <tr key={c.code || i} data-testid="bank-code-row" className="border-t border-white/[0.05]">
+              // Key on the canonical row index: `code` is user-editable, so keying on it
+              // would remount the input on every keystroke and drop focus. The table is
+              // not reorderable, so the index is a stable per-row identity.
+              <tr key={i} data-testid="bank-code-row" className="border-t border-white/[0.05]">
                 <td className="py-1 pr-2">
                   <input
                     aria-label="Code"

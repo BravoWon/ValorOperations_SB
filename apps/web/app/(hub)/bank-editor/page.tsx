@@ -38,9 +38,14 @@ export default function BankEditorPage() {
 
   const onSave = async () => {
     setSaveState('saving');
-    await getRepo().saveBankCodes(codes);
-    setSaveState('saved');
-    setTimeout(() => setSaveState('idle'), 1800);
+    try {
+      await getRepo().saveBankCodes(codes);
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 1800);
+    } catch {
+      // Don't leave the button stuck on "Saving…" if persistence fails.
+      setSaveState('idle');
+    }
   };
 
   return (

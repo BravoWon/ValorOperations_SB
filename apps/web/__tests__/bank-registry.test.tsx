@@ -29,6 +29,22 @@ describe('BankRegistry', () => {
     expect(next[0].npt).toBe(!BANK_SEED[0]!.npt);
   });
 
+  it('toggles billable via the checkbox', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(<BankRegistry codes={BANK_SEED} onChange={onChange} />);
+    fireEvent.click(getAllByLabelText(/Billable/i)[0] as HTMLInputElement);
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next[0].billable).toBe(!BANK_SEED[0]!.billable);
+  });
+
+  it('edits the category via onChange', () => {
+    const onChange = vi.fn();
+    const { getAllByLabelText } = render(<BankRegistry codes={BANK_SEED} onChange={onChange} />);
+    fireEvent.change(getAllByLabelText(/^Category$/i)[0] as HTMLInputElement, { target: { value: 'Pressure/BOP' } });
+    const next = onChange.mock.calls.at(-1)?.[0];
+    expect(next[0].category).toBe('Pressure/BOP');
+  });
+
   it('offers existing categories as datalist options', () => {
     const onChange = vi.fn();
     const { container } = render(<BankRegistry codes={BANK_SEED} onChange={onChange} />);
