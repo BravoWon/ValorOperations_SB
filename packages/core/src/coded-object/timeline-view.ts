@@ -28,6 +28,10 @@ export function timelineToRigDay(ticket: TicketView): RigDay {
     return { id: e.id, code: e.code as string, startMin: e.atMin, endMin, ...(e.note ? { note: e.note } : {}) };
   });
 
+  // Attach each qc mark to the block covering its minute (half-open [start, end)). A qc at a
+  // zero-span block's start lands on the next covering block; if several qc events cover the
+  // same block, the last in timeline order wins (TimeBlock.qc holds a single mark). A qc at
+  // exactly DAY_MINUTES has no covering block and is dropped — all consistent with the schema.
   for (const e of timeline) {
     if (e.kind !== 'qc' || !e.qc) continue;
     const block = blocks.find((b) => e.atMin >= b.startMin && e.atMin < b.endMin);

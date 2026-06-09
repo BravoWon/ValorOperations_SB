@@ -8,12 +8,14 @@ describe('timelineToRigDay', () => {
     const day = timelineToRigDay(view);
     expect(day.blocks.map((b) => b.code)).toEqual(['TIH', 'DRL', 'RIGREP']);
     expect(day.blocks.map((b) => [b.startMin, b.endMin])).toEqual([[0, 120], [120, 510], [510, 1440]]);
+    expect(day.blocks.map((b) => b.id)).toEqual(['ev-1', 'ev-2', 'ev-3']); // event id carried onto the block
   });
 
-  it('attaches a qc event to the block whose span covers it', () => {
+  it('attaches a qc event (status + note) to the block whose span covers it', () => {
     const day = timelineToRigDay(view);
     const rigrep = day.blocks.find((b) => b.code === 'RIGREP')!;
     expect(rigrep.qc?.status).toBe('approved');
+    expect(rigrep.qc?.note).toBe('Tower QC complete');
   });
 
   it('carries the section id/label and full-day lanes from parties/equipment', () => {
