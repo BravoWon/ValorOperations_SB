@@ -107,7 +107,9 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     if (atMin <= maxAt) return; // day is full near midnight — appending couldn't advance the timeline
     setSaving(true);
     try {
-      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${day.blocks.length + 1}`;
+      // randomUUID exists in every target runtime; the fallback adds a wall-clock suffix so a
+      // partial failure (append ok, reload failed) can't mint the same id twice.
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${Date.now()}`;
       await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin, kind: 'activity', code: code.code });
       const view = await load();
       if (!mountedRef.current) return;
