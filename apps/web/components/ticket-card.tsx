@@ -42,8 +42,8 @@ export function TicketCard({ summary }: TicketCardProps) {
           </span>
         )}
         <div className="flex flex-wrap items-center gap-3 font-mono text-[0.6875rem]">
-          <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" aria-hidden="true" />{summary.parties}</span>
-          <span className="inline-flex items-center gap-1"><Wrench className="h-3 w-3" aria-hidden="true" />{summary.equipment}</span>
+          <span className="inline-flex items-center gap-1" aria-label={`${summary.parties} parties`}><Users className="h-3 w-3" aria-hidden="true" />{summary.parties}</span>
+          <span className="inline-flex items-center gap-1" aria-label={`${summary.equipment} equipment`}><Wrench className="h-3 w-3" aria-hidden="true" />{summary.equipment}</span>
           <span>{summary.bha} BHA</span>
         </div>
         <div className="inline-flex items-center gap-1.5 font-mono text-[0.6875rem]">

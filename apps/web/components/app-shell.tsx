@@ -31,6 +31,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) return;
+      if (e.repeat) return; // holding the combo shouldn't strobe the palette open/closed
       // Don't hijack the shortcut while typing — notably macOS Ctrl-K (kill-to-end-of-line)
       // in text fields. The palette opens from normal page focus; Esc/backdrop close it.
       const t = e.target as HTMLElement | null;

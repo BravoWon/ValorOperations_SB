@@ -21,9 +21,11 @@ export function BankSearchPalette({ open, onClose, codes, onSelect }: BankSearch
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
+    // Coerce defensively — persisted Bank JSON could be hand-edited/malformed.
+    const norm = (v: unknown) => String(v ?? '').toLowerCase();
     const categories = [...new Set(codes.map((c) => c.category))];
     const matches = (b: BankCode) =>
-      !q || b.code.toLowerCase().includes(q) || b.label.toLowerCase().includes(q) || b.category.toLowerCase().includes(q);
+      !q || norm(b.code).includes(q) || norm(b.label).includes(q) || norm(b.category).includes(q);
     return categories
       .map((category) => ({ category, items: codes.filter((b) => b.category === category && matches(b)) }))
       .filter((g) => g.items.length > 0);
