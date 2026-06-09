@@ -34,6 +34,7 @@ import type { Vendor, AfeLine } from '@valor/core';
 import type { WellSetup } from '@valor/core';
 import type { RigDay } from '@valor/core';
 import type { CodedObject, Relation, CodedGraph, TimelineEvent, ObjectType } from '@valor/core';
+import type { BankCode } from '@valor/core';
 
 /**
  * SupabaseRepository — the real backend adapter (SCAFFOLD).
@@ -633,6 +634,15 @@ export class SupabaseRepository implements Repository {
   async loadCodedGraph(_orgId: string): Promise<CodedGraph> { this.codedObjectsUnsupported('loadCodedGraph'); }
   async appendTimelineEvent(_event: Omit<TimelineEvent, 'seq'> & { seq?: number }): Promise<TimelineEvent> { this.codedObjectsUnsupported('appendTimelineEvent'); }
   async loadTimeline(_orgId: string, _ticketId: string): Promise<TimelineEvent[]> { this.codedObjectsUnsupported('loadTimeline'); }
+
+  // --- bank-code catalog (Slice C is mock-only; the cloud bank_codes table is a later step) ---
+  private bankUnsupported(method: string): never {
+    throw new Error(
+      `SupabaseRepository.${method}: bank-code catalog not implemented in the Supabase scaffold (Slice C is mock-only).`,
+    );
+  }
+  async saveBankCodes(_codes: BankCode[]): Promise<void> { this.bankUnsupported('saveBankCodes'); }
+  async loadBankCodes(): Promise<BankCode[] | null> { this.bankUnsupported('loadBankCodes'); }
 }
 
 // ============================================================================
