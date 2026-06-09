@@ -47,6 +47,8 @@ export interface Repository {
   loadAfe(): Promise<import('./office-ops/types').AfeLine[] | null>;
   saveBankCodes(codes: import('./well-setup/bank').BankCode[]): Promise<void>;
   loadBankCodes(): Promise<import('./well-setup/bank').BankCode[] | null>;
+  saveTemplateBundles(bundles: TemplateBundle[]): Promise<void>;
+  loadTemplateBundles(): Promise<TemplateBundle[] | null>;
   exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot>;
   importSnapshot(snapshot: import('./local-db/types').LocalDbSnapshot): Promise<void>;
   listCollections(): Promise<import('./local-db/types').CollectionInfo[]>;

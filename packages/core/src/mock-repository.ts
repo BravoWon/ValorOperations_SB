@@ -24,6 +24,7 @@ export class MockRepository implements Repository {
   private vendors: import('./office-ops/types').Vendor[] | null = null;
   private afe: import('./office-ops/types').AfeLine[] | null = null;
   private bankCodes: import('./well-setup/bank').BankCode[] | null = null;
+  private templateBundles: import('./repository').TemplateBundle[] | null = null;
   private codedObjects: import('./coded-object/types').CodedObject[] | null = null;
   private relationsList: import('./coded-object/types').Relation[] | null = null;
   private timelines: Record<string, import('./coded-object/types').TimelineEvent[]> | null = null;
@@ -307,6 +308,18 @@ export class MockRepository implements Repository {
     return this.bankCodes ? structuredClone(this.bankCodes) : null;
   }
 
+  async saveTemplateBundles(bundles: import('./repository').TemplateBundle[]): Promise<void> {
+    const store = this.browserStorage;
+    if (store) store.setItem('valor:templatebundles', JSON.stringify(bundles));
+    else this.templateBundles = structuredClone(bundles);
+  }
+
+  async loadTemplateBundles(): Promise<import('./repository').TemplateBundle[] | null> {
+    const store = this.browserStorage;
+    if (store) { const raw = store.getItem('valor:templatebundles'); if (raw) { try { return JSON.parse(raw) as import('./repository').TemplateBundle[]; } catch { return null; } } return null; }
+    return this.templateBundles ? structuredClone(this.templateBundles) : null;
+  }
+
   async saveCodedObject(obj: import('./coded-object/types').CodedObject): Promise<void> {
     // Upsert by (orgId, id): drop only the same org's object with this id, then append.
     const others = (await this.allCodedObjects()).filter((o) => !(o.id === obj.id && o.orgId === obj.orgId));
@@ -386,7 +399,7 @@ export class MockRepository implements Repository {
     // substrate (Slice B) is not wired into the app. Snapshot/restore for it lands when the
     // graph is surfaced (a later slice). resetLocalDb DOES clear them (full valor:* sweep).
     const collections: import('./local-db/types').LocalDbSnapshot['collections'] = {
-      dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [], bankCodes: [],
+      dashboards: [], wellSetups: [], rigDays: [], channels: [], vendors: [], afe: [], bankCodes: [], templateBundles: [],
     };
     if (store) {
       for (let i = 0; i < store.length; i++) {
@@ -400,6 +413,7 @@ export class MockRepository implements Repository {
           else if (k === 'valor:vendors') collections.vendors = JSON.parse(raw);
           else if (k === 'valor:afe') collections.afe = JSON.parse(raw);
           else if (k === 'valor:bankcodes') collections.bankCodes = JSON.parse(raw);
+          else if (k === 'valor:templatebundles') collections.templateBundles = JSON.parse(raw);
         } catch { /* skip malformed */ }
       }
     } else {
@@ -410,6 +424,7 @@ export class MockRepository implements Repository {
       collections.vendors = this.vendors ? structuredClone(this.vendors) : [];
       collections.afe = this.afe ? structuredClone(this.afe) : [];
       collections.bankCodes = this.bankCodes ? structuredClone(this.bankCodes) : [];
+      collections.templateBundles = this.templateBundles ? structuredClone(this.templateBundles) : [];
     }
     return { version: 1 as const, collections };
   }
@@ -435,6 +450,7 @@ export class MockRepository implements Repository {
     if (Array.isArray(c.vendors)) { try { await this.saveVendors(c.vendors); } catch { /* skip */ } }
     if (Array.isArray(c.afe)) { try { await this.saveAfe(c.afe); } catch { /* skip */ } }
     if (Array.isArray(c.bankCodes)) { try { await this.saveBankCodes(c.bankCodes); } catch { /* skip */ } }
+    if (Array.isArray(c.templateBundles)) { try { await this.saveTemplateBundles(c.templateBundles); } catch { /* skip */ } }
   }
 
   async listCollections(): Promise<import('./local-db/types').CollectionInfo[]> {
@@ -451,6 +467,7 @@ export class MockRepository implements Repository {
       this.dashboards.clear(); this.wellSetups.clear(); this.rigDays.clear();
       this.channels = null; this.vendors = null; this.afe = null;
       this.bankCodes = null;
+      this.templateBundles = null;
       this.codedObjects = null; this.relationsList = null; this.timelines = null;
     }
   }
