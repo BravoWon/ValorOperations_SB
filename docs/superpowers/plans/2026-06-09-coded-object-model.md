@@ -10,6 +10,10 @@
 
 **Constraints:** No `Date.now`/`Math.random` in `@valor/core`. `warnings: string[]`, never throw (except the deliberate Supabase stubs). Existing 162 core tests stay green; `@valor/web` typecheck 0 + both builds (normal + static export) pass.
 
+> **Post-review deviations (as-built, PR #21).** The code blocks below are the original pre-implementation recipe; two refinements landed during dual-bot review and are the source of truth in the merged code:
+> 1. **`QcMark` → `EventQcMark`.** The QC-mark interface is named `EventQcMark` (rig-day already exports a `QcMark`; the rename avoids a duplicate `export *` from `@valor/core`). Wherever a snippet below says `QcMark`, read `EventQcMark`.
+> 2. **Timeline is org-scoped.** `loadTimeline(orgId, ticketId)` (not `loadTimeline(ticketId)`), the MockRepository timeline map is keyed by a composite `${orgId}::${ticketId}`, and `saveCodedObject`/`saveRelation` upsert by `(orgId, id)` — multi-tenant isolation so colliding ids/ticketIds across orgs don't mix. The Supabase stub signature is `loadTimeline(_orgId, _ticketId)`. Wherever a snippet below shows the single-arg `loadTimeline(ticketId)` / `ticketId`-keyed timeline, read the org-scoped form.
+
 Commands (from repo root `C:\Users\Deving-1\Desktop\dev\ValorOperations_SB`):
 - Core one file: `corepack pnpm --filter @valor/core test -- <name>`
 - Core all: `corepack pnpm --filter @valor/core test` · Core typecheck: `corepack pnpm --filter @valor/core typecheck`

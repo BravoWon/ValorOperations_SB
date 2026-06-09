@@ -38,7 +38,8 @@ export interface Relation {
 }
 
 export type EventKind = 'activity' | 'note' | 'qc' | 'hse' | 'milestone' | string;
-export interface QcMark { status: 'approved' | 'flagged'; note?: string; }
+// Named `EventQcMark` in the implementation to avoid colliding with rig-day's existing `QcMark` export.
+export interface EventQcMark { status: 'approved' | 'flagged'; note?: string; }
 
 /** Append-only. Corrections are new events; never mutate an existing one. */
 export interface TimelineEvent {
@@ -50,7 +51,7 @@ export interface TimelineEvent {
   kind: EventKind;
   code?: string;                 // Bank code for activity events
   note?: string;
-  qc?: QcMark;
+  qc?: EventQcMark;
 }
 
 export interface CodedGraph { objects: CodedObject[]; relations: Relation[]; }
