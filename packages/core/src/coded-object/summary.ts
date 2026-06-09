@@ -21,16 +21,18 @@ export function summarizeTicket(view: TicketView): TicketSummary {
   const { section, parties, equipment, bha, timeline, warnings } = view;
   const bank = section.code ? findBankCode(section.code) : undefined;
 
-  const statusRaw = section.fields?.status;
-  const status = statusRaw === undefined || statusRaw === null || statusRaw === '' ? undefined : String(statusRaw);
+  const statusRaw = section.fields.status;
+  const status = statusRaw == null || statusRaw === '' ? undefined : String(statusRaw);
 
-  // Latest activity = the highest-seq event of kind 'activity' (timeline is seq-ordered).
-  let latestActivity: TicketSummary['latestActivity'];
+  // Latest activity = the last event of kind 'activity' (timeline is seq-ordered);
+  // resolve its Bank label once.
+  let lastAct: TicketView['timeline'][number] | undefined;
   for (const e of timeline) {
-    if (e.kind === 'activity') {
-      latestActivity = { code: e.code, atMin: e.atMin, bankLabel: e.code ? findBankCode(e.code)?.label : undefined };
-    }
+    if (e.kind === 'activity') lastAct = e;
   }
+  const latestActivity: TicketSummary['latestActivity'] = lastAct
+    ? { code: lastAct.code, atMin: lastAct.atMin, bankLabel: lastAct.code ? findBankCode(lastAct.code)?.label : undefined }
+    : undefined;
 
   return {
     id: section.id,

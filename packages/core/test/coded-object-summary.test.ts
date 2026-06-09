@@ -29,6 +29,12 @@ describe('summarizeTicket', () => {
     expect(s.status).toBeUndefined();
   });
 
+  it('treats an empty-string status as undefined', () => {
+    const view = assembleTicket(DEFAULT_CODED_GRAPH, DEFAULT_TIMELINE, SEED_TICKET_ID)!;
+    const s = summarizeTicket({ ...view, section: { ...view.section, fields: { status: '' } } });
+    expect(s.status).toBeUndefined();
+  });
+
   it('handles a timeline with no activity events (no latestActivity)', () => {
     const view = assembleTicket(DEFAULT_CODED_GRAPH, DEFAULT_TIMELINE, SEED_TICKET_ID)!;
     const s = summarizeTicket({ ...view, timeline: view.timeline.filter((e) => e.kind !== 'activity') });
