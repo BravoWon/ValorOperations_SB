@@ -49,7 +49,8 @@ export function MorningReportView({ sections }: MorningReportViewProps) {
               </tr>
             </thead>
             <tbody>
-              {[...s.accounting.byCode].sort((a, b) => b.minutes - a.minutes).map((t) => (
+              {/* byCode arrives sorted descending by minutes (deriveTimeAccounting's contract). */}
+              {s.accounting.byCode.map((t) => (
                 <tr key={t.code} data-testid="report-tally-row" className="border-t border-white/[0.05] print:border-black/10">
                   <td className="py-1 pr-3 font-mono">{t.code}</td>
                   <td className="py-1 pr-3">{t.label}</td>
