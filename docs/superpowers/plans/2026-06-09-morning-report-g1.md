@@ -12,6 +12,11 @@
 
 **Constraints:** No `Date.now`/`Math.random` in `@valor/core` (the "as-of" framing is data-derived, not clock-derived). `warnings: string[]`, never throw. Additive — no changes to existing projections/components; both typechecks 0; both builds pass (static export +1 page, `/morning-report`). MockRepository default; IP guardrail generic terms only.
 
+> **Post-review deviations (as-built, PR #27).** Code blocks below are the original pre-implementation recipe; refinements landed during dual-bot review and are the source of truth in the merged code:
+> 1. **`print:hidden`, not `.no-print`.** The legacy `.no-print` class has no global `@media print` rule (it exists only in well-setup's inline styles), so the Print button uses Tailwind's `print:hidden` utility. Wherever a snippet/reference below says `.no-print`, read `print:hidden`.
+> 2. **Header metadata join** — `[s.code, s.bankLabel, s.status].filter(Boolean).join(' · ')` (no leading separator when `code` is absent), replacing the concatenation shown in the Task 2 snippet.
+> 3. **No `byCode` re-sort in the view** — `deriveTimeAccounting` returns it sorted descending; the view consumes it directly. Typographic apostrophes throughout the page copy.
+
 Commands (run from the repository root):
 - Core: `corepack pnpm --filter @valor/core test -- <name>` / `test` / `typecheck`
 - Web: `corepack pnpm --filter @valor/web test -- <name>` / `test` / `typecheck` / `build`
