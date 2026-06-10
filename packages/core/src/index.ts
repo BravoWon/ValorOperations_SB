@@ -32,3 +32,4 @@ export * from './local-db/types';
 export * from './analytics/types';
 export * from './analytics/analytics';
 export * from './report/morning-report';
+export * from './report/shift-handoff';
