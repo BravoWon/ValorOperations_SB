@@ -75,6 +75,7 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     setDay(null);
     setWarnings([]);
     setFailed(false);
+    setHandoffOpen(false); // a drawer open on the previous ticket must not pop open on the next
     load()
       .then((v) => {
         if (!active) return;
@@ -129,6 +130,11 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     }
   };
 
+  /**
+   * Append the handoff as a `milestone` event, then reload + re-project. Closes the drawer only
+   * after BOTH the append and the reload succeed — so a reload failure (with the append already
+   * written) keeps the drawer open rather than hiding the now-stale view behind a "done" state.
+   */
   const onSignHandoff = async (cutoffMin: number, narrative: string) => {
     if (!day || saving) return; // mirror onPick's guard: re-entrancy + not-loaded
     setSaving(true);
@@ -136,14 +142,14 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
       const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${cutoffMin}-handoff-${Date.now()}`;
       const note = `Shift handoff @ ${String(Math.floor(cutoffMin / 60)).padStart(2, '0')}:${String(cutoffMin % 60).padStart(2, '0')}${narrative ? ` — ${narrative}` : ''}`;
       await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin: cutoffMin, kind: 'milestone', note });
-      setHandoffOpen(false);
       const v = await load();
       if (!mountedRef.current) return;
       setView(v);
       setDay(v ? timelineToRigDay(v) : null);
       setWarnings(v?.warnings ?? []);
+      setHandoffOpen(false);
     } catch {
-      // Append failed — keep the drawer open so the operator can retry.
+      // Append or reload failed — keep the drawer open so the operator can retry.
     } finally {
       if (mountedRef.current) setSaving(false);
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { deriveHandoff, type TicketView } from '@valor/core';
 
@@ -11,6 +11,7 @@ export interface HandoffDrawerProps {
   onClose: () => void;
 }
 
+/** Format a minute-of-day count as zero-padded `HH:MM` (negatives clamp to 0; fractions round). */
 function fmtHm(totalMin: number): string {
   const m = Math.max(0, Math.round(totalMin));
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -26,11 +27,23 @@ export function HandoffDrawer({ open, view, onSign, onClose }: HandoffDrawerProp
   // Default to the latest logged event — the handoff is "as of now", so the still-open
   // activity (the last block, projected to end-of-day) correctly carries forward.
   const defaultCutoff = useMemo(
-    () => view.timeline.reduce((m, e) => Math.max(m, e.atMin), 0) || 1440,
+    () => (view.timeline.length ? view.timeline.reduce((m, e) => Math.max(m, e.atMin), 0) : 1440),
     [view.timeline],
   );
   const [cutoff, setCutoff] = useState<number>(defaultCutoff);
   const [narrative, setNarrative] = useState('');
+
+  // The parent keeps this mounted while closed (it just returns null), so the ephemeral review
+  // state survives across opens. Reset on each closed→open edge — otherwise a stale cutoff or
+  // narrative (including one left over after the timeline changed) would resurface on reopen.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setCutoff(defaultCutoff);
+      setNarrative('');
+    }
+    wasOpen.current = open;
+  }, [open, defaultCutoff]);
 
   const handoff = useMemo(() => deriveHandoff(view, cutoff), [view, cutoff]);
 
