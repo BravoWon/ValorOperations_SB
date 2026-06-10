@@ -57,6 +57,7 @@ export function deriveMorningReport(view: TicketView, rules: NotificationRules =
     flaggedQc,
     journal,
     notifications,
-    warnings: [...viewWarnings, ...accounting.warnings],
+    // De-dupe: both layers can warn about the same issue (e.g. an unknown Bank code).
+    warnings: [...new Set([...viewWarnings, ...accounting.warnings])],
   };
 }

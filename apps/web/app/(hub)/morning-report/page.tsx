@@ -31,11 +31,12 @@ export default function MorningReportPage() {
       const repo = getRepo();
       let graph: CodedGraph = await repo.loadCodedGraph(DEMO_ORG_ID);
       let usingSeed = false;
-      if (objectsByType(graph, 'section').length === 0) {
+      let secs = objectsByType(graph, 'section');
+      if (secs.length === 0) {
         graph = DEFAULT_CODED_GRAPH;
         usingSeed = true;
+        secs = objectsByType(graph, 'section');
       }
-      const secs = objectsByType(graph, 'section');
       const derived = await Promise.all(
         secs.map(async (section): Promise<MorningReportSection | null> => {
           let events: TimelineEvent[] = await repo.loadTimeline(DEMO_ORG_ID, section.id);
