@@ -19,7 +19,18 @@ const KIND_LABEL: Record<'note' | 'hse' | 'milestone', string> = {
 /** Print-clean morning report: one block per section. Solid fills; no glassmorphism. */
 export function MorningReportView({ sections }: MorningReportViewProps) {
   return (
-    <div className="space-y-8">
+    <div className="report-print-root space-y-8">
+      {/* In print, sections go white — remap the dark-theme color tokens at the report root
+          so inherited cream text and token colors (muted/green) stay readable on paper. */}
+      <style>{`@media print {
+        .report-print-root {
+          --cream: 0 0% 5%;
+          --muted-foreground: 0 0% 32%;
+          --green: 150 60% 22%;
+          --red: 0 70% 38%;
+          color: #000;
+        }
+      }`}</style>
       {sections.map((s) => (
         <section
           key={s.ticketId}
