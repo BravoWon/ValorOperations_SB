@@ -17,6 +17,7 @@ import {
   type TimelineEvent,
   type BankCode,
   type RigDay,
+  type TicketView,
 } from '@valor/core';
 import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
 import { PageHeader } from '@/components/ui/page-header';
@@ -27,6 +28,7 @@ import { RigDayLanes } from '@/components/rig-day-lanes';
 import { TimeAccountingRail } from '@/components/time-accounting-rail';
 import { NotificationsPanel } from '@/components/notifications-panel';
 import { BankSearchPalette } from '@/components/bank-search-palette';
+import { HandoffDrawer } from '@/components/handoff-drawer';
 
 const BTN_CLASS =
   'flex items-center gap-1.5 rounded-md border border-gold/30 bg-gold/[0.06] px-3 py-1.5 font-mono text-[0.6875rem] uppercase tracking-wider text-gold-light transition-colors hover:bg-gold/[0.12] disabled:opacity-40';
@@ -39,6 +41,8 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [view, setView] = useState<TicketView | null>(null);
+  const [handoffOpen, setHandoffOpen] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -67,14 +71,16 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
     // Reset on ticket change (client-side nav re-uses this instance): clears stale data so the
     // previous ticket never flashes, and `!day` blocks onPick until the new load resolves.
     setLoaded(false);
+    setView(null);
     setDay(null);
     setWarnings([]);
     setFailed(false);
     load()
-      .then((view) => {
+      .then((v) => {
         if (!active) return;
-        setDay(view ? timelineToRigDay(view) : null);
-        setWarnings(view?.warnings ?? []);
+        setView(v);
+        setDay(v ? timelineToRigDay(v) : null);
+        setWarnings(v?.warnings ?? []);
         setLoaded(true);
       })
       .catch(() => {
@@ -111,12 +117,33 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
       // partial failure (append ok, reload failed) can't mint the same id twice.
       const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${atMin}-${code.code}-${Date.now()}`;
       await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin, kind: 'activity', code: code.code });
-      const view = await load();
+      const v = await load();
       if (!mountedRef.current) return;
-      setDay(view ? timelineToRigDay(view) : null);
-      setWarnings(view?.warnings ?? []);
+      setView(v);
+      setDay(v ? timelineToRigDay(v) : null);
+      setWarnings(v?.warnings ?? []);
     } catch {
       // Append failed (e.g. the Supabase scaffold throws) — leave the view as-is.
+    } finally {
+      if (mountedRef.current) setSaving(false);
+    }
+  };
+
+  const onSignHandoff = async (cutoffMin: number, narrative: string) => {
+    if (!day || saving) return; // mirror onPick's guard: re-entrancy + not-loaded
+    setSaving(true);
+    try {
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev-${cutoffMin}-handoff-${Date.now()}`;
+      const note = `Shift handoff @ ${String(Math.floor(cutoffMin / 60)).padStart(2, '0')}:${String(cutoffMin % 60).padStart(2, '0')}${narrative ? ` — ${narrative}` : ''}`;
+      await getRepo().appendTimelineEvent({ id, orgId: DEMO_ORG_ID, ticketId, atMin: cutoffMin, kind: 'milestone', note });
+      setHandoffOpen(false);
+      const v = await load();
+      if (!mountedRef.current) return;
+      setView(v);
+      setDay(v ? timelineToRigDay(v) : null);
+      setWarnings(v?.warnings ?? []);
+    } catch {
+      // Append failed — keep the drawer open so the operator can retry.
     } finally {
       if (mountedRef.current) setSaving(false);
     }
@@ -134,9 +161,14 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
               <ArrowLeft className="h-3 w-3" /> Board
             </Link>
             {day && (
-              <button type="button" onClick={() => setPaletteOpen(true)} disabled={saving} className={BTN_CLASS}>
-                <Search className="h-3.5 w-3.5" strokeWidth={2} /> {saving ? 'Logging…' : 'Log activity'}
-              </button>
+              <>
+                <button type="button" onClick={() => setPaletteOpen(true)} disabled={saving} className={BTN_CLASS}>
+                  <Search className="h-3.5 w-3.5" strokeWidth={2} /> {saving ? 'Logging…' : 'Log activity'}
+                </button>
+                <button type="button" onClick={() => setHandoffOpen(true)} disabled={saving} className={BTN_CLASS}>
+                  Sign handoff
+                </button>
+              </>
             )}
           </div>
         }
@@ -171,6 +203,7 @@ export function TicketTimeView({ ticketId }: { ticketId: string }) {
       )}
 
       <BankSearchPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} codes={bankCodes} onSelect={onPick} />
+      {view && <HandoffDrawer open={handoffOpen} view={view} onSign={onSignHandoff} onClose={() => setHandoffOpen(false)} />}
     </div>
   );
 }

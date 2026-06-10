@@ -20,4 +20,10 @@ describe('TicketTimeView', () => {
     expect(await findByText(/not found/i)).toBeTruthy();
     expect(queryByRole('button', { name: /log activity/i })).toBeNull();
   });
+
+  it('offers "Sign handoff" once a ticket loads', async () => {
+    const { findByText, getByRole } = render(<TicketTimeView ticketId={SEED_TICKET_ID} />);
+    await findByText(/12¼" Intermediate/);
+    expect(getByRole('button', { name: /sign handoff/i })).toBeTruthy();
+  });
 });
