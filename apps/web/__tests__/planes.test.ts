@@ -7,7 +7,7 @@ import { ALL_ROLES, ROLE_RANK } from '@/lib/role';
 // (Started as the pre-Slice-A flat nav; each slice that adds a route also adds it here.)
 const EXISTING_NAV = [
   '/dashboard', '/jobs', '/tickets', '/rig-day', '/assets',
-  '/day', '/tools/hydraulics', '/tools/directional',
+  '/day', '/morning-report', '/tools/hydraulics', '/tools/directional',
   '/data-manager', '/template-builder', '/bank-editor', '/office-ops', '/data-studio', '/local-db',
 ];
 
