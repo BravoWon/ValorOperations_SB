@@ -12,13 +12,23 @@ import { updateSession } from '@/lib/supabase/middleware-client';
 export async function middleware(request: NextRequest) {
   if (!supabaseConfigured()) return NextResponse.next();
 
-  const { response, user } = await updateSession(request);
-  if (decideAuth(true, Boolean(user), request.nextUrl.pathname) === 'redirect') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  try {
+    const { response, user } = await updateSession(request);
+    if (decideAuth(true, Boolean(user), request.nextUrl.pathname) === 'redirect') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    return response;
+  } catch {
+    // Session refresh failed (network/runtime) — treat as unauthenticated.
+    if (decideAuth(true, false, request.nextUrl.pathname) === 'redirect') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
   }
-  return response;
 }
 
 export const config = {

@@ -20,6 +20,7 @@ export const PUBLIC_PATHS = ['/login', '/auth/callback'];
 /** Pure middleware decision: should this request be redirected to /login? */
 export function decideAuth(configured: boolean, hasSession: boolean, pathname: string): 'pass' | 'redirect' {
   if (!configured) return 'pass';
-  if (PUBLIC_PATHS.includes(pathname)) return 'pass';
+  const path = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  if (PUBLIC_PATHS.includes(path)) return 'pass';
   return hasSession ? 'pass' : 'redirect';
 }

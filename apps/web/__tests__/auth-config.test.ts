@@ -42,4 +42,7 @@ describe('decideAuth', () => {
   it('passes a protected path with a session', () => {
     expect(decideAuth(true, true, '/tickets')).toBe('pass');
   });
+  it('treats a public path with a trailing slash as public', () => {
+    expect(decideAuth(true, false, '/auth/callback/')).toBe('pass');
+  });
 });

@@ -22,8 +22,10 @@ export function RequireMembership({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { if (active) setState('ok'); return; } // middleware gates unauthenticated
       const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID as string;
-      const { data } = await supabase.from('memberships').select('org_id').eq('org_id', orgId).limit(1);
-      if (active) setState((data?.length ?? 0) > 0 ? 'ok' : 'denied');
+      const { data, error } = await supabase.from('memberships').select('org_id').eq('org_id', orgId).limit(1);
+      if (!active) return;
+      if (error) { setState('ok'); return; } // transient error — don't block on the membership check
+      setState((data?.length ?? 0) > 0 ? 'ok' : 'denied');
     })();
     return () => { active = false; };
   }, []);

@@ -19,7 +19,13 @@ function CallbackInner() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
+    let supabase: ReturnType<typeof createSupabaseBrowserClient>;
+    try {
+      supabase = createSupabaseBrowserClient();
+    } catch {
+      setError(true);
+      return;
+    }
     supabase.auth
       .exchangeCodeForSession(window.location.href)
       .then(({ error: err }: { error: { message: string } | null }) => {
