@@ -29,7 +29,7 @@ At **portal.azure.com → Microsoft Entra ID → App registrations → New regis
   - **Directory (tenant) ID** → used in the Tenant URL (Part B).
 - [ ] **Certificates & secrets → Client secrets → New client secret** → pick an expiry → **Add**.
   - ⚠️ **Copy the `Value` column, NOT `Secret ID`.** The Value is shown only once.
-- [ ] **(Recommended, security) Manifest → add the optional `xms_edov` claim** so Supabase can distinguish verified vs unverified emails (guards against email-domain impersonation — see the Supabase doc's "Unverified Email Domain" note).
+- [ ] **(Recommended, security) Add the optional `xms_edov` claim** so Supabase can distinguish verified vs unverified email domains (guards against impersonation — see the Supabase doc's "Unverified Email Domain" note). Path: **App registration → Token configuration → Add optional claim → Token type: ID → tick `xms_edov` → Add** (accept the prompt to enable the required Microsoft Graph permission). Verify `xms_edov` then appears in the **Token configuration** list.
 - [ ] **API permissions:** default `User.Read` (openid/profile/email) is enough — the app requests `scopes: 'email'`. If your tenant enforces it, click **Grant admin consent for jtech.ai**.
 
 ---
@@ -71,7 +71,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon / publishable key>
 NEXT_PUBLIC_SUPABASE_ORG_ID=00000000-0000-0000-0000-000000000001
 ```
 
-- [ ] Anon key: **Project Settings → API → Project API keys → `anon` `public`** (or `npx supabase projects api-keys --project-ref ekswyggelycioeupgfil`). **Never** use `service_role` here.
+- [ ] Anon key: **Project Settings → API → Project API keys → `anon` `public`** (or `supabase projects api-keys --project-ref ekswyggelycioeupgfil` — prefix with `npx` if the CLI isn't installed globally). It's the JWT labeled `anon` `public` (starts with `eyJ`). **Never** use the `service_role` key here — if a key is labeled `service_role`, do not use it.
 - [ ] All three present → the app flips to `SupabaseRepository` + the real auth gate. Missing any → stays the open mock demo.
 
 ---
@@ -95,6 +95,7 @@ RLS denies everything until a `memberships` row exists, and you can't create one
 ## Part E — Verify
 
 - [ ] Unauthenticated visit → redirected to `/login`.
+- [ ] During sign-in the browser briefly hits `https://ekswyggelycioeupgfil.supabase.co/auth/v1/callback` (check DevTools → Network if sign-in fails — a redirect-URI mismatch is the most common Azure misconfig).
 - [ ] Sign in with Microsoft → `/auth/callback` → app.
 - [ ] A Microsoft account **without** a membership → `NotProvisioned`; **with** → full app, scoped to org A.
 - [ ] Sign out → back to `/login`.
@@ -105,5 +106,5 @@ RLS denies everything until a `memberships` row exists, and you can't create one
 
 - **Local dev:** Azure rejects `127.0.0.1` as a redirect — use `http://localhost:3000` (already allowlisted), not the IP.
 - **Anon key only** in `NEXT_PUBLIC_*`. RLS is the real boundary; the middleware gate is defense-in-depth.
-- **The seeded `vep-demo@example.com`** (email/password) is **not** the SSO path — SSO users come from Entra. It exists only for the earlier RLS validation.
+- **No email/password login** — sign-in is Microsoft SSO only. (A one-off `vep-demo@example.com` user may still exist in the live project's **Authentication → Users** from the earlier RLS validation; it isn't used by the app and can be deleted. It is not a repo seed.)
 - **Two build targets:** the configured (Vercel) build runs the real auth; the `STATIC_EXPORT=true` build runs unconfigured (mock + the client `AuthGate` demo-cookie gate). They're mutually exclusive by deploy config.
