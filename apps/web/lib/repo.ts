@@ -1,6 +1,7 @@
 import { MockRepository, DEMO_ORG_ID, type Repository } from '@valor/core';
 import { supabaseConfigured } from './supabase/config';
 export { supabaseConfigured };
+import { resolveActiveOrgClient } from './active-org';
 
 // Memoized in-process singleton for the data layer. By default this is the
 // in-memory MockRepository — the running app is byte-for-byte unchanged unless
@@ -27,9 +28,9 @@ function createRepo(): Repository {
     const { createSupabaseBrowserClient } = require('./supabase/browser') as typeof import('./supabase/browser');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { SupabaseRepository } = require('./supabase-repository') as typeof import('./supabase-repository');
-    // Guaranteed present (and intended to be the org's UUID) by the gate above.
+    // Resolves from document.cookie (active-org cookie) with env-var fallback.
     // No DEMO_ORG_ID fallback here: that would reintroduce the uuid mismatch.
-    const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID as string;
+    const orgId = resolveActiveOrgClient();
     return new SupabaseRepository(createSupabaseBrowserClient(), orgId);
   }
   return new MockRepository();

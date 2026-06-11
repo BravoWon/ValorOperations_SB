@@ -1,5 +1,6 @@
 import { MockRepository, type Repository } from '@valor/core';
 import { supabaseConfigured } from './supabase/config';
+import { ACTIVE_ORG_COOKIE, readActiveOrgCookie } from './active-org';
 
 /** Server-component data layer: builds a SupabaseRepository over the request's
  *  session (cookies via next/headers) when configured; else the mock.
@@ -11,7 +12,9 @@ export async function getServerRepo(): Promise<Repository> {
   if (supabaseConfigured()) {
     const { createSupabaseServerClient } = await import('./supabase/server');
     const { SupabaseRepository } = await import('./supabase-repository');
-    const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID as string;
+    const { cookies } = await import('next/headers');
+    const store = await cookies();
+    const orgId = readActiveOrgCookie(store.get(ACTIVE_ORG_COOKIE)?.value);
     return new SupabaseRepository(await createSupabaseServerClient(), orgId);
   }
   return new MockRepository();
