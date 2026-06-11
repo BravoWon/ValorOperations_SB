@@ -58,8 +58,13 @@ function makeClient(result: { data: unknown; error: unknown } = { data: [], erro
     return builder;
   });
 
-  const client = { from } as unknown as SupabaseClient;
-  return { client, calls, setResult };
+  const rpcCalls: { name: string; params: unknown }[] = [];
+  const rpc = vi.fn((name: string, params: unknown) => {
+    rpcCalls.push({ name, params });
+    return Promise.resolve(nextResult);
+  });
+  const client = { from, rpc } as unknown as SupabaseClient;
+  return { client, calls, rpcCalls, setResult };
 }
 
 const lastCall = (calls: RecordedCall[], table: string) =>
@@ -225,5 +230,38 @@ describe('SupabaseRepository (mocked client)', () => {
     const repo = new SupabaseRepository(client, ORG);
     await expect(repo.saveTemplateBundles([])).rejects.toThrow(/mock-only/i);
     await expect(repo.loadTemplateBundles()).rejects.toThrow(/mock-only/i);
+  });
+
+  it('listOrgMembers() calls the org_members RPC and maps rows to OrgMember[]', async () => {
+    const { client, rpcCalls, setResult } = makeClient();
+    setResult({ data: [{ user_id: 'u1', email: 'a@x.com', role: 'owner', created_at: '2026-01-01T00:00:00Z' }], error: null });
+    const repo = new SupabaseRepository(client, ORG);
+    const out = await repo.listOrgMembers('org-1');
+    expect(rpcCalls.at(-1)).toEqual({ name: 'org_members', params: { p_org_id: 'org-1' } });
+    expect(out).toEqual([{ userId: 'u1', email: 'a@x.com', role: 'owner', createdAt: '2026-01-01T00:00:00Z' }]);
+  });
+
+  it('inviteMember() calls the invite_member RPC and returns the status', async () => {
+    const { client, rpcCalls, setResult } = makeClient();
+    setResult({ data: 'added', error: null });
+    const repo = new SupabaseRepository(client, ORG);
+    const res = await repo.inviteMember('org-1', 'New@x.com', 'viewer');
+    expect(rpcCalls.at(-1)).toEqual({ name: 'invite_member', params: { p_org_id: 'org-1', p_email: 'New@x.com', p_role: 'viewer' } });
+    expect(res).toBe('added');
+  });
+
+  it('setMemberRole() and removeMember() call their RPCs', async () => {
+    const { client, rpcCalls } = makeClient({ data: null, error: null });
+    const repo = new SupabaseRepository(client, ORG);
+    await repo.setMemberRole('org-1', 'u2', 'admin');
+    expect(rpcCalls.at(-1)).toEqual({ name: 'set_member_role', params: { p_org_id: 'org-1', p_user_id: 'u2', p_role: 'admin' } });
+    await repo.removeMember('org-1', 'u2');
+    expect(rpcCalls.at(-1)).toEqual({ name: 'remove_member', params: { p_org_id: 'org-1', p_user_id: 'u2' } });
+  });
+
+  it('surfaces an RPC error via fail()', async () => {
+    const { client } = makeClient({ data: null, error: { message: 'not authorized' } });
+    const repo = new SupabaseRepository(client, ORG);
+    await expect(repo.listOrgMembers('org-1')).rejects.toThrow(/listOrgMembers/);
   });
 });

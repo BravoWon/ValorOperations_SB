@@ -35,6 +35,7 @@ import type { WellSetup } from '@valor/core';
 import type { RigDay } from '@valor/core';
 import type { CodedObject, Relation, CodedGraph, TimelineEvent, ObjectType } from '@valor/core';
 import type { BankCode } from '@valor/core';
+import type { OrgMember, InviteResult, Role } from '@valor/core';
 
 /**
  * SupabaseRepository — the real backend adapter (SCAFFOLD).
@@ -623,6 +624,35 @@ export class SupabaseRepository implements Repository {
       const { error } = await this.client.from(table).delete().eq('org_id', this.orgId);
       if (error) this.fail(error, `resetLocalDb(${table})`);
     }
+  }
+
+  // --- member provisioning (Auth H3a — thin .rpc() wrappers) -------------------
+  // Unlike the .from() reads above (which orgScope() pins to this.orgId), these
+  // pass orgId straight through as p_org_id: the RPCs are explicitly org-
+  // parameterized and enforce is_org_admin(p_org_id) server-side. Callers pass
+  // the active org (H2), which equals this.orgId on the configured path.
+
+  async listOrgMembers(orgId: string): Promise<OrgMember[]> {
+    const { data, error } = await this.client.rpc('org_members', { p_org_id: orgId });
+    if (error) this.fail(error, 'listOrgMembers');
+    return ((data ?? []) as { user_id: string; email: string; role: Role; created_at: string }[])
+      .map((r) => ({ userId: r.user_id, email: r.email, role: r.role, createdAt: r.created_at }));
+  }
+
+  async inviteMember(orgId: string, email: string, role: Role): Promise<InviteResult> {
+    const { data, error } = await this.client.rpc('invite_member', { p_org_id: orgId, p_email: email, p_role: role });
+    if (error) this.fail(error, 'inviteMember');
+    return data as InviteResult;
+  }
+
+  async setMemberRole(orgId: string, userId: string, role: Role): Promise<void> {
+    const { error } = await this.client.rpc('set_member_role', { p_org_id: orgId, p_user_id: userId, p_role: role });
+    if (error) this.fail(error, 'setMemberRole');
+  }
+
+  async removeMember(orgId: string, userId: string): Promise<void> {
+    const { error } = await this.client.rpc('remove_member', { p_org_id: orgId, p_user_id: userId });
+    if (error) this.fail(error, 'removeMember');
   }
 
   // --- coded-object graph (Slice B is mock-only; cloud graph tables are a later step) ---
