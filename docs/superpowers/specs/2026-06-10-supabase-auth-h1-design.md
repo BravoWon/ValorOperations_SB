@@ -25,7 +25,7 @@ The web app does not yet *use* this. Today:
    - **H1 — Auth foundation** (this spec): SSO sign-in/out, callback, session, route gating, session-aware data layer, "not provisioned" state.
    - **H2 — Active-org context + switcher** (later): memberships → active org, replacing the single env `ORG_ID`.
    - **H3 — Admin provisioning UI** (later): invite/allowlist users, manage memberships/roles in-app (replacing SQL seeding).
-3. **Architecture: client-side `@supabase/ssr`** — `createBrowserClient` (cookie session), a `'use client'` `/auth/callback` page (not a server route handler, so static export still builds), middleware for session refresh + gating that is a no-op when Supabase is unconfigured, and `repo.ts` switched to the session-aware browser client. Minimal refactor of the all-`'use client'` app; RLS works via the user's JWT; both build targets stay green.
+3. **Architecture: hybrid `@supabase/ssr`** (the standard Next App Router pattern). The app is a mix of client and server components: ~6 components fetch via `getRepo()` **server-side** (hub `layout.tsx` + `assets`/`jobs`/`wells/[id]`/`wells/[id]/setup` pages), 3 dynamic routes use **`generateStaticParams`** (build-time), and the rest fetch in `'use client'` components. So a single browser (cookie) client is insufficient. H1 adds **both** a browser client (client components) and a server client (server components, cookies via `next/headers`), splits the factory into `getRepo()` (client) + `getServerRepo()` (async, server), uses a `'use client'` `/auth/callback` page (not a route handler — static export still builds) and middleware for session refresh + gating that no-ops when Supabase is unconfigured. RLS works via the user's JWT in both contexts; both build targets stay green.
 
 ## Prerequisites (external — user/Entra-admin provided)
 
@@ -38,7 +38,8 @@ These gate live end-to-end testing, not the code:
 ## Architecture & Components
 
 ### New files
-- **`apps/web/lib/supabase/browser.ts`** — `createSupabaseBrowserClient()` using `@supabase/ssr` `createBrowserClient` with `NEXT_PUBLIC_SUPABASE_URL` + anon key. Cookie-based session; memoized per browser.
+- **`apps/web/lib/supabase/browser.ts`** — `createSupabaseBrowserClient()` using `@supabase/ssr` `createBrowserClient` with `NEXT_PUBLIC_SUPABASE_URL` + anon key. Cookie-based session; memoized per browser. **Client components only.**
+- **`apps/web/lib/supabase/server.ts`** — `createSupabaseServerClient()` (async) using `@supabase/ssr` `createServerClient` with the `next/headers` `cookies()` adapter (Next 15 `cookies()` is async). **Server components only.** Reads the request's session cookies so server-side queries run as the signed-in user.
 - **`apps/web/lib/supabase/middleware-client.ts`** — `updateSession(request: NextRequest)` using `createServerClient` with the request/response cookie adapter; calls `getUser()` to refresh, returns `{ response, user }` for `middleware.ts`.
 - **`apps/web/app/auth/callback/page.tsx`** — `'use client'`. On mount: `supabase.auth.exchangeCodeForSession(window.location.href)` (PKCE), then `router.replace(next ?? '/')`. Renders a "Signing you in…" state and an error state with a "Back to sign in" link. A **page, not a route handler**, so `output: 'export'` still builds.
 - **`apps/web/lib/auth.ts`** — `signInWithMicrosoft(next?)` (`signInWithOAuth({ provider: 'azure', options: { redirectTo: <origin>/auth/callback?next=… , scopes: 'email' } })`), `signOut()`, and a `useSession()` hook (subscribes to `onAuthStateChange`, exposes `{ session, user, loading }`).
@@ -47,7 +48,9 @@ These gate live end-to-end testing, not the code:
 ### Changed files
 - **`apps/web/app/login/page.tsx`** — replace the password form with a "Sign in with Microsoft" button → `signInWithMicrosoft()`, keeping the existing brand/card styling. When Supabase is **unconfigured** (mock mode), render a "Continue (demo mode)" affordance that sets the existing demo cookie, so the static demo flow is preserved.
 - **`apps/web/middleware.ts`** — new logic: if Supabase **unconfigured** → `NextResponse.next()` (open demo, unchanged behavior); else call `updateSession(request)` and, when there is no user and the path is not public (`/login`, `/auth/callback`, `/api`, `_next`/static, files), redirect to `/login`. Keep the matcher. Extract the pure branch decision into a testable helper `decideAuth(configured, hasSession, pathname)`.
-- **`apps/web/lib/repo.ts`** — in the configured branch, construct the client via `createSupabaseBrowserClient()` (session-aware) instead of the plain anon `createClient`. The `SupabaseRepository` then issues every request as the signed-in user, so RLS serves their org. The gate (URL + anon key + UUID `ORG_ID`) is unchanged; remove the "anon singleton / RLS returns no rows" limitation comment.
+- **`apps/web/lib/repo.ts`** — keep `getRepo(): Repository` (client/browser path): configured branch builds the `SupabaseRepository` over `createSupabaseBrowserClient()` (session-aware) instead of the plain anon `createClient`. **Add `getServerRepo(): Promise<Repository>`** (server path): configured branch builds the `SupabaseRepository` over `await createSupabaseServerClient()`; unconfigured → `MockRepository`. Both issue requests as the signed-in user → RLS serves their org. The gate (`supabaseConfigured()`: URL + anon key + UUID `ORG_ID`) is shared/unchanged; remove the "anon singleton / RLS returns no rows" limitation comment.
+- **Six server-component call sites switch `await getRepo()` → `await getServerRepo()`:** `app/(hub)/layout.tsx`, `app/(hub)/assets/page.tsx`, `app/(hub)/jobs/page.tsx`, `app/(hub)/wells/[wellId]/page.tsx`, `app/(hub)/wells/[wellId]/setup/page.tsx`, and the `generateStaticParams` in `app/(hub)/tickets/[ticketId]/page.tsx`. (Client components keep `getRepo()`.)
+- **`generateStaticParams` gating (3 routes:** `tickets/[ticketId]`, `wells/[wellId]`, `wells/[wellId]/setup`) — extract a small helper so each returns `[]` when `supabaseConfigured()` (can't/shouldn't enumerate per-user ids at build with no session → route renders dynamically per-request with the user's cookies), and enumerates from the repo otherwise (static export / mock). This keeps `STATIC_EXPORT=true` (mock, enumerates) and configured Vercel (dynamic) both correct.
 - **Hub layout** (`apps/web/app/(hub)/layout.tsx`) — wrap children in a new thin **client** component `components/require-membership.tsx` (`<RequireMembership>`). When Supabase is configured and a session exists, it queries `memberships` self-select (RLS-allowed) for a row in `ORG_ID`; none → render `<NotProvisioned/>` instead of the app. In mock mode (or no session) it passes children through untouched. Keeping it a client component avoids putting the session/`memberships` query in the server-rendered layout.
 
 ## Data flow
@@ -56,7 +59,7 @@ These gate live end-to-end testing, not the code:
 1. Unauthenticated request → middleware (no user) → redirect `/login`.
 2. `/login` → "Sign in with Microsoft" → `signInWithOAuth({ provider: 'azure' })` → Microsoft sign-in → Supabase `/auth/v1/callback` → app `/auth/callback?code=…`.
 3. `/auth/callback` (`'use client'`) → `exchangeCodeForSession` → session cookies set → `router.replace('/')`.
-4. App pages → `getRepo()` → `SupabaseRepository` over the session browser client → queries carry the user JWT → RLS returns the user's org data.
+4. App pages → server components use `getServerRepo()` (server client, request cookies), client components use `getRepo()` (browser client) → both `SupabaseRepository` over a session client → queries carry the user JWT → RLS returns the user's org data. Middleware refreshes the session cookie each request so the server client sees a fresh session.
 5. Provisioning guard: signed-in user with no membership in `ORG_ID` → `<NotProvisioned/>`.
 6. Sign out → `supabase.auth.signOut()` → cookies cleared → middleware → `/login`.
 
@@ -82,11 +85,13 @@ These gate live end-to-end testing, not the code:
 **Component/unit (Vitest/jsdom; mock the browser client):**
 - `/login`: renders "Sign in with Microsoft" when configured and calls `signInWithMicrosoft` on click; renders the demo affordance when unconfigured.
 - `/auth/callback`: calls `exchangeCodeForSession` on mount; redirects on success; error state on failure.
-- `repo.ts` factory: extend the existing gate test — configured branch builds the session client (not plain anon); unconfigured → `MockRepository`.
+- `repo.ts` factory: keep the existing `supabaseConfigured()` gate tests (unchanged); add that `getServerRepo()` returns `MockRepository` when unconfigured. The **configured** construction (browser/server clients) is **not** unit-tested — it lazy-`require`s/imports the bundler-only `@supabase/ssr` and (server) `next/headers` cookies, which don't resolve under vitest; it is covered by typecheck + both builds, consistent with the existing test's rationale.
 - `<NotProvisioned/>`: renders the state + signs out on click.
+- `<RequireMembership/>`: passes children through in mock mode / no session; with a session, queries `memberships` (mock the browser client) → renders children when a row in `ORG_ID` exists, `<NotProvisioned/>` when not.
 - `decideAuth(configured, hasSession, pathname)`: configured + no session + protected → redirect; unconfigured → pass; public paths → pass.
+- `staticParamsFor(...)` gating helper: returns `[]` when configured; enumerates the given ids otherwise.
 
-**Builds:** both typechecks 0; normal build **and** `STATIC_EXPORT=true` exit 0 (the callback page + middleware must not break export) — the same gate G2 passed.
+**Builds:** both typechecks 0; normal build **and** `STATIC_EXPORT=true` exit 0 (the callback page + middleware must not break export) — the same gate G2 passed. Build-config assumption: the `STATIC_EXPORT=true` build runs **without** Supabase env (mock → `generateStaticParams` enumerates → full static export); the configured build runs on Vercel (server runtime → the 3 dynamic routes render per-request). These two modes are mutually exclusive by deploy config.
 
 **Manual E2E (documented; needs the live Azure provider):** real Microsoft sign-in end-to-end on a preview deploy → RLS-served data; a no-membership account → `<NotProvisioned/>`. SSO cannot be unit-tested without the live provider, so the plan documents this manual pass as the end-to-end gate.
 
