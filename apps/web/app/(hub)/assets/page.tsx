@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { MapPin, ChevronRight, Layers } from 'lucide-react';
-import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
+import { getServerRepo } from '@/lib/server-repo';
+import { DEMO_ORG_ID } from '@/lib/repo';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/states';
 
 export default async function AssetsPage() {
-  const tree = await getRepo().getAssetTree(DEMO_ORG_ID);
+  const tree = await (await getServerRepo()).getAssetTree(DEMO_ORG_ID);
 
   return (
     <div>

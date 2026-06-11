@@ -66,4 +66,11 @@ describe('getRepo() factory gate', () => {
     const { supabaseConfigured } = await import('@/lib/repo');
     expect(supabaseConfigured()).toBe(false);
   });
+
+  it('getServerRepo() returns MockRepository when unconfigured', async () => {
+    vi.resetModules();
+    const { getServerRepo } = await import('@/lib/server-repo');
+    const repo = await getServerRepo();
+    expect(repo.constructor.name).toBe('MockRepository');
+  });
 });

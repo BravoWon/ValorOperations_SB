@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, GitBranch, Layers, Ruler, PencilRuler } from 'lucide-react';
 import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
+import { getServerRepo } from '@/lib/server-repo';
 import { WellHeader } from '@/components/well-header';
 import { FormationsTable } from '@/components/formations-table';
 import { CasingTable } from '@/components/casing-table';
@@ -19,7 +20,7 @@ export async function generateStaticParams() {
 
 export default async function WellPage({ params }: { params: Promise<{ wellId: string }> }) {
   const { wellId } = await params;
-  const detail = await getRepo().getWellDetail(wellId);
+  const detail = await (await getServerRepo()).getWellDetail(wellId);
   if (!detail) notFound();
 
   return (
