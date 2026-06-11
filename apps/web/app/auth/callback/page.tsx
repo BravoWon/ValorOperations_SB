@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { supabaseConfigured } from '@/lib/supabase/config';
 
 const Pending = () => (
   <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Signing you in&hellip;</p>
@@ -19,6 +20,7 @@ function CallbackInner() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (!supabaseConfigured()) { setError(true); return; }
     let supabase: ReturnType<typeof createSupabaseBrowserClient>;
     try {
       supabase = createSupabaseBrowserClient();

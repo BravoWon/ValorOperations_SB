@@ -12,7 +12,7 @@ import { NotProvisioned } from '@/components/not-provisioned';
  * session, which middleware already handles) it passes children through.
  */
 export function RequireMembership({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<'checking' | 'ok' | 'denied'>(supabaseConfigured() ? 'checking' : 'ok');
+  const [state, setState] = useState<'checking' | 'ok' | 'denied' | 'error'>(supabaseConfigured() ? 'checking' : 'ok');
 
   useEffect(() => {
     if (!supabaseConfigured()) return;
@@ -24,13 +24,20 @@ export function RequireMembership({ children }: { children: React.ReactNode }) {
       const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID as string;
       const { data, error } = await supabase.from('memberships').select('org_id').eq('org_id', orgId).limit(1);
       if (!active) return;
-      if (error) { setState('ok'); return; } // transient error — don't block on the membership check
+      if (error) { setState('error'); return; }
       setState((data?.length ?? 0) > 0 ? 'ok' : 'denied');
     })();
     return () => { active = false; };
   }, []);
 
   if (state === 'checking') return null;
+  if (state === 'error') {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6 py-12 text-sm text-muted-foreground">
+        Unable to verify access right now &mdash; please retry.
+      </main>
+    );
+  }
   if (state === 'denied') return <NotProvisioned />;
   return <>{children}</>;
 }

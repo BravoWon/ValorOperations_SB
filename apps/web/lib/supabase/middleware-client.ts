@@ -20,6 +20,12 @@ export async function updateSession(request: NextRequest): Promise<{ response: N
       },
     },
   );
-  const { data } = await supabase.auth.getUser();
-  return { response, user: data.user };
+  let user: unknown = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    user = null;
+  }
+  return { response, user };
 }

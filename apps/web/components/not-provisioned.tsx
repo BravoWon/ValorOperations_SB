@@ -12,7 +12,7 @@ export function NotProvisioned() {
         <p className="mt-2 text-sm text-muted-foreground">Ask an administrator to add you to the organization, then sign in again.</p>
         <button
           type="button"
-          onClick={() => signOut().then(() => window.location.assign('/login'))}
+          onClick={() => { void signOut().finally(() => window.location.assign('/login')); }}
           className="mt-6 inline-block rounded-md border border-gold/40 bg-gold/[0.06] px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-wider text-gold-light transition-colors hover:bg-gold/[0.12]"
         >
           Sign out

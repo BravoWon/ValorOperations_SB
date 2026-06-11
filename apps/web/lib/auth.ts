@@ -8,7 +8,8 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 export async function signInWithMicrosoft(next = '/') {
   const supabase = createSupabaseBrowserClient();
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const redirectTo = `${origin}${base}/auth/callback?next=${encodeURIComponent(next)}`;
   return supabase.auth.signInWithOAuth({ provider: 'azure', options: { redirectTo, scopes: 'email' } });
 }
 

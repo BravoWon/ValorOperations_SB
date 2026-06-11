@@ -4,6 +4,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 const replace = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }), useSearchParams: () => new URLSearchParams('next=/tickets') }));
 
+vi.mock('@/lib/supabase/config', () => ({ supabaseConfigured: () => true }));
+
 const exchangeCodeForSession = vi.fn(async () => ({ error: null }));
 vi.mock('@/lib/supabase/browser', () => ({
   createSupabaseBrowserClient: () => ({ auth: { exchangeCodeForSession } }),
