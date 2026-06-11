@@ -1,4 +1,5 @@
-import type { JobStatus } from './enums';
+import type { JobStatus, Role } from './enums';
+import type { OrgMember, InviteResult } from './members/types';
 import type { Asset, Job, JobTemplate, JobWithRelations, TemplateFieldDef, TemplateStageDef, Well } from './types';
 import type { AssetTreeNode, WellDetail } from './views';
 import type { DashboardLayout } from './widgets/types';
@@ -62,4 +63,10 @@ export interface Repository {
   loadCodedGraph(orgId: string): Promise<import('./coded-object/types').CodedGraph>;
   appendTimelineEvent(event: Omit<import('./coded-object/types').TimelineEvent, 'seq'> & { seq?: number }): Promise<import('./coded-object/types').TimelineEvent>;
   loadTimeline(orgId: string, ticketId: string): Promise<import('./coded-object/types').TimelineEvent[]>;
+
+  // --- Org membership / provisioning (H3a) ---
+  listOrgMembers(orgId: string): Promise<OrgMember[]>;
+  inviteMember(orgId: string, email: string, role: Role): Promise<InviteResult>;
+  setMemberRole(orgId: string, userId: string, role: Role): Promise<void>;
+  removeMember(orgId: string, userId: string): Promise<void>;
 }
