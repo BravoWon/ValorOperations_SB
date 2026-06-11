@@ -5,22 +5,23 @@ import { supabaseConfigured } from '@/lib/supabase/config';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { NotProvisioned } from '@/components/not-provisioned';
 import { resolveActiveOrgClient, writeActiveOrgCookie } from '@/lib/active-org';
+import { isRole, type Role } from '@/lib/role';
 
-export interface OrgInfo { id: string; name: string; }
-interface ActiveOrgContextValue { orgs: OrgInfo[]; activeOrgId: string; setActiveOrg: (id: string) => void; }
+export interface OrgInfo { id: string; name: string; role: Role; }
+interface ActiveOrgContextValue { orgs: OrgInfo[]; activeOrgId: string; activeRole: Role; setActiveOrg: (id: string) => void; }
 
 const ActiveOrgContext = createContext<ActiveOrgContextValue | null>(null);
 export function useActiveOrg(): ActiveOrgContextValue | null { return useContext(ActiveOrgContext); }
 
 type State =
   | { kind: 'checking' }
-  | { kind: 'ok'; orgs: OrgInfo[]; activeOrgId: string }
+  | { kind: 'ok'; orgs: OrgInfo[]; activeOrgId: string; activeRole: Role }
   | { kind: 'denied' }
   | { kind: 'error' };
 
 // PostgREST embeds a to-one relation as an object, but the typed client can infer
 // an array — normalize both.
-type MembershipRow = { org_id: string; orgs: { name: string } | { name: string }[] | null };
+type MembershipRow = { org_id: string; role: string; orgs: { name: string } | { name: string }[] | null };
 
 /**
  * Evolves H1's RequireMembership: fetch the user's memberships (RLS-scoped to their
@@ -38,20 +39,20 @@ export function ActiveOrgProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       const supabase = createSupabaseBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { if (active) setState({ kind: 'ok', orgs: [], activeOrgId: '' }); return; } // middleware gates
-      const { data, error } = await supabase.from('memberships').select('org_id, orgs(name)');
+      if (!session) { if (active) setState({ kind: 'ok', orgs: [], activeOrgId: '', activeRole: 'viewer' }); return; } // middleware gates
+      const { data, error } = await supabase.from('memberships').select('org_id, role, orgs(name)');
       if (!active) return;
       if (error) { setState({ kind: 'error' }); return; }
       const orgs: OrgInfo[] = ((data ?? []) as unknown as MembershipRow[])
         .map((r) => {
           const org = Array.isArray(r.orgs) ? r.orgs[0] : r.orgs;
-          return { id: r.org_id, name: org?.name ?? r.org_id };
+          return { id: r.org_id, name: org?.name ?? r.org_id, role: isRole(r.role) ? r.role : 'viewer' };
         })
         .sort((a, b) => a.name.localeCompare(b.name));
       if (orgs.length === 0) { setState({ kind: 'denied' }); return; }
       const resolved = resolveActiveOrgClient();
       if (orgs.some((o) => o.id === resolved)) {
-        setState({ kind: 'ok', orgs, activeOrgId: resolved });
+        setState({ kind: 'ok', orgs, activeOrgId: resolved, activeRole: orgs.find((o) => o.id === resolved)?.role ?? 'viewer' });
         return;
       }
       // Active org isn't one of the user's — self-heal to their default, once.
@@ -89,7 +90,7 @@ export function ActiveOrgProvider({ children }: { children: React.ReactNode }) {
   }
   if (state.kind === 'denied') return <NotProvisioned />;
   return (
-    <ActiveOrgContext.Provider value={{ orgs: state.orgs, activeOrgId: state.activeOrgId, setActiveOrg }}>
+    <ActiveOrgContext.Provider value={{ orgs: state.orgs, activeOrgId: state.activeOrgId, activeRole: state.activeRole, setActiveOrg }}>
       {children}
     </ActiveOrgContext.Provider>
   );

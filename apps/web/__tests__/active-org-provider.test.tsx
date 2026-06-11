@@ -64,6 +64,11 @@ function Switcher() {
   );
 }
 
+function RoleConsumer() {
+  const ctx = useActiveOrg();
+  return <div>role:{ctx?.activeRole ?? 'none'}</div>;
+}
+
 it('passes children through in mock mode (unconfigured)', () => {
   supabaseConfigured.mockReturnValue(false);
   render(<ActiveOrgProvider><div>app</div></ActiveOrgProvider>);
@@ -104,6 +109,18 @@ it('errors (no reload loop) when the heal cookie write is blocked', async () => 
   render(<ActiveOrgProvider><Consumer /></ActiveOrgProvider>);
   await waitFor(() => expect(screen.getByText(/unable to verify access/i)).toBeInTheDocument());
   expect(reload).not.toHaveBeenCalled();
+});
+
+it("exposes the active org's role as activeRole", async () => {
+  rows = [{ org_id: 'org-a', role: 'admin', orgs: { name: 'A' } }]; // resolvedOrg defaults to 'org-a'
+  render(<ActiveOrgProvider><RoleConsumer /></ActiveOrgProvider>);
+  await waitFor(() => expect(screen.getByText('role:admin')).toBeInTheDocument());
+});
+
+it('defaults an unexpected role to viewer', async () => {
+  rows = [{ org_id: 'org-a', role: 'superuser', orgs: { name: 'A' } }];
+  render(<ActiveOrgProvider><RoleConsumer /></ActiveOrgProvider>);
+  await waitFor(() => expect(screen.getByText('role:viewer')).toBeInTheDocument());
 });
 
 it('setActiveOrg validates: ignores the same/unknown org, switches on a valid change', async () => {
