@@ -52,19 +52,28 @@ export function ActiveOrgProvider({ children }: { children: React.ReactNode }) {
       const resolved = resolveActiveOrgClient();
       if (orgs.some((o) => o.id === resolved)) {
         setState({ kind: 'ok', orgs, activeOrgId: resolved });
-      } else if (!healedRef.current) {
-        healedRef.current = true;
-        const first = orgs[0];
-        if (first) {
-          writeActiveOrgCookie(first.id);
-          window.location.reload();
-        }
+        return;
+      }
+      // Active org isn't one of the user's — self-heal to their default, once.
+      const first = orgs[0];
+      if (healedRef.current || !first) { setState({ kind: 'error' }); return; }
+      healedRef.current = true;
+      writeActiveOrgCookie(first.id);
+      // Only reload if the cookie actually persisted; if cookies are blocked the write is a
+      // no-op and a reload would loop forever, so surface an explicit error instead.
+      if (resolveActiveOrgClient() === first.id) {
+        window.location.reload();
+      } else {
+        setState({ kind: 'error' });
       }
     })();
     return () => { active = false; };
   }, []);
 
   const setActiveOrg = (id: string) => {
+    // Validate against the user's orgs and ignore no-ops — avoids writing a junk
+    // orgId or reloading when nothing changed.
+    if (state.kind !== 'ok' || id === state.activeOrgId || !state.orgs.some((o) => o.id === id)) return;
     writeActiveOrgCookie(id);
     window.location.reload();
   };

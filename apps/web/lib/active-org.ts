@@ -7,8 +7,9 @@ export function readActiveOrgCookie(value: string | undefined): string {
 
 /** Client: resolve the active org from `document.cookie`, else the env default. */
 export function resolveActiveOrgClient(): string {
+  // Split on ';' and trim — the optional space after ';' isn't guaranteed (matches auth-gate.tsx).
   const raw = typeof document !== 'undefined'
-    ? document.cookie.split('; ').find((c) => c.startsWith(`${ACTIVE_ORG_COOKIE}=`))
+    ? document.cookie.split(';').map((c) => c.trim()).find((c) => c.startsWith(`${ACTIVE_ORG_COOKIE}=`))
     : undefined;
   const value = raw ? decodeURIComponent(raw.slice(ACTIVE_ORG_COOKIE.length + 1)) : undefined;
   return readActiveOrgCookie(value);

@@ -1,9 +1,9 @@
 import { it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 const { supabaseConfigured, resolveActiveOrgClient, writeActiveOrgCookie } = vi.hoisted(() => ({
   supabaseConfigured: vi.fn(() => true),
-  resolveActiveOrgClient: vi.fn(() => 'org-a'),
+  resolveActiveOrgClient: vi.fn(),
   writeActiveOrgCookie: vi.fn(),
 }));
 vi.mock('@/lib/supabase/config', () => ({ supabaseConfigured: () => supabaseConfigured() }));
@@ -28,10 +28,17 @@ vi.mock('@/lib/supabase/browser', () => ({
 import { ActiveOrgProvider, useActiveOrg } from '@/components/active-org-provider';
 
 const reload = vi.fn();
+// `resolveActiveOrgClient()` reads this; `writeActiveOrgCookie(id)` persists into it
+// (unless cookies are "blocked") — so the provider's write-then-verify heal logic is exercised.
+let resolvedOrg = 'org-a';
+let cookiesBlocked = false;
 beforeEach(() => {
   supabaseConfigured.mockReturnValue(true);
-  resolveActiveOrgClient.mockReturnValue('org-a');
-  writeActiveOrgCookie.mockClear();
+  resolvedOrg = 'org-a';
+  cookiesBlocked = false;
+  resolveActiveOrgClient.mockImplementation(() => resolvedOrg);
+  writeActiveOrgCookie.mockReset();
+  writeActiveOrgCookie.mockImplementation((id: string) => { if (!cookiesBlocked) resolvedOrg = id; });
   reload.mockClear();
   select.mockClear();
   session = { user: { id: 'u1' } };
@@ -43,6 +50,18 @@ beforeEach(() => {
 function Consumer() {
   const ctx = useActiveOrg();
   return <div>active:{ctx?.activeOrgId ?? 'none'} count:{ctx?.orgs.length ?? -1}</div>;
+}
+
+function Switcher() {
+  const ctx = useActiveOrg();
+  if (!ctx) return null;
+  return (
+    <>
+      <button onClick={() => ctx.setActiveOrg(ctx.activeOrgId)}>same</button>
+      <button onClick={() => ctx.setActiveOrg('nope')}>unknown</button>
+      <button onClick={() => ctx.setActiveOrg('org-c')}>other</button>
+    </>
+  );
 }
 
 it('passes children through in mock mode (unconfigured)', () => {
@@ -65,8 +84,7 @@ it('shows the retry state on a memberships query error', async () => {
 });
 
 it('provides the org context + children when the active org is valid', async () => {
-  rows = [{ org_id: 'org-a', orgs: { name: 'Valor (demo)' } }];
-  resolveActiveOrgClient.mockReturnValue('org-a');
+  rows = [{ org_id: 'org-a', orgs: { name: 'Valor (demo)' } }]; // resolvedOrg defaults to 'org-a' (valid)
   render(<ActiveOrgProvider><Consumer /></ActiveOrgProvider>);
   await waitFor(() => expect(screen.getByText(/active:org-a count:1/)).toBeInTheDocument());
   expect(writeActiveOrgCookie).not.toHaveBeenCalled();
@@ -74,9 +92,29 @@ it('provides the org context + children when the active org is valid', async () 
 });
 
 it('heals an invalid active org: sets the default cookie and reloads once', async () => {
-  rows = [{ org_id: 'org-b', orgs: { name: 'Org B' } }];
-  resolveActiveOrgClient.mockReturnValue('org-a'); // not in [org-b]
+  rows = [{ org_id: 'org-b', orgs: { name: 'Org B' } }]; // resolvedOrg 'org-a' is not in [org-b]
   render(<ActiveOrgProvider><Consumer /></ActiveOrgProvider>);
   await waitFor(() => expect(writeActiveOrgCookie).toHaveBeenCalledWith('org-b'));
+  expect(reload).toHaveBeenCalledTimes(1);
+});
+
+it('errors (no reload loop) when the heal cookie write is blocked', async () => {
+  rows = [{ org_id: 'org-b', orgs: { name: 'Org B' } }];
+  cookiesBlocked = true; // writeActiveOrgCookie is a no-op, so the cookie stays invalid
+  render(<ActiveOrgProvider><Consumer /></ActiveOrgProvider>);
+  await waitFor(() => expect(screen.getByText(/unable to verify access/i)).toBeInTheDocument());
+  expect(reload).not.toHaveBeenCalled();
+});
+
+it('setActiveOrg validates: ignores the same/unknown org, switches on a valid change', async () => {
+  rows = [{ org_id: 'org-a', orgs: { name: 'A' } }, { org_id: 'org-c', orgs: { name: 'C' } }];
+  render(<ActiveOrgProvider><Switcher /></ActiveOrgProvider>);
+  await waitFor(() => expect(screen.getByText('same')).toBeInTheDocument());
+  fireEvent.click(screen.getByText('same'));    // same as active → ignored
+  fireEvent.click(screen.getByText('unknown')); // not in orgs → ignored
+  expect(writeActiveOrgCookie).not.toHaveBeenCalled();
+  expect(reload).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('other'));   // valid + different → switch
+  expect(writeActiveOrgCookie).toHaveBeenCalledWith('org-c');
   expect(reload).toHaveBeenCalledTimes(1);
 });
