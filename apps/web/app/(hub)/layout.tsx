@@ -4,7 +4,7 @@ import { AppShell } from '@/components/app-shell';
 import { AuthGate } from '@/components/auth-gate';
 import { RoleProvider } from '@/components/role-provider';
 import { RoleGate } from '@/components/role-gate';
-import { RequireMembership } from '@/components/require-membership';
+import { ActiveOrgProvider } from '@/components/active-org-provider';
 
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   const tree = await (await getServerRepo()).getAssetTree(DEMO_ORG_ID);
@@ -12,11 +12,11 @@ export default async function HubLayout({ children }: { children: React.ReactNod
   // RoleProvider must wrap both the sidebar (role-filtered nav) and RoleGate
   // (direct-visit gate) so they share one role. RoleGate wraps the page content.
   const shell = (
-    <AppShell tree={tree}>
-      <RequireMembership>
+    <ActiveOrgProvider>
+      <AppShell tree={tree}>
         <RoleGate>{children}</RoleGate>
-      </RequireMembership>
-    </AppShell>
+      </AppShell>
+    </ActiveOrgProvider>
   );
 
   // Static export (GitHub Pages) also needs the client AuthGate (no middleware there);

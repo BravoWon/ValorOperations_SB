@@ -8,6 +8,7 @@ import { BANK_SEED, type BankCode } from '@valor/core';
 import { Home } from 'lucide-react';
 import { AssetTree } from '@/components/asset-tree';
 import { RoleSwitcher } from '@/components/role-switcher';
+import { OrgSwitcher } from '@/components/org-switcher';
 import { useRole } from '@/components/role-provider';
 import { planesForRole } from '@/lib/planes';
 import { cn } from '@/lib/utils';
@@ -75,6 +76,7 @@ export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: 
         </Link>
 
         <RoleSwitcher />
+        <OrgSwitcher />
 
         <nav className="space-y-5">
           {planes.map((plane) => {
