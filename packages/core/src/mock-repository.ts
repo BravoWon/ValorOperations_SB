@@ -2,7 +2,9 @@ import type { JobStatus } from './enums';
 import { summarizeSnapshot } from './local-db/types';
 import { instantiateStages } from './templates';
 import { assertJobStatusTransition } from './transitions';
-import { createSeed, type SeedData } from './seed';
+import type { Role } from './enums';
+import { createSeed, type SeedData, DEMO_ORG_ID } from './seed';
+import type { OrgMember, InviteResult } from './members/types';
 import type {
   CreateJobFromTemplateInput,
   Repository,
@@ -28,6 +30,13 @@ export class MockRepository implements Repository {
   private codedObjects: import('./coded-object/types').CodedObject[] | null = null;
   private relationsList: import('./coded-object/types').Relation[] | null = null;
   private timelines: Record<string, import('./coded-object/types').TimelineEvent[]> | null = null;
+  private members = new Map<string, OrgMember[]>([
+    [DEMO_ORG_ID, [
+      { userId: 'demo-owner', email: 'owner@valor.demo', role: 'owner', createdAt: '2026-01-01T00:00:00.000Z' },
+      { userId: 'demo-admin', email: 'admin@valor.demo', role: 'admin', createdAt: '2026-01-02T00:00:00.000Z' },
+      { userId: 'demo-viewer', email: 'viewer@valor.demo', role: 'viewer', createdAt: '2026-01-03T00:00:00.000Z' },
+    ]],
+  ]);
 
   constructor() {
     this.data = createSeed();
@@ -390,6 +399,39 @@ export class MockRepository implements Repository {
     const store = this.browserStorage;
     if (store) store.setItem('valor:timelines', JSON.stringify(map));
     else this.timelines = structuredClone(map);
+  }
+
+  async listOrgMembers(orgId: string): Promise<OrgMember[]> {
+    return [...(this.members.get(orgId) ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
+  async inviteMember(orgId: string, email: string, role: Role): Promise<InviteResult> {
+    const list = this.members.get(orgId) ?? [];
+    if (list.some((m) => m.email.toLowerCase() === email.toLowerCase())) return 'already_member';
+    // Deterministic createdAt (no Date in @valor/core); sorts after the seeds.
+    list.push({ userId: `mock-${email.toLowerCase()}`, email, role, createdAt: '2099-01-01T00:00:00.000Z' });
+    this.members.set(orgId, list);
+    return 'added';
+  }
+
+  async setMemberRole(orgId: string, userId: string, role: Role): Promise<void> {
+    const list = this.members.get(orgId) ?? [];
+    const target = list.find((m) => m.userId === userId);
+    if (!target) return;
+    if (role !== 'owner' && target.role === 'owner' && list.filter((m) => m.role === 'owner').length <= 1) {
+      throw new Error('cannot demote the last owner');
+    }
+    target.role = role;
+  }
+
+  async removeMember(orgId: string, userId: string): Promise<void> {
+    const list = this.members.get(orgId) ?? [];
+    const target = list.find((m) => m.userId === userId);
+    if (!target) return;
+    if (target.role === 'owner' && list.filter((m) => m.role === 'owner').length <= 1) {
+      throw new Error('cannot remove the last owner');
+    }
+    this.members.set(orgId, list.filter((m) => m.userId !== userId));
   }
 
   async exportSnapshot(): Promise<import('./local-db/types').LocalDbSnapshot> {
