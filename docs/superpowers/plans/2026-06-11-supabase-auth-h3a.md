@@ -411,7 +411,7 @@ git commit -m "feat(core): Repository member-provisioning contract + MockReposit
 
 ### Task 4: `SupabaseRepository` `.rpc()` impls (TDD)
 
-**Files:** Modify `apps/web/lib/supabase-repository.ts`; Test `apps/web/__tests__/supabase-repository.test.ts`.
+**Files:** Modify `apps/web/lib/supabase-repository.ts`; Test `apps/web/__tests__/supabase-repository.test.ts`. (The thin wrappers are unit-tested against a mocked client; the live RPC round-trip is integration-only, run at activation.)
 
 - [ ] **Step 1: Extend the test's mock client to record `.rpc`, and write the failing tests.** In `apps/web/__tests__/supabase-repository.test.ts`, inside `makeClient`, add an `rpcCalls` recorder + an `rpc` method on the client, and return `rpcCalls`. Change the `client`/return lines from:
 

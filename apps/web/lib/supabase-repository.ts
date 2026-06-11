@@ -626,32 +626,31 @@ export class SupabaseRepository implements Repository {
     }
   }
 
-  // --- member provisioning (Auth H3a — thin .rpc() wrappers) -------------------
-  // Unlike the .from() reads above (which orgScope() pins to this.orgId), these
-  // pass orgId straight through as p_org_id: the RPCs are explicitly org-
-  // parameterized and enforce is_org_admin(p_org_id) server-side. Callers pass
-  // the active org (H2), which equals this.orgId on the configured path.
+  // member provisioning (Auth H3a — thin .rpc() wrappers). orgScope() pins p_org_id to
+  // this.orgId (the active org) like the .from() reads, so a caller passing the
+  // DEMO_ORG_ID placeholder can't reach the DB as a non-UUID. The RPCs also enforce
+  // is_org_admin(p_org_id) server-side.
 
   async listOrgMembers(orgId: string): Promise<OrgMember[]> {
-    const { data, error } = await this.client.rpc('org_members', { p_org_id: orgId });
+    const { data, error } = await this.client.rpc('org_members', { p_org_id: this.orgScope(orgId) });
     if (error) this.fail(error, 'listOrgMembers');
     return ((data ?? []) as { user_id: string; email: string; role: Role; created_at: string }[])
       .map((r) => ({ userId: r.user_id, email: r.email, role: r.role, createdAt: r.created_at }));
   }
 
   async inviteMember(orgId: string, email: string, role: Role): Promise<InviteResult> {
-    const { data, error } = await this.client.rpc('invite_member', { p_org_id: orgId, p_email: email, p_role: role });
+    const { data, error } = await this.client.rpc('invite_member', { p_org_id: this.orgScope(orgId), p_email: email, p_role: role });
     if (error) this.fail(error, 'inviteMember');
     return data as InviteResult;
   }
 
   async setMemberRole(orgId: string, userId: string, role: Role): Promise<void> {
-    const { error } = await this.client.rpc('set_member_role', { p_org_id: orgId, p_user_id: userId, p_role: role });
+    const { error } = await this.client.rpc('set_member_role', { p_org_id: this.orgScope(orgId), p_user_id: userId, p_role: role });
     if (error) this.fail(error, 'setMemberRole');
   }
 
   async removeMember(orgId: string, userId: string): Promise<void> {
-    const { error } = await this.client.rpc('remove_member', { p_org_id: orgId, p_user_id: userId });
+    const { error } = await this.client.rpc('remove_member', { p_org_id: this.orgScope(orgId), p_user_id: userId });
     if (error) this.fail(error, 'removeMember');
   }
 

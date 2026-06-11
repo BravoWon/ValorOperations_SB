@@ -237,7 +237,7 @@ describe('SupabaseRepository (mocked client)', () => {
     setResult({ data: [{ user_id: 'u1', email: 'a@x.com', role: 'owner', created_at: '2026-01-01T00:00:00Z' }], error: null });
     const repo = new SupabaseRepository(client, ORG);
     const out = await repo.listOrgMembers('org-1');
-    expect(rpcCalls.at(-1)).toEqual({ name: 'org_members', params: { p_org_id: 'org-1' } });
+    expect(rpcCalls.at(-1)).toEqual({ name: 'org_members', params: { p_org_id: ORG } });
     expect(out).toEqual([{ userId: 'u1', email: 'a@x.com', role: 'owner', createdAt: '2026-01-01T00:00:00Z' }]);
   });
 
@@ -246,7 +246,7 @@ describe('SupabaseRepository (mocked client)', () => {
     setResult({ data: 'added', error: null });
     const repo = new SupabaseRepository(client, ORG);
     const res = await repo.inviteMember('org-1', 'New@x.com', 'viewer');
-    expect(rpcCalls.at(-1)).toEqual({ name: 'invite_member', params: { p_org_id: 'org-1', p_email: 'New@x.com', p_role: 'viewer' } });
+    expect(rpcCalls.at(-1)).toEqual({ name: 'invite_member', params: { p_org_id: ORG, p_email: 'New@x.com', p_role: 'viewer' } });
     expect(res).toBe('added');
   });
 
@@ -254,9 +254,9 @@ describe('SupabaseRepository (mocked client)', () => {
     const { client, rpcCalls } = makeClient({ data: null, error: null });
     const repo = new SupabaseRepository(client, ORG);
     await repo.setMemberRole('org-1', 'u2', 'admin');
-    expect(rpcCalls.at(-1)).toEqual({ name: 'set_member_role', params: { p_org_id: 'org-1', p_user_id: 'u2', p_role: 'admin' } });
+    expect(rpcCalls.at(-1)).toEqual({ name: 'set_member_role', params: { p_org_id: ORG, p_user_id: 'u2', p_role: 'admin' } });
     await repo.removeMember('org-1', 'u2');
-    expect(rpcCalls.at(-1)).toEqual({ name: 'remove_member', params: { p_org_id: 'org-1', p_user_id: 'u2' } });
+    expect(rpcCalls.at(-1)).toEqual({ name: 'remove_member', params: { p_org_id: ORG, p_user_id: 'u2' } });
   });
 
   it('surfaces an RPC error via fail()', async () => {

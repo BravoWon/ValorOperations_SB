@@ -15,7 +15,7 @@ Backend as built (`supabase/migrations/`):
 - `orgs(id, name, slug, created_at)`. Emails live in `auth.users` (RLS-locked; not readable from the browser).
 - `is_org_admin(p_org_id)` (`SECURITY DEFINER`, `STABLE`, pinned `search_path`) = the caller has role `owner`|`admin` in the org; `revoke all from public` + `grant execute to authenticated`.
 - RLS: `memberships_self_select` (a user reads **only their own** membership rows — so an admin can't list members today); `memberships_admin_insert/update/delete` gated by `is_org_admin`.
-- The `@valor/core` `Repository` interface has **no** membership/org methods today; neither `MockRepository` nor `SupabaseRepository` touches memberships.
+- Before H3a, the `@valor/core` `Repository` interface had **no** membership/org methods; neither `MockRepository` nor `SupabaseRepository` touched memberships.
 
 **Decisions (from brainstorming):**
 1. **Invite model:** existing users by email only (no `org_invites` table, no `auth.users` trigger). A user must have signed in via SSO at least once (exist in `auth.users`) to be added.
@@ -69,7 +69,7 @@ removeMember(orgId: string, userId: string): Promise<void>;
 - `listOrgMembers(orgId)` → `this.client.rpc('org_members', { p_org_id: orgId })`; map rows → `OrgMember` (`user_id`→`userId`, `created_at`→`createdAt`); on error `this.fail(error, 'listOrgMembers')`.
 - `inviteMember(orgId, email, role)` → `this.client.rpc('invite_member', { p_org_id: orgId, p_email: email, p_role: role })`; on error `this.fail`; return `data` as `InviteResult`.
 - `setMemberRole` / `removeMember` → `this.client.rpc('set_member_role' | 'remove_member', { … })`; on error `this.fail` (an RPC guard raise surfaces as a thrown `Error`).
-(These ignore any per-instance org scoping — they take `orgId` explicitly. They can't run under vitest; covered by typecheck + pgTAP, like the rest of `SupabaseRepository`. If `apps/web/__tests__/supabase-repository.test.ts` mocks the client, add call-shape assertions for the four methods.)
+(These ignore any per-instance org scoping — they take `orgId` explicitly. The thin wrappers are unit-tested against a mocked client; the live RPC round-trip is integration-only (run at activation). Covered by typecheck + pgTAP, like the rest of `SupabaseRepository`. If `apps/web/__tests__/supabase-repository.test.ts` mocks the client, add call-shape assertions for the four methods.)
 
 ## Error handling
 

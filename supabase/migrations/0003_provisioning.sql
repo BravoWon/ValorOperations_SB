@@ -54,12 +54,17 @@ begin
   if v_user_id is null then
     return 'not_found';
   end if;
-  if exists (select 1 from public.memberships where org_id = p_org_id and user_id = v_user_id) then
+
+  -- Idempotent insert: ON CONFLICT avoids a TOCTOU race against unique(user_id, org_id);
+  -- a concurrent invite for the same (org, user) yields 'already_member', never a 23505.
+  insert into public.memberships (org_id, user_id, role)
+    values (p_org_id, v_user_id, p_role)
+    on conflict (user_id, org_id) do nothing;
+  if found then
+    return 'added';
+  else
     return 'already_member';
   end if;
-
-  insert into public.memberships (org_id, user_id, role) values (p_org_id, v_user_id, p_role);
-  return 'added';
 end;
 $$;
 revoke all on function public.invite_member(uuid, text, text) from public;
@@ -79,6 +84,9 @@ begin
   if p_role not in ('owner', 'admin', 'ops', 'field', 'vendor', 'viewer') then
     raise exception 'invalid role: %', p_role using errcode = '22023';
   end if;
+  -- Lock the org's owner rows so concurrent demotions/removals can't both pass the
+  -- count check and leave the org with zero owners (READ COMMITTED re-checks after the lock).
+  perform 1 from public.memberships where org_id = p_org_id and role = 'owner' for update;
   if p_role <> 'owner'
      and exists (select 1 from public.memberships where org_id = p_org_id and user_id = p_user_id and role = 'owner')
      and (select count(*) from public.memberships where org_id = p_org_id and role = 'owner') <= 1 then
@@ -101,6 +109,8 @@ begin
   if not public.is_org_admin(p_org_id) then
     raise exception 'not authorized' using errcode = '42501';
   end if;
+  -- Lock the org's owner rows so concurrent removals can't both pass the count check.
+  perform 1 from public.memberships where org_id = p_org_id and role = 'owner' for update;
   if exists (select 1 from public.memberships where org_id = p_org_id and user_id = p_user_id and role = 'owner')
      and (select count(*) from public.memberships where org_id = p_org_id and role = 'owner') <= 1 then
     raise exception 'cannot remove the last owner' using errcode = '42501';
