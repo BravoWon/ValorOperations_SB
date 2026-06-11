@@ -1,37 +1,19 @@
 import { MockRepository, DEMO_ORG_ID, type Repository } from '@valor/core';
+import { supabaseConfigured } from './supabase/config';
+export { supabaseConfigured };
 
 // Memoized in-process singleton for the data layer. By default this is the
 // in-memory MockRepository — the running app is byte-for-byte unchanged unless
 // Supabase is fully configured (see below). Enabling Supabase requires all
-// three of NEXT_PUBLIC_SUPABASE_URL, _ANON_KEY, and _ORG_ID; only then does the
-// factory construct a SupabaseRepository (scaffold — see supabase-repository.ts).
+// three of NEXT_PUBLIC_SUPABASE_URL, _ANON_KEY, and _ORG_ID (a valid UUID);
+// only then does the factory construct a SupabaseRepository (scaffold — see
+// supabase-repository.ts). The gate logic lives in lib/supabase/config.ts so
+// the Next.js middleware can import it without pulling in @valor/core.
 let instance: Repository | null = null;
-
-// The org id MUST be the UUID of the org row in Supabase. The schema types every
-// org_id column as `uuid`, so a non-UUID (e.g. the mock seed DEMO_ORG_ID,
-// 'org-valor') would make PostgREST's org_id filters error or match nothing.
-// Hence org id is part of the "configured" gate and has no fallback on the
-// Supabase path — the mock path keeps using DEMO_ORG_ID, where it is valid.
-// A non-UUID org id would break PostgREST's uuid `org_id` filters, so the gate
-// validates the format — a malformed ORG_ID fails the gate and the app stays on
-// the mock rather than silently engaging a broken Supabase path.
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// Exported for the factory-gate test. All three vars are required to engage
-// Supabase; ORG_ID specifically must be the org's UUID (no fallback).
-export function supabaseConfigured(): boolean {
-  const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID;
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-      orgId &&
-      UUID_RE.test(orgId),
-  );
-}
 
 function createRepo(): Repository {
   if (supabaseConfigured()) {
-    // Lazy require so @supabase/supabase-js + the adapter are never pulled into
+    // Lazy require so the browser client + the adapter are never pulled into
     // the default (mock) path — keeps the unconfigured app identical to before.
     //
     // This module only runs inside the Next.js bundle (the gate is on
@@ -42,23 +24,13 @@ function createRepo(): Repository {
     // async and ripple through every caller for no benefit in the only
     // (bundled) environment this runs in. Hence the deliberate lazy require.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js');
+    const { createSupabaseBrowserClient } = require('./supabase/browser') as typeof import('./supabase/browser');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { SupabaseRepository } = require('./supabase-repository') as typeof import('./supabase-repository');
-    // SCAFFOLD LIMITATION (auth not yet wired): this is a plain anon-key client
-    // held as a module singleton. The RLS policies are `TO authenticated`, so
-    // until Supabase Auth is wired AND a per-request SSR client is used (e.g.
-    // @supabase/ssr, with the user's session cookies/headers), queries run as the
-    // anon role and RLS returns no rows / rejects writes. Wiring auth + the SSR
-    // client is the documented next step in supabase/README.md (Known limitations).
-    const client = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-    );
     // Guaranteed present (and intended to be the org's UUID) by the gate above.
     // No DEMO_ORG_ID fallback here: that would reintroduce the uuid mismatch.
     const orgId = process.env.NEXT_PUBLIC_SUPABASE_ORG_ID as string;
-    return new SupabaseRepository(client, orgId);
+    return new SupabaseRepository(createSupabaseBrowserClient(), orgId);
   }
   return new MockRepository();
 }

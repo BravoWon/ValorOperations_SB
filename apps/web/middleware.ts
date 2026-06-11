@@ -1,29 +1,36 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { supabaseConfigured, decideAuth } from '@/lib/supabase/config';
+import { updateSession } from '@/lib/supabase/middleware-client';
 
 /**
- * ⚠️ DEMO PLACEHOLDER AUTH GATE — NOT REAL SECURITY.
- *
- * This middleware only checks for the presence of a `valor_demo_auth` cookie so
- * the intended end-to-end flow (login → workspace launcher → Field Operations)
- * can be walked and error-punchlisted. It performs NO real authentication,
- * authorization, signing, or verification. Replace with a real auth provider
- * before this ever leaves a sandbox.
+ * Real auth gate (configured) / open demo (unconfigured). When Supabase is
+ * configured, refresh the session each request and redirect unauthenticated
+ * users (except on the public sign-in paths) to /login. When NOT configured the
+ * app is the open mock demo — pass everything through. (Static export ignores
+ * middleware entirely; the client AuthGate enforces the demo cookie there.)
  */
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isAuthed = request.cookies.has('valor_demo_auth');
+export async function middleware(request: NextRequest) {
+  if (!supabaseConfigured()) return NextResponse.next();
 
-  if (!isAuthed && pathname !== '/login') {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    return NextResponse.redirect(loginUrl, 307);
+  try {
+    const { response, user } = await updateSession(request);
+    if (decideAuth(true, Boolean(user), request.nextUrl.pathname) === 'redirect') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    return response;
+  } catch {
+    // Session refresh failed (network/runtime) — treat as unauthenticated.
+    if (decideAuth(true, false, request.nextUrl.pathname) === 'redirect') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
   }
-
-  return NextResponse.next();
 }
 
 export const config = {
-  // Skip /api (route handlers carry their own auth), /login, Next internals/
-  // static, and any path with a file extension.
-  matcher: ['/((?!api|login|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };
