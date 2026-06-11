@@ -3,9 +3,11 @@
 
 import { ALL_ROLES, isRole } from '@/lib/role';
 import { useRole } from '@/components/role-provider';
+import { supabaseConfigured } from '@/lib/supabase/config';
 
 /** Demo affordance: switch the signed-in role to see the surface adapt. */
 export function RoleSwitcher() {
+  if (supabaseConfigured()) return null; // live mode: your role comes from your membership, not a demo cookie
   const { role, setRole } = useRole();
   return (
     <label className="mb-6 flex items-center gap-2 px-2">

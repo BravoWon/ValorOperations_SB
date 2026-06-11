@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({ path: '/data-manager', role: 'viewer' as string }));
 vi.mock('next/navigation', () => ({ usePathname: () => h.path }));
-vi.mock('@/components/role-provider', () => ({ useRole: () => ({ role: h.role, setRole: () => {} }) }));
+vi.mock('@/lib/use-effective-role', () => ({ useEffectiveRole: () => h.role }));
 
 import { RoleGate } from '@/components/role-gate';
 

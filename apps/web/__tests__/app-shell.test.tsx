@@ -4,9 +4,7 @@ import { render, screen } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({ role: 'viewer' as string }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/dashboard' }));
-vi.mock('@/components/role-provider', () => ({
-  useRole: () => ({ role: h.role, setRole: () => {} }),
-}));
+vi.mock('@/lib/use-effective-role', () => ({ useEffectiveRole: () => h.role }));
 
 import { AppShell } from '@/components/app-shell';
 

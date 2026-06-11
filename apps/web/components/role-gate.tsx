@@ -2,7 +2,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useRole } from '@/components/role-provider';
+import { useEffectiveRole } from '@/lib/use-effective-role';
 import { roleSatisfies } from '@/lib/role';
 import { minRoleForPath } from '@/lib/planes';
 import { RoleBlocked } from '@/components/role-blocked';
@@ -18,7 +18,7 @@ import { RoleBlocked } from '@/components/role-blocked';
  */
 export function RoleGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { role } = useRole();
+  const role = useEffectiveRole();
   const min = minRoleForPath(pathname);
   if (!roleSatisfies(role, min)) return <RoleBlocked required={min} />;
   return <>{children}</>;
