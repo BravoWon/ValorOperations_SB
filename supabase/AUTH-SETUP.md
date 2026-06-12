@@ -36,9 +36,10 @@ The repo ships three migrations and two pgTAP suites; they are **scaffold-ahead*
   ```bash
   supabase migration list
   ```
-  If `0001`/`0002` are **not** marked applied on the remote (but their tables exist), mark them applied so push only runs `0003`:
+  If `0001`/`0002` are **not** marked applied on the remote (but their tables exist), mark them applied so push only runs `0003` (one `repair` per version — the CLI takes a single version at a time):
   ```bash
-  supabase migration repair --status applied 0001 0002
+  supabase migration repair --status applied 0001
+  supabase migration repair --status applied 0002
   ```
 - [ ] **Apply `0003` (and any unapplied migration) to the live project:**
   ```bash
@@ -47,14 +48,17 @@ The repo ships three migrations and two pgTAP suites; they are **scaffold-ahead*
   (Alternative if you'd rather not touch history: paste `supabase/migrations/0003_provisioning.sql` into **SQL editor** and run it once.)
 - [ ] **Sanity-check the RPCs exist + grants are tight** (SQL editor):
   ```sql
-  select proname, prosecdef from pg_proc
+  select proname, prosecdef, proacl from pg_proc
    where pronamespace = 'public'::regnamespace
      and proname in ('org_members','invite_member','set_member_role','remove_member');
-  -- expect 4 rows, prosecdef = true (security definer), execute granted to `authenticated` only
+  -- expect 4 rows, all prosecdef = true (security definer). In proacl, each function
+  -- should grant EXECUTE to `authenticated` (an `authenticated=X/...` entry) and NOT to
+  -- PUBLIC (no bare `=X/...` entry — the migration revokes EXECUTE from public).
   ```
-- [ ] **(Optional, local confidence) run the pgTAP suites** against a local stack — validates the RLS policies + the provisioning RPCs (admin gate, last-owner guard, invite contract) without touching live:
+- [ ] **(Optional, local confidence) run the pgTAP suites** against a local stack — validates the RLS policies + the provisioning RPCs (admin gate, last-owner guard, invite contract) without touching live. This repo intentionally omits `supabase/config.toml` (see `supabase/README.md`), so a fresh clone needs a one-time `supabase init` first:
   ```bash
-  supabase start && supabase test db   # runs rls.test.sql + provisioning.test.sql
+  supabase init                         # once, only if supabase/config.toml is absent
+  supabase start && supabase test db    # runs rls.test.sql + provisioning.test.sql
   ```
 - [ ] **Run the advisors** and clear anything flagged: `supabase db advisors` (or MCP `get_advisors`).
 
@@ -161,7 +165,7 @@ Once you're an owner/admin, use **`/members`** (Administer plane):
 
 **Gotchas**
 
-- **Migration history:** `0001`/`0002` may already be live from the RLS proof but untracked — reconcile with `supabase migration repair --status applied 0001 0002` before `supabase db push`, or apply `0003` directly (Part A). Don't blindly `db push` against existing objects.
+- **Migration history:** `0001`/`0002` may already be live from the RLS proof but untracked — reconcile per version (`supabase migration repair --status applied 0001`, then `… 0002`) before `supabase db push`, or apply `0003` directly (Part A). Don't blindly `db push` against existing objects.
 - **Provisioning RPCs are admin-gated** (`is_org_admin(p_org_id)`); they `revoke execute from public` + `grant to authenticated`, read `auth.users` only inside the definer body, and never use `service_role`. The last-owner guard is enforced in the DB (concurrency-safe via row locks), so the UI can't be tricked into orphaning an org.
 - **Invite = existing users only.** There is no email-sending / pending-invite flow — a person must sign in via Microsoft once (creating their `auth.users` row) before they can be invited. This is by design (H3 decision).
 - **Local dev:** Azure rejects `127.0.0.1` as a redirect — use `http://localhost:3000` (already allowlisted), not the IP.
