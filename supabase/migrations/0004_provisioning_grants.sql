@@ -12,8 +12,11 @@
 -- exploit fix; it makes the grant surface match 0003's authenticated-only intent and
 -- clears the Supabase security advisor. `authenticated` keeps EXECUTE (the app calls
 -- these as the signed-in user; the in-function admin check is the real boundary).
+--
+-- `revoke all` (rather than `revoke execute`) mirrors 0002/0003 — for a function EXECUTE
+-- is the only grantable privilege, so the two are equivalent here.
 
-revoke execute on function
+revoke all on function
   public.org_members(uuid),
   public.invite_member(uuid, text, text),
   public.set_member_role(uuid, uuid, text),
