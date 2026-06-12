@@ -9,7 +9,7 @@ import { Home } from 'lucide-react';
 import { AssetTree } from '@/components/asset-tree';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { OrgSwitcher } from '@/components/org-switcher';
-import { useRole } from '@/components/role-provider';
+import { useEffectiveRole } from '@/lib/use-effective-role';
 import { planesForRole } from '@/lib/planes';
 import { cn } from '@/lib/utils';
 import { getRepo } from '@/lib/repo';
@@ -17,7 +17,7 @@ import { BankSearchPalette } from '@/components/bank-search-palette';
 
 export function AppShell({ tree, children }: { tree: AssetTreeNode[]; children: React.ReactNode }) {
   const pathname = usePathname();
-  const { role } = useRole();
+  const role = useEffectiveRole();
   const planes = planesForRole(role);
 
   const [paletteOpen, setPaletteOpen] = useState(false);

@@ -3,10 +3,13 @@
 
 import { ALL_ROLES, isRole } from '@/lib/role';
 import { useRole } from '@/components/role-provider';
+import { supabaseConfigured } from '@/lib/supabase/config';
 
 /** Demo affordance: switch the signed-in role to see the surface adapt. */
 export function RoleSwitcher() {
+  // Call hooks unconditionally (Rules of Hooks), then branch on the result.
   const { role, setRole } = useRole();
+  if (supabaseConfigured()) return null; // live mode: your role comes from your membership, not a demo cookie
   return (
     <label className="mb-6 flex items-center gap-2 px-2">
       <span className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-muted-foreground/70">Role</span>

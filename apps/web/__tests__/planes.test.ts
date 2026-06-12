@@ -8,7 +8,7 @@ import { ALL_ROLES, ROLE_RANK } from '@/lib/role';
 const EXISTING_NAV = [
   '/dashboard', '/jobs', '/tickets', '/rig-day', '/assets',
   '/day', '/morning-report', '/tools/hydraulics', '/tools/directional',
-  '/data-manager', '/template-builder', '/bank-editor', '/office-ops', '/data-studio', '/local-db',
+  '/data-manager', '/template-builder', '/bank-editor', '/office-ops', '/data-studio', '/local-db', '/members',
 ];
 
 describe('planes registry', () => {
@@ -18,6 +18,16 @@ describe('planes registry', () => {
       expect(hrefs.filter((h) => h === route)).toHaveLength(1);
     }
     expect(hrefs.length).toBe(EXISTING_NAV.length);
+  });
+
+  it('exposes the admin-only Members route in the Administer plane', () => {
+    const administer = PLANES.find((p) => p.id === 'administer');
+    const members = administer?.items.find((i) => i.href === '/members');
+    expect(members).toBeDefined();
+    expect(members?.minRole).toBe('admin');
+    expect(minRoleForPath('/members')).toBe('admin');
+    expect(planesForRole('admin').flatMap((p) => p.items.map((i) => i.href))).toContain('/members');
+    expect(planesForRole('viewer').flatMap((p) => p.items.map((i) => i.href))).not.toContain('/members');
   });
 
   it('every item has a valid min role', () => {
