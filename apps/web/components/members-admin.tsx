@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Trash2, UserPlus } from 'lucide-react';
 import type { OrgMember } from '@valor/core';
-import { ALL_ROLES, type Role } from '@/lib/role';
+import { ALL_ROLES, isRole, type Role } from '@/lib/role';
 import { getRepo, DEMO_ORG_ID } from '@/lib/repo';
 import { useActiveOrg } from '@/components/active-org-provider';
 import { PageHeader } from '@/components/ui/page-header';
@@ -41,9 +41,13 @@ export function MembersAdmin() {
 
   useEffect(() => {
     let active = true;
+    // Clear the prior org's rows up-front so a slow or failed load for a new
+    // orgId can't leave stale members on screen (acting against the new orgId).
+    setMembers(null);
+    setLoadError(false);
     getRepo().listOrgMembers(orgId)
-      .then((list) => { if (active) setMembers(list); })
-      .catch(() => { if (active) setLoadError(true); });
+      .then((list) => { if (active) { setMembers(list); setLoadError(false); } })
+      .catch(() => { if (active) { setMembers(null); setLoadError(true); } });
     return () => { active = false; };
   }, [orgId]);
 
@@ -127,6 +131,12 @@ export function MembersAdmin() {
     <div>
       {header}
       {rowError && <p role="alert" className="mb-4 text-sm text-red-300">{rowError}</p>}
+      {loadError && (
+        <p role="alert" className="mb-4 text-sm text-red-300">
+          Couldn&apos;t refresh the member list &mdash; it may be out of date.{' '}
+          <button type="button" onClick={refresh} className="underline underline-offset-2">Retry</button>
+        </p>
+      )}
       <div className="space-y-6">
         <Card>
           <CardHeader><CardTitle>Members</CardTitle></CardHeader>
@@ -148,7 +158,7 @@ export function MembersAdmin() {
                         aria-label={`Role for ${m.email}`}
                         value={m.role}
                         disabled={busy}
-                        onChange={(e) => onChangeRole(m.userId, e.target.value as Role)}
+                        onChange={(e) => { if (isRole(e.target.value)) onChangeRole(m.userId, e.target.value); }}
                         className={SELECT_CLASS}
                       >
                         {ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -192,7 +202,7 @@ export function MembersAdmin() {
                 <select
                   aria-label="Invite role"
                   value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as Role)}
+                  onChange={(e) => { if (isRole(e.target.value)) setInviteRole(e.target.value); }}
                   className={SELECT_CLASS}
                 >
                   {ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}

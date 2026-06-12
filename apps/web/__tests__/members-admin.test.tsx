@@ -48,6 +48,7 @@ describe('MembersAdmin', () => {
     await waitFor(() => screen.getByText('viewer@valor.demo'));
     fireEvent.click(screen.getByLabelText('Remove viewer@valor.demo'));
     await waitFor(() => expect(removeMember).toHaveBeenCalledWith('org-demo', 'u-viewer'));
+    await waitFor(() => expect(listOrgMembers).toHaveBeenCalledTimes(2)); // mount + refetch
   });
 
   it('does not special-case the own/owner row (actions enabled)', async () => {
@@ -72,6 +73,8 @@ describe('MembersAdmin', () => {
     fireEvent.click(screen.getByRole('button', { name: /invite/i }));
     await waitFor(() => expect(inviteMember).toHaveBeenCalledWith('org-demo', 'new@valor.demo', 'viewer'));
     await waitFor(() => expect(screen.getByText(/added new@valor.demo/i)).toBeInTheDocument());
+    expect(screen.getByLabelText('Invite email')).toHaveValue('');
+    await waitFor(() => expect(listOrgMembers).toHaveBeenCalledTimes(2)); // mount + refetch
   });
 
   it('messages already_member', async () => {
